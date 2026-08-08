@@ -51,11 +51,6 @@ module.exports = async (req, res) => {
       res.status(200).json(await topFive());
       return;
     }
-    if (req.method === 'DELETE') {
-      await redis('del', KEY);
-      res.status(200).json({ cleared: true });
-      return;
-    }
     res.setHeader('Allow', 'GET, POST');
     res.status(405).json({ error: 'method not allowed' });
   } catch (e) {
