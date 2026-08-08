@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pietro's Pizzeria Panic — A Hot Slice Creative Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--beige:#F8E5C2; --tomato:#D64541; --tomato-dark:#A5322E; --mozz:#FAF8F5; --basil:#2E8B57; --olive:#2C2C2C; --glow:#F2C14E;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--olive); font-family:'Open Sans',sans-serif; color:var(--mozz); overflow-x:hidden;}
+  .hero{height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:radial-gradient(ellipse at 50% 30%,rgba(242,193,78,.14),transparent 60%),linear-gradient(180deg,#3a3530,#2C2C2C);}
+  h1.title{font-family:'Fredoka',sans-serif; font-weight:700; color:var(--glow); font-size:clamp(36px,9vw,64px); text-shadow:3px 3px 0 var(--tomato-dark); line-height:1.05; display:flex; flex-direction:column; align-items:center;}
+  .titleLine{display:flex; align-items:center; justify-content:center;}
+  .aSlice{display:inline-block; width:.68em; height:.9em; margin:0 -.01em; transform:translateY(.04em);}
+  .subtitle{font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px; color:var(--beige); margin-top:10px;}
+  .scrollCue{margin-top:52px; font-family:'Fredoka',sans-serif; font-size:14px; color:var(--beige); opacity:.7; animation:bob 1.8s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
+  .scene-wrap{position:relative; height:280vh;}
+  .scene-pin{position:sticky; top:0; height:100vh; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  canvas.scene{position:absolute; inset:0; width:100%; height:100%;}
+  .captions{position:relative; z-index:2; text-align:center; padding:0 28px; pointer-events:none;}
+  .caption-line{font-family:'Fredoka',sans-serif; font-weight:600; font-size:clamp(20px,5vw,32px); color:var(--mozz); text-shadow:0 2px 10px rgba(0,0,0,.6); opacity:0; transition:opacity .25s linear; margin:6px 0;}
+  .caption-line.tomato{color:var(--tomato);} .caption-line.basil{color:var(--basil);} .caption-line.glow{color:var(--glow);}
+  .cta{height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(180deg,#2C2C2C,#1a130d); padding:24px;}
+  .cta h2{font-family:'Fredoka',sans-serif; font-size:clamp(28px,7vw,44px); color:var(--mozz); margin-bottom:14px;}
+  .cta p{color:var(--beige); max-width:340px; margin-bottom:28px; line-height:1.5;}
+  .playBtn{font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--mozz); text-decoration:none; background:linear-gradient(180deg,var(--tomato),var(--tomato-dark)); border:2px solid var(--olive); border-bottom:5px solid #6b1f1c; border-radius:12px; padding:16px 40px; display:inline-block;}
+  .playBtn:active{transform:translateY(2px); border-bottom-width:3px;}
+  .footer-credit{margin-top:40px; font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.55;}
+</style>
+</head>
+<body>
+  <section class="hero">
+    <h1 class="title">
+      <span class="titleLine">PIETRO'S</span>
+      <span class="titleLine">PIZZERI<svg class="aSlice" viewBox="0 0 40 40"><polygon points="20,2 4,36 36,36" fill="#D64541" stroke="#8f2f1e" stroke-width="2"/><circle cx="17" cy="24" r="2.6" fill="#8f2f1e"/><circle cx="24" cy="27" r="2.6" fill="#8f2f1e"/><circle cx="20" cy="19" r="2.2" fill="#8f2f1e"/></svg></span>
+      <span class="titleLine">P<svg class="aSlice" viewBox="0 0 40 40"><polygon points="20,2 4,36 36,36" fill="#FAF8F5" stroke="#8f2f1e" stroke-width="2"/></svg>NIC</span>
+    </h1>
+    <div class="subtitle">starring Pietro the Pie Man</div>
+    <div class="scrollCue">scroll to step inside ↓</div>
+  </section>
+  <section class="scene-wrap" id="scene1"><div class="scene-pin"><canvas class="scene" id="canvas1"></canvas><div class="captions"><div class="caption-line glow" data-in="0.55" data-out="0.95">Late night. Ovens still warm.</div></div></div></section>
+  <section class="scene-wrap" id="scene2"><div class="scene-pin"><canvas class="scene" id="canvas2"></canvas><div class="captions"><div class="caption-line" data-in="0.15" data-out="0.4">Meet Pietro.</div><div class="caption-line basil" data-in="0.45" data-out="0.7">Jolly. Rotund. A little unlucky.</div><div class="caption-line glow" data-in="0.75" data-out="0.98">He ALWAYS makes the catch.</div></div></div></section>
+  <section class="scene-wrap" id="scene3"><div class="scene-pin"><canvas class="scene" id="canvas3"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.35">The stack grows...</div><div class="caption-line tomato" data-in="0.4" data-out="0.65">...and leans...</div><div class="caption-line glow" data-in="0.82" data-out="1.0">Stack 20 high and it overflows! 🎉</div></div></div></section>
+  <section class="scene-wrap" id="scene4"><div class="scene-pin"><canvas class="scene" id="canvas4"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.3">5 lives on the bricks.</div><div class="caption-line basil" data-in="0.38" data-out="0.6">🍄 restores a life. 🌶️ will HURT you.</div><div class="caption-line glow" data-in="0.68" data-out="1.0">Tilt. Catch. Stack. Repeat.</div></div></div></section>
+  <section class="cta"><h2>Ready, Pietro?</h2><p>Free to play. Tilt your phone and see how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="footer-credit">A Hot Slice Creative Game</div></section>
+<script>
+(function(){
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  const scenes=['scene1','scene2','scene3','scene4'].map(id=>{const wrap=document.getElementById(id);const canvas=wrap.querySelector('canvas');const ctx=canvas.getContext('2d');const captions=Array.from(wrap.querySelectorAll('.caption-line'));return{wrap,canvas,ctx,captions};});
+  function resizeCanvases(){scenes.forEach(s=>{s.canvas.width=window.innerWidth;s.canvas.height=window.innerHeight;});}
+  window.addEventListener('resize',resizeCanvases);resizeCanvases();
+  function blobRows(ctx,cx,topY,h,maxHalfW,color,shade){for(let i=0;i<h;i++){const t=(i+0.5)/h;const w=Math.sin(Math.PI*t)*maxHalfW;const y=topY+i;ctx.fillStyle=color;ctx.fillRect(Math.round(cx-w),y,Math.max(1,Math.round(w*2)),1.4);const shW=Math.max(1,Math.round(w*0.32));ctx.fillStyle=shade;ctx.fillRect(Math.round(cx+w-shW),y,shW,1.4);}}
+  function drawScene1(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1a130d');g.addColorStop(1,'#0d0906');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const glowR=W*(0.15+p*0.9);const gl=ctx.createRadialGradient(W/2,H*0.55,10,W/2,H*0.55,glowR);gl.addColorStop(0,`rgba(242,193,78,${0.05+p*0.35})`);gl.addColorStop(1,'rgba(242,193,78,0)');ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);const inset=(1-p)*W*0.5;ctx.fillStyle='#0d0906';ctx.fillRect(0,0,inset,H);ctx.fillRect(W-inset,0,inset,H);ctx.fillStyle='rgba(90,48,27,0.6)';ctx.fillRect(0,0,inset*0.15,H);ctx.fillRect(W-inset*0.15,0,inset*0.15,H);}
+  function drawPietroHero(ctx,cx,cy,scale,breathe){ctx.save();ctx.translate(cx,cy);ctx.scale(scale,scale);blobRows(ctx,0,10,60,58*breathe,'#D64541','#A5322E');blobRows(ctx,0,-32,32,40*breathe,'#F8E5C2','#E0C99A');blobRows(ctx,0,-88,48,34,'#EFC094','#D9A374');ctx.fillStyle='#8f8072';ctx.fillRect(-42,-42,84,10);ctx.fillStyle='#F2EFE8';ctx.fillRect(-42,-49,84,7);ctx.fillRect(-52,-55,18,14);ctx.fillRect(34,-55,18,14);ctx.fillStyle='#2C2C2C';ctx.fillRect(-24,-76,10,10);ctx.fillRect(14,-76,10,10);ctx.fillStyle='#FAF8F5';ctx.fillRect(-38,-140,76,14);blobRows(ctx,0,-172,34,32,'#FAF8F5','#E5E1DA');ctx.restore();}
+  function drawScene2(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a3530');g.addColorStop(1,'#1c1a17');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const enter=clamp(p/0.4,0,1);ctx.save();ctx.globalAlpha=enter;drawPietroHero(ctx,W/2,H*0.6,1.1*(0.85+enter*0.15),1+Math.sin(p*10)*0.02);ctx.restore();if(p>0.3){const arcT=clamp((p-0.3)/0.4,0,1);const px=W*0.25+(W*0.5-W*0.25)*arcT;const py=H*0.15+(H*0.55-H*0.15)*arcT*arcT;ctx.save();ctx.translate(px,py);ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fillStyle='#D9A15A';ctx.fill();ctx.strokeStyle='#8f5322';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#D64541';ctx.beginPath();ctx.arc(-5,-3,3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(6,4,3,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  function drawScene3(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a3530');g.addColorStop(1,'#1c1a17');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const baseX=W/2,baseY=H*0.78;const n=Math.floor(p*14);const sway=Math.sin(p*6)*0.5*p;for(let i=0;i<n;i++){const t=(i+1)/14;const s=sway*t;const lift=(i+1)*(H*0.028);ctx.save();ctx.translate(baseX+s*40,baseY-lift);ctx.rotate(s*0.5);const rx=30-t*8,ry=10;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fillStyle=i%2===0?'#D9A15A':'#e0b06e';ctx.fill();ctx.strokeStyle='#8f5322';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.ellipse(0,-1.5,rx*0.72,ry*0.6,0,0,Math.PI*2);ctx.fillStyle='#FAF0C8';ctx.fill();ctx.fillStyle='#D64541';ctx.beginPath();ctx.arc(-rx*0.3,0,rx*0.14,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx*0.25,ry*0.2,rx*0.14,0,Math.PI*2);ctx.fill();ctx.restore();}if(p>0.85){const burstT=(p-0.85)/0.15;ctx.save();for(let i=0;i<16;i++){const ang=(i/16)*Math.PI*2;const dist=burstT*80;ctx.globalAlpha=1-burstT;ctx.beginPath();ctx.arc(baseX+Math.cos(ang)*dist,baseY-H*0.4+Math.sin(ang)*dist,4,0,Math.PI*2);ctx.fillStyle='#F2C14E';ctx.fill();}ctx.restore();}}
+  function drawScene4(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a3530');g.addColorStop(1,'#1c1a17');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const gy=H-H*0.16*clamp(p*2,0,1);ctx.fillStyle='#5a301b';ctx.fillRect(0,gy,W,H-gy);const rowH=Math.max(14,(H-gy)/2.5),brickW=rowH*2.1;let ri=0;for(let y=gy;y<H;y+=rowH){const off=(ri%2===0)?0:brickW/2;ctx.fillStyle=ri%2===0?'#A5322E':'#8f3626';for(let bx=-brickW+off;bx<W;bx+=brickW)ctx.fillRect(bx+2,y+2,brickW-4,Math.min(rowH,H-y)-4);ri++;}const icons=[{emoji:'🍕',label:'catch them',at:0.2,x:0.28},{emoji:'🍄',label:'+life',at:0.45,x:0.5},{emoji:'🌶️',label:'DANGER',at:0.7,x:0.72}];icons.forEach(ic=>{const a=clamp((p-ic.at)/0.15,0,1);if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.font=`${Math.floor(W*0.09)}px sans-serif`;ctx.textAlign='center';ctx.fillText(ic.emoji,W*ic.x,H*0.42-(1-a)*20);ctx.font=`bold 16px 'Fredoka',sans-serif`;ctx.fillStyle=ic.label==='DANGER'?'#D64541':'#FAF8F5';ctx.fillText(ic.label,W*ic.x,H*0.42+34);ctx.restore();});}
+  const drawers=[drawScene1,drawScene2,drawScene3,drawScene4];
+  function updateCaptions(scene,p){scene.captions.forEach(el=>{const inP=parseFloat(el.dataset.in),outP=parseFloat(el.dataset.out);let op=0;if(p>=inP&&p<=outP){const span=(outP-inP)/2;op=clamp((p-inP)/(span*0.4),0,1)*clamp((outP-p)/(span*0.4),0,1);}el.style.opacity=op;});}
+  function loop(){scenes.forEach((s,idx)=>{const rect=s.wrap.getBoundingClientRect();const total=s.wrap.offsetHeight-window.innerHeight;const scrolled=clamp(-rect.top,0,Math.max(1,total));const p=total>0?scrolled/total:0;drawers[idx](s.ctx,p,s.canvas.width,s.canvas.height);updateCaptions(s,p);});requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
