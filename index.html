@@ -13,9 +13,9 @@
   html{scroll-behavior:smooth;}
   body{background:var(--olive); font-family:'Open Sans',sans-serif; color:var(--mozz); overflow-x:hidden;}
   .hero{height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:radial-gradient(ellipse at 50% 30%,rgba(242,193,78,.14),transparent 60%),linear-gradient(180deg,#3a3530,#2C2C2C);}
-  h1.title{font-family:'Fredoka',sans-serif; font-weight:700; color:var(--glow); font-size:clamp(36px,9vw,64px); text-shadow:3px 3px 0 var(--tomato-dark); line-height:1.05; display:flex; flex-direction:column; align-items:center;}
+  h1.title{font-family:'Fredoka',sans-serif; font-weight:700; color:var(--glow); font-size:clamp(41px,10.4vw,74px); text-shadow:3px 3px 0 var(--tomato-dark); line-height:1.05; display:flex; flex-direction:column; align-items:center;}
   .titleLine{display:flex; align-items:center; justify-content:center;}
-  .aSlice{display:inline-block; width:.68em; height:.9em; margin:0 -.01em; transform:translateY(.04em);}
+  .pizzaA{display:inline-block; font-size:.8em; line-height:1; transform:translateY(.05em);}
   .subtitle{font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px; color:var(--beige); margin-top:10px;}
   .scrollCue{margin-top:52px; font-family:'Fredoka',sans-serif; font-size:14px; color:var(--beige); opacity:.7; animation:bob 1.8s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
@@ -30,22 +30,23 @@
   .cta p{color:var(--beige); max-width:340px; margin-bottom:28px; line-height:1.5;}
   .playBtn{font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--mozz); text-decoration:none; background:linear-gradient(180deg,var(--tomato),var(--tomato-dark)); border:2px solid var(--olive); border-bottom:5px solid #6b1f1c; border-radius:12px; padding:16px 40px; display:inline-block;}
   .playBtn:active{transform:translateY(2px); border-bottom-width:3px;}
-  .footer-credit{margin-top:40px; font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.55;}
+  .footer-credit{margin-top:40px; font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.65; line-height:1.7;}
+  .footer-credit a{color:var(--glow); text-decoration:underline;}
 </style>
 </head>
 <body>
   <section class="hero">
     <h1 class="title">
       <span class="titleLine">PIETRO'S</span>
-      <span class="titleLine">PIZZERI<svg class="aSlice" viewBox="0 0 40 40"><polygon points="20,2 4,36 36,36" fill="#D64541" stroke="#8f2f1e" stroke-width="2"/><circle cx="17" cy="24" r="2.6" fill="#8f2f1e"/><circle cx="24" cy="27" r="2.6" fill="#8f2f1e"/><circle cx="20" cy="19" r="2.2" fill="#8f2f1e"/></svg></span>
-      <span class="titleLine">P<svg class="aSlice" viewBox="0 0 40 40"><polygon points="20,2 4,36 36,36" fill="#FAF8F5" stroke="#8f2f1e" stroke-width="2"/></svg>NIC</span>
+      <span class="titleLine">PIZZERI<span class="pizzaA">🍕</span></span>
+      <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
     </h1>
     <div class="subtitle">Catch. Stack. Survive the rush.</div>
     <div class="scrollCue">scroll to see how it works ↓</div>
   </section>
-  <section class="scene-wrap" id="scene3"><div class="scene-pin"><canvas class="scene" id="canvas3"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.35">Catch the falling pizzas.</div><div class="caption-line tomato" data-in="0.4" data-out="0.65">Stack 'em high...</div><div class="caption-line glow" data-in="0.82" data-out="1.0">Stack 20 high and it overflows! 🎉</div></div></div></section>
-  <section class="scene-wrap" id="scene4"><div class="scene-pin"><canvas class="scene" id="canvas4"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.3">5 lives on the bricks.</div><div class="caption-line basil" data-in="0.38" data-out="0.6">🍄 helps you. 🌶️ and rolling pins HURT you.</div><div class="caption-line glow" data-in="0.68" data-out="1.0">Tilt or tap to move. Catch. Survive.</div></div></div></section>
-  <section class="cta"><h2>Ready to play?</h2><p>Free to play. Tilt or tap to move — see how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="footer-credit">A Hot Slice Creative Game</div></section>
+  <section class="scene-wrap" id="scene3"><div class="scene-pin"><canvas class="scene" id="canvas3"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.35">Catch the falling pizzas.</div><div class="caption-line tomato" data-in="0.4" data-out="0.65">Stack 'em high...</div><div class="caption-line glow" data-in="0.82" data-out="1.0">Stack toward the ceiling — but don't touch it! 🎉</div></div></div></section>
+  <section class="scene-wrap" id="scene4"><div class="scene-pin"><canvas class="scene" id="canvas4"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.3">5 lives on the bricks.</div><div class="caption-line basil" data-in="0.38" data-out="0.6">🍄 helps you. 🌶️ and 🍍 HURT you.</div><div class="caption-line glow" data-in="0.68" data-out="1.0">Tilt or tap to move. Catch. Survive.</div></div></div></section>
+  <section class="cta"><h2>Ready to play?</h2><p>Free to play. Tilt or tap to move — see how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div></section>
 <script>
 (function(){
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}

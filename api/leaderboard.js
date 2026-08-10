@@ -21,8 +21,8 @@ function parseEntries(raw) {
   return entries;
 }
 
-async function topFive() {
-  const raw = await redis('zrange', KEY, '0', '4', 'REV', 'WITHSCORES');
+async function topTen() {
+  const raw = await redis('zrange', KEY, '0', '9', 'REV', 'WITHSCORES');
   return parseEntries(raw || []);
 }
 
@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       res.setHeader('Cache-Control', 'public, s-maxage=5, stale-while-revalidate=30');
-      res.status(200).json(await topFive());
+      res.status(200).json(await topTen());
       return;
     }
     if (req.method === 'POST') {
@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
       const member = `${initials}|${Date.now()}|${Math.random().toString(36).slice(2, 8)}`;
       await redis('zadd', KEY, String(score), member);
       await redis('zremrangebyrank', KEY, '0', String(-(KEEP + 1)));
-      res.status(200).json(await topFive());
+      res.status(200).json(await topTen());
       return;
     }
     res.setHeader('Allow', 'GET, POST');
