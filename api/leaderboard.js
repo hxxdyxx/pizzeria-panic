@@ -1,8 +1,27 @@
+const { sign } = require('./session.js');
+
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 const KEY = 'ppp_leaderboard';
 const MAX_SCORE = 100000;
 const KEEP = 50;
+
+// A run needs to spend real time on screen to earn points -- the fastest
+// realistic pace (max combo multiplier, fastest spawn rate late-game) is
+// roughly one scored point per ~0.12s. Anything faster than that for the
+// claimed score is not a real run. Generous on purpose: this is meant to
+// stop trivial spoofed POSTs, not to police legitimate skilled play.
+const MIN_MS_PER_POINT = 120;
+const MAX_TOKEN_AGE_MS = 2 * 60 * 60 * 1000; // a session can't be replayed hours later
+
+function validSession(ts, sig, score) {
+  if (!ts || !sig) return false;
+  if (sign(ts) !== sig) return false;
+  const elapsed = Date.now() - ts;
+  if (elapsed < 0 || elapsed > MAX_TOKEN_AGE_MS) return false;
+  if (elapsed < score * MIN_MS_PER_POINT) return false;
+  return true;
+}
 
 async function redis(...args) {
   const path = args.map(a => encodeURIComponent(a)).join('/');
@@ -42,6 +61,10 @@ module.exports = async (req, res) => {
       const score = Number(body.score);
       if (!Number.isFinite(score) || !Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
         res.status(400).json({ error: 'invalid score' });
+        return;
+      }
+      if (!validSession(Number(body.ts), String(body.sig || ''), score)) {
+        res.status(400).json({ error: 'invalid or expired play session' });
         return;
       }
       const initials = String(body.initials || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'AAA';

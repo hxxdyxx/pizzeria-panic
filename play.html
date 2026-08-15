@@ -99,6 +99,8 @@
         <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
       </h1>
       <div class="subtitle">Catch. Stack. Survive the rush.</div>
+      <div class="rankBadge hidden" id="bestBadge" style="font-size:15px;margin-top:0;"></div>
+      <div class="rankBadge hidden" id="streakBadge" style="font-size:15px;color:#FF7A3C;margin-top:2px;"></div>
       <button class="btn" id="startBtn">Tap to Start</button>
       <div class="hint">Move the pan to catch pizzas. Stack 'em high. 🍄 helps, 🌶️ hurts. Don't let five 🍕 hit the floor!</div>
       <div class="controlPicker" id="controlPickerStart">
@@ -122,6 +124,7 @@
       <div class="subtitle" id="gameOverHeadline" style="margin-bottom:0;">MAMMA MIA!</div>
       <div class="scoreBig" id="finalScore">0</div>
       <div class="rankBadge" id="rankText">Dish Boy</div>
+      <div class="hint" id="nearMissText" style="margin-top:4px;font-size:15px;"></div>
       <div id="scoreSubmitWrap" class="hidden" style="margin-top:14px;">
         <div class="subtitle" style="font-size:13px;margin:0 0 6px 0;">NEW HIGH SCORE! Enter initials:</div>
         <input id="initialsInput" class="initialsInput" maxlength="3" placeholder="AAA">
@@ -172,10 +175,63 @@
   const boardListMain=document.getElementById('boardListMain'),boardListEnd=document.getElementById('boardListEnd');
   const scoreSubmitWrap=document.getElementById('scoreSubmitWrap'),initialsInput=document.getElementById('initialsInput'),submitScoreBtn=document.getElementById('submitScoreBtn');
   const donateBtnStart=document.getElementById('donateBtnStart'),donateBtnPause=document.getElementById('donateBtnPause');
+  const bestBadge=document.getElementById('bestBadge'),streakBadge=document.getElementById('streakBadge'),nearMissText=document.getElementById('nearMissText');
   const DONATE_URL='https://buy.stripe.com/28EaEP9fR4eG1h46Ia6EU00';
   function openDonate(){if(DONATE_URL)window.open(DONATE_URL,'_blank','noopener');}
   donateBtnStart.addEventListener('click',openDonate);
   donateBtnPause.addEventListener('click',openDonate);
+
+  // ---- Personal best (localStorage; there's no account system, so this is
+  // the only "you vs. yourself" progress signal the game has) ----
+  function loadBest(){try{return parseInt(localStorage.getItem('ppp_best')||'0',10)||0;}catch(e){return 0;}}
+  function saveBest(v){try{localStorage.setItem('ppp_best',String(v));}catch(e){}}
+  let personalBest=loadBest();
+  function renderBestBadge(){
+    if(personalBest>0){bestBadge.textContent='Best: '+personalBest;bestBadge.classList.remove('hidden');}
+    else bestBadge.classList.add('hidden');
+  }
+
+  // ---- Daily streak: a lightweight "come back tomorrow" hook, the single
+  // most common retention pattern in top free-to-play games. No accounts
+  // needed -- just consecutive calendar days with a play session, tracked
+  // locally. A small in-run bonus (extra starting shield) rewards it. ----
+  function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function loadStreak(){try{return parseInt(localStorage.getItem('ppp_streak')||'0',10)||0;}catch(e){return 0;}}
+  function updateStreakOnPlay(){
+    try{
+      const last=localStorage.getItem('ppp_lastPlayDate');
+      const today=todayStr();
+      if(last===today)return loadStreak(); // already counted today
+      const streak=(last===yesterdayStr())?loadStreak()+1:1;
+      localStorage.setItem('ppp_streak',String(streak));
+      localStorage.setItem('ppp_lastPlayDate',today);
+      return streak;
+    }catch(e){return 0;}
+  }
+  let streakDays=loadStreak();
+  function renderStreakBadge(){
+    if(streakDays>=2){streakBadge.textContent='🔥 Day '+streakDays+' streak'+(streakBonusShield()>0?' — bonus shield!':'');streakBadge.classList.remove('hidden');}
+    else streakBadge.classList.add('hidden');
+  }
+  function streakBonusShield(){return streakDays>=2?1:0;}
+  renderBestBadge();renderStreakBadge();
+
+  // ---- Anti-spoof session token ----
+  // Without this, anyone could POST straight to /api/leaderboard with a
+  // huge score and zero gameplay. A short-lived signed token is fetched
+  // when a run starts, and the server checks enough real time elapsed for
+  // the claimed score to be plausible before it accepts a submission.
+  let sessionTs=null,sessionSig=null;
+  async function fetchPlaySession(){
+    try{
+      const r=await fetch('/api/session');
+      if(!r.ok)return;
+      const d=await r.json();
+      sessionTs=d.ts;sessionSig=d.sig;
+    }catch(e){}
+  }
+
   let W=0,H=0;
   function resize(){const r=frame.getBoundingClientRect();W=canvas.width=r.width;H=canvas.height=r.height;panY=computePanY();}
   window.addEventListener('resize',resize);
@@ -231,7 +287,7 @@
   function computePanY(){const scale=(W*0.16)/BUF_W;const offsetPx=44*scale;return clamp(BODY_Y-offsetPx/Math.max(1,H),0.5,BODY_Y-0.02);}
   function reset(){
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
-    score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=0;spawnTimer=0;
+    score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=streakBonusShield();spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
     growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
@@ -733,7 +789,7 @@
     }
     startGame();
   }
-  function startGame(){reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');}
+  function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');}
   function endGame(reason){
     if(state==='gameover'||state==='ending')return;
     pendingReason=reason||'lives';
@@ -746,9 +802,16 @@
     state='gameover';finalScore.textContent=score;rankText.textContent=rankFor(score);
     gameOverHeadline.textContent=pendingReason==='ceiling'?CEILING_REASONS[Math.floor(Math.random()*CEILING_REASONS.length)]:'MAMMA MIA!';
     gameOverScreen.classList.remove('hidden');pauseScreen.classList.add('hidden');
+    const isNewBest=score>personalBest;
+    if(isNewBest){personalBest=score;saveBest(personalBest);}
+    renderBestBadge();renderStreakBadge();
     const entries=await fetchLeaderboard();
     renderBoard(boardListEnd,entries);
     const qualifies=score>0&&entries&&(entries.length<10||score>entries[entries.length-1].score);
+    if(isNewBest&&score>0)nearMissText.textContent='🎉 New personal best!';
+    else if(entries&&entries.length>=10&&score<entries[entries.length-1].score)nearMissText.textContent=(entries[entries.length-1].score-score)+' points from the leaderboard';
+    else if(personalBest>score&&score>0)nearMissText.textContent=(personalBest-score)+' points from your best';
+    else nearMissText.textContent='';
     if(qualifies){scoreSubmitWrap.classList.remove('hidden');initialsInput.value='';setTimeout(()=>initialsInput.focus(),50);}
     else scoreSubmitWrap.classList.add('hidden');
   }
@@ -827,7 +890,7 @@
     const initials=(initialsInput.value||'AAA').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3)||'AAA';
     submitScoreBtn.disabled=true;submitScoreBtn.textContent='Saving...';
     try{
-      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initials,score})});
+      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initials,score,ts:sessionTs,sig:sessionSig})});
       if(r.ok){const entries=await r.json();renderBoard(boardListEnd,entries);}
     }catch(e){}
     scoreSubmitWrap.classList.add('hidden');
