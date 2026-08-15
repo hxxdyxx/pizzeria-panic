@@ -8,6 +8,7 @@ Living list from a full audit against genre best practices (endless arcade catch
 - [x] **Personal best tracking.** Nearly universal in this genre (Flappy Bird, etc.) and was entirely missing. Now tracked in localStorage and shown on the start screen.
 - [x] **Daily streak.** Classic F2P "come back tomorrow" retention hook. Tracks consecutive calendar days played, shown on start screen, grants a small starting-shield bonus at 2+ days. No account system needed.
 - [x] **Near-miss messaging on game over.** Shows "X points from your best" or "X points from the leaderboard" — proven re-engagement hook, previously absent.
+- [x] **"Beat my score" challenge links.** Both share actions now carry a `?beat=N` link. Opening one shows the target on the start screen instead of the generic pitch, and game-over messaging reports the exact gap or a win. Chosen over leaderboard seasons/tutorial/art-pass as the highest-leverage item since it grows the player base rather than polishing for existing players — the right call pre-traffic.
 
 ## Needs a business decision before implementing
 
@@ -18,7 +19,6 @@ Living list from a full audit against genre best practices (endless arcade catch
 ## Nice-to-have, lower priority
 
 - [ ] Guided first-run tutorial beyond the current static instructions (the difficulty curve already ramps gently, so this is polish, not urgent).
-- [ ] Direct "beat my score" challenge links (prefill a friend's target score via URL param) — cheap addition to the existing share flow.
 - [ ] Art/asset pass if budget allows — current pixel-art Pietro + canvas effects are already solid, but a professional illustrator pass would raise production value further.
 
 ## Explicitly out of scope tonight
