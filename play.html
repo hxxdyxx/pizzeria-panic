@@ -101,6 +101,7 @@
       <div class="subtitle">Catch. Stack. Survive the rush.</div>
       <div class="rankBadge hidden" id="bestBadge" style="font-size:15px;margin-top:0;"></div>
       <div class="rankBadge hidden" id="streakBadge" style="font-size:15px;color:#FF7A3C;margin-top:2px;"></div>
+      <div class="rankBadge hidden" id="challengeBadge" style="font-size:15px;color:#F2C14E;margin-top:2px;"></div>
       <button class="btn" id="startBtn">Tap to Start</button>
       <div class="hint">Move the pan to catch pizzas. Stack 'em high. 🍄 helps, 🌶️ hurts. Don't let five 🍕 hit the floor!</div>
       <div class="controlPicker" id="controlPickerStart">
@@ -176,6 +177,7 @@
   const scoreSubmitWrap=document.getElementById('scoreSubmitWrap'),initialsInput=document.getElementById('initialsInput'),submitScoreBtn=document.getElementById('submitScoreBtn');
   const donateBtnStart=document.getElementById('donateBtnStart'),donateBtnPause=document.getElementById('donateBtnPause');
   const bestBadge=document.getElementById('bestBadge'),streakBadge=document.getElementById('streakBadge'),nearMissText=document.getElementById('nearMissText');
+  const challengeBadge=document.getElementById('challengeBadge');
   const DONATE_URL='https://buy.stripe.com/28EaEP9fR4eG1h46Ia6EU00';
   function openDonate(){if(DONATE_URL)window.open(DONATE_URL,'_blank','noopener');}
   donateBtnStart.addEventListener('click',openDonate);
@@ -215,7 +217,25 @@
     else streakBadge.classList.add('hidden');
   }
   function streakBonusShield(){return streakDays>=2?1:0;}
-  renderBestBadge();renderStreakBadge();
+
+  // ---- "Beat my score" challenge links ----
+  // Cheap addition to the share flow that already exists: a shared score
+  // carries a ?beat=N link, so the person who opens it sees a specific
+  // target instead of just an abstract "try the game" pitch.
+  const challengeTarget=(function(){
+    try{
+      const v=parseInt(new URLSearchParams(location.search).get('beat'),10);
+      return (Number.isFinite(v)&&v>0&&v<100000)?v:null;
+    }catch(e){return null;}
+  })();
+  function renderChallengeBadge(){
+    if(challengeTarget){challengeBadge.textContent='🎯 Beat '+challengeTarget+' to win the challenge';challengeBadge.classList.remove('hidden');}
+    else challengeBadge.classList.add('hidden');
+  }
+  function challengeUrl(forScore){
+    return location.origin+location.pathname+'?beat='+forScore;
+  }
+  renderBestBadge();renderStreakBadge();renderChallengeBadge();
 
   // ---- Anti-spoof session token ----
   // Without this, anyone could POST straight to /api/leaderboard with a
@@ -808,7 +828,9 @@
     const entries=await fetchLeaderboard();
     renderBoard(boardListEnd,entries);
     const qualifies=score>0&&entries&&(entries.length<10||score>entries[entries.length-1].score);
-    if(isNewBest&&score>0)nearMissText.textContent='🎉 New personal best!';
+    if(challengeTarget&&score>challengeTarget)nearMissText.textContent='🎉 Challenge beaten! '+challengeTarget+' → '+score;
+    else if(challengeTarget&&score>0)nearMissText.textContent=(challengeTarget-score+1)+' points from beating the challenge';
+    else if(isNewBest&&score>0)nearMissText.textContent='🎉 New personal best!';
     else if(entries&&entries.length>=10&&score<entries[entries.length-1].score)nearMissText.textContent=(entries[entries.length-1].score-score)+' points from the leaderboard';
     else if(personalBest>score&&score>0)nearMissText.textContent=(personalBest-score)+' points from your best';
     else nearMissText.textContent='';
@@ -826,7 +848,7 @@
   retryBtn.addEventListener('click',beginPlay);
   pauseBtn.addEventListener('click',pauseGame);
   resumeBtn.addEventListener('click',resumeGame);
-  shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with Pietro in Pizzeria Panic! 🍕 #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
+  shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with Pietro in Pizzeria Panic! 🍕 Beat my score: '+challengeUrl(score)+' #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
   async function shareScoreImage(){
     const cw=800,chh=1000;
     const c=document.createElement('canvas');c.width=cw;c.height=chh;
@@ -855,9 +877,10 @@
     try{
       const blob=await shareScoreImage();
       const file=new File([blob],'pizzeria-panic-score.png',{type:'image/png'});
-      const shareData={files:[file],title:"Pietro's Pizzeria Panic",text:'I stacked '+score+' pizzas with Pietro! 🍕 #HotSliceCreative'};
+      const cUrl=challengeUrl(score);
+      const shareData={files:[file],title:"Pietro's Pizzeria Panic",text:'I stacked '+score+' pizzas with Pietro! 🍕 Beat my score: '+cUrl+' #HotSliceCreative'};
       if(navigator.canShare&&navigator.canShare(shareData)){await navigator.share(shareData);}
-      else if(navigator.share){await navigator.share({title:shareData.title,text:shareData.text});}
+      else if(navigator.share){await navigator.share({title:shareData.title,text:shareData.text,url:cUrl});}
       else{
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');a.href=url;a.download='pizzeria-panic-score.png';a.click();
