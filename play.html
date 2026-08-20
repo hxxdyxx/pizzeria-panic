@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Pietro's Pizzeria Panic — A Hot Slice Creative Game</title>
+<title>Pizzeria Panic — A Hot Slice Creative Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -878,7 +878,7 @@
       const blob=await shareScoreImage();
       const file=new File([blob],'pizzeria-panic-score.png',{type:'image/png'});
       const cUrl=challengeUrl(score);
-      const shareData={files:[file],title:"Pietro's Pizzeria Panic",text:'I stacked '+score+' pizzas with Pietro! 🍕 Beat my score: '+cUrl+' #HotSliceCreative'};
+      const shareData={files:[file],title:"Pizzeria Panic",text:'I stacked '+score+' pizzas with Pietro! 🍕 Beat my score: '+cUrl+' #HotSliceCreative'};
       if(navigator.canShare&&navigator.canShare(shareData)){await navigator.share(shareData);}
       else if(navigator.share){await navigator.share({title:shareData.title,text:shareData.text,url:cUrl});}
       else{
