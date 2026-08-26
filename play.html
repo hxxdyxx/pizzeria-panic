@@ -70,6 +70,7 @@
   .donateBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;color:var(--glow);background:rgba(242,193,78,.1);border:1.5px solid rgba(242,193,78,.5);border-radius:20px;padding:7px 16px;cursor:pointer;margin-top:12px;touch-action:manipulation;}
   .donateBtn:active{transform:translateY(1px);}
   .pill.combo{border-color:#FF7A3C;color:#FF7A3C;animation:comboPulse .6s ease-in-out infinite;}
+  .pill.rush{border-color:#FF7A3C;color:#FF7A3C;background:rgba(255,122,60,.16);animation:comboPulse .45s ease-in-out infinite;}
   @keyframes comboPulse{0%,100%{box-shadow:0 0 0 rgba(255,122,60,0);}50%{box-shadow:0 0 16px rgba(255,122,60,.8);}}
 </style>
 </head>
@@ -83,6 +84,7 @@
         <div class="pill" id="livesPill">LIVES: <span id="livesText">🍕🍕🍕🍕🍕</span></div>
         <div class="pill shield hidden" id="shieldPill">SHIELD: <span id="shieldText">0</span></div>
         <div class="pill combo hidden" id="comboPill">COMBO: <span id="comboText">x1.5 (5)</span></div>
+        <div class="pill rush hidden" id="rushPill">🔥 RUSH x2</div>
       </div>
       <div class="hudCol right">
         <button class="iconBtn hidden" id="pauseBtn" aria-label="Pause">⏸</button>
@@ -94,7 +96,6 @@
     </div>
     <div id="startScreen" class="overlay">
       <h1 class="title">
-        <span class="titleLine">PIETRO'S</span>
         <span class="titleLine">PIZZERI<span class="pizzaA">🍕</span></span>
         <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
       </h1>
@@ -112,7 +113,7 @@
         <span class="controlPickerLabel">Set Your Controls</span>
       </div>
       <button class="linkBtn" id="viewBoardBtn">🏆 Leaderboard</button>
-      <button class="donateBtn" id="donateBtnStart">🍕 Buy Pietro a Slice</button>
+      <button class="donateBtn" id="donateBtnStart">🍕 Buy the Chef a Slice</button>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="leaderboardScreen" class="overlay hidden">
@@ -162,7 +163,7 @@
           </div>
           <span class="controlPickerLabel">Set Your Controls</span>
         </div>
-        <button class="donateBtn" id="donateBtnPause">🍕 Buy Pietro a Slice</button>
+        <button class="donateBtn" id="donateBtnPause">🍕 Buy the Chef a Slice</button>
         <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
       </div>
     </div>
@@ -178,6 +179,7 @@
   const scoreText=document.getElementById('scoreText'),livesText=document.getElementById('livesText');
   const shieldPill=document.getElementById('shieldPill'),shieldText=document.getElementById('shieldText');
   const comboPill=document.getElementById('comboPill'),comboText=document.getElementById('comboText');
+  const rushPill=document.getElementById('rushPill');
   const finalScore=document.getElementById('finalScore'),rankText=document.getElementById('rankText'),floatersEl=document.getElementById('floaters');
   const gameOverHeadline=document.getElementById('gameOverHeadline');
   const growTimerWrap=document.getElementById('growTimerWrap'),growTimerText=document.getElementById('growTimerText');
@@ -194,8 +196,6 @@
   donateBtnStart.addEventListener('click',openDonate);
   donateBtnPause.addEventListener('click',openDonate);
 
-  // ---- Personal best (localStorage; there's no account system, so this is
-  // the only "you vs. yourself" progress signal the game has) ----
   function loadBest(){try{return parseInt(localStorage.getItem('ppp_best')||'0',10)||0;}catch(e){return 0;}}
   function saveBest(v){try{localStorage.setItem('ppp_best',String(v));}catch(e){}}
   let personalBest=loadBest();
@@ -204,10 +204,6 @@
     else bestBadge.classList.add('hidden');
   }
 
-  // ---- Daily streak: a lightweight "come back tomorrow" hook, the single
-  // most common retention pattern in top free-to-play games. No accounts
-  // needed -- just consecutive calendar days with a play session, tracked
-  // locally. A small in-run bonus (extra starting shield) rewards it. ----
   function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
   function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
   function loadStreak(){try{return parseInt(localStorage.getItem('ppp_streak')||'0',10)||0;}catch(e){return 0;}}
@@ -215,7 +211,7 @@
     try{
       const last=localStorage.getItem('ppp_lastPlayDate');
       const today=todayStr();
-      if(last===today)return loadStreak(); // already counted today
+      if(last===today)return loadStreak();
       const streak=(last===yesterdayStr())?loadStreak()+1:1;
       localStorage.setItem('ppp_streak',String(streak));
       localStorage.setItem('ppp_lastPlayDate',today);
@@ -229,10 +225,6 @@
   }
   function streakBonusShield(){return streakDays>=2?1:0;}
 
-  // ---- "Beat my score" challenge links ----
-  // Cheap addition to the share flow that already exists: a shared score
-  // carries a ?beat=N link, so the person who opens it sees a specific
-  // target instead of just an abstract "try the game" pitch.
   const challengeTarget=(function(){
     try{
       const v=parseInt(new URLSearchParams(location.search).get('beat'),10);
@@ -248,11 +240,6 @@
   }
   renderBestBadge();renderStreakBadge();renderChallengeBadge();
 
-  // ---- Anti-spoof session token ----
-  // Without this, anyone could POST straight to /api/leaderboard with a
-  // huge score and zero gameplay. A short-lived signed token is fetched
-  // when a run starts, and the server checks enough real time elapsed for
-  // the claimed score to be plausible before it accepts a submission.
   let sessionTs=null,sessionSig=null;
   async function fetchPlaySession(){
     try{
@@ -291,6 +278,7 @@
   function comboMultFor(c){if(c>=30)return 4;if(c>=20)return 3;if(c>=10)return 2;if(c>=5)return 1.5;return 1;}
   let windActive=false,windTimer=0,windNextT=10+Math.random()*8,windForce=0,windDir=1,windAgeT=0,windDur=0;
   let neonIdx=0,neonT=0,neonFlicker=1;
+  let rushActive=false,rushTimer=0,rushNextT=32+Math.random()*10,rushDur=8;
   let lightningT=6,lightningFlash=0;
   let bigText=null;
   function showBigText(text,color,duration,style,sub){bigText={text,color,t:0,duration:duration||1.6,style:style||'flash',sub:sub||null};}
@@ -312,7 +300,8 @@
     {name:'Lunch Rush',from:40,sky:['#F2C14E','#D64541'],deco:'clouds'},
     {name:'Sunset Slice',from:90,sky:['#D64541','#5b2a6e'],deco:'sunset'},
     {name:'Late Night Kitchen',from:160,sky:['#241f3a','#0f0d1a'],deco:'stars'},
-    {name:'Festival Lights',from:260,sky:['#1c1033','#2c1650'],deco:'lanterns'}
+    {name:'Festival Lights',from:260,sky:['#1c1033','#2c1650'],deco:'lanterns'},
+    {name:'Midnight Rush',from:400,sky:['#0a0612','#1a0a24'],deco:'neonrush'}
   ];
   function currentLevel(){let lvl=LEVELS[0];for(const L of LEVELS){if(progress>=L.from)lvl=L;}return lvl;}
   function computePanY(){const scale=(W*0.16)/BUF_W;const offsetPx=44*scale;return clamp(BODY_Y-offsetPx/Math.max(1,H),0.5,BODY_Y-0.02);}
@@ -324,6 +313,7 @@
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;pendingReason='lives';
+    rushActive=false;rushTimer=0;rushNextT=32+Math.random()*10;rushPill.classList.add('hidden');
     panY=computePanY();beginLifeCycleTracking();updateHud();updateComboUI();
   }
   function updateHud(){scoreText.textContent=score;livesText.textContent='🍕'.repeat(Math.max(lives,0))||'—';if(shield>0){shieldPill.classList.remove('hidden');shieldText.textContent=shield;}else shieldPill.classList.add('hidden');}
@@ -371,10 +361,10 @@
   renderControlButtons();
   function spawnFaller(){
     const roll=Math.random();
-    const pepperChance=Math.min(0.22,0.06+progress*0.0019);
-    const mushBaseChance=Math.max(0.05,0.11-progress*0.0009);
-    const pineappleChance=progress>=35?Math.min(0.08,0.015+progress*0.0007):0;
-    const burntChance=progress>=25?Math.min(0.05,0.01+progress*0.0004):0;
+    const pepperChance=Math.min(0.22,0.05+progress*0.00105);
+    const mushBaseChance=Math.max(0.05,0.11-progress*0.0005);
+    const pineappleChance=progress>=45?Math.min(0.08,0.012+progress*0.0004):0;
+    const burntChance=progress>=35?Math.min(0.05,0.008+progress*0.00022):0;
     const powerupGateOpen=(gameClock-lastPowerupT>=minPowerupInterval())&&powerupOnScreen===0;
     const mushChance=powerupGateOpen?mushBaseChance:0;
     const greenAllowed=powerupGateOpen&&!growActive&&!greenOnScreen&&greenHistorySum()<2;
@@ -392,10 +382,10 @@
     if(type==='mushroom'||type==='greenmushroom'){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
     fallers.push(f);
   }
-  function currentFallSpeed(){return Math.min(0.75,0.15+progress*0.007);}
-  function currentSpawnInterval(){return Math.max(0.42,1.35-progress*0.014);}
+  function currentFallSpeed(){const base=Math.min(0.68,0.13+progress*0.0032);return rushActive?base*1.12:base;}
+  function currentSpawnInterval(){return Math.max(0.46,1.42-progress*0.0062);}
   const catchLines=['Bellissimo!','Perfecto!','Mamma mia, sì!','Ay, che bello!','Bravissimo!','Molto bene!'];
-  const missLines=['Mamma mia...','Oh no, il pavimento!','Cursed pan!','Whoopsie Pietro!'];
+  const missLines=['Mamma mia...','Oh no, il pavimento!','Cursed pan!','Whoopsie, Chef!'];
   function floatText(text,x,y,color){const el=document.createElement('div');el.className='floater';el.textContent=text;el.style.left=(x*100)+'%';el.style.top=(y*100)+'%';if(color)el.style.color=color;floatersEl.appendChild(el);setTimeout(()=>el.remove(),1350);}
   function spawnBurst(x,y,color,count,big,mult){mult=mult||1;for(let i=0;i<count;i++){const ang=Math.random()*Math.PI*2,sp=((big?0.45:0.25)+Math.random()*(big?0.7:0.5))*mult;particles.push({x,y,vx:Math.cos(ang)*sp,vy:(Math.sin(ang)*sp-(big?0.25:0.15))*mult,life:(big?0.8:0.6)+Math.random()*0.4,maxLife:big?1.2:0.9,color,size:((big?4:2)+Math.random()*(big?5:3))*mult});}}
   function explodeStack(reason){
@@ -458,7 +448,7 @@
       else if(step.type==='footTapFast'){footTapping=true;footTapPhase+=dt*3.6;}
     }
   }
-  function weatherTypeFor(lvl){switch(lvl.deco){case 'clouds':return'windDrift';case 'sunset':return'heatShimmer';case 'stars':return'rain';case 'lanterns':return'confetti';default:return'none';}}
+  function weatherTypeFor(lvl){switch(lvl.deco){case 'clouds':return'windDrift';case 'sunset':return'heatShimmer';case 'stars':return'rain';case 'lanterns':return'confetti';case 'neonrush':return'confetti';default:return'none';}}
   function updateWind(dt){
     if(progress<20)return;
     if(!windActive){
@@ -476,6 +466,20 @@
   }
   function windEnvelope(){if(!windActive)return 0;const p=windAgeT/windDur;return Math.min(1,p*4)*Math.min(1,(1-p)*4);}
   function updateNeon(dt){neonT+=dt;if(neonT>3.2){neonT=0;neonIdx++;}neonFlicker=Math.random()<0.02?0.4+Math.random()*0.3:1;}
+  function updateRush(dt){
+    if(!rushActive){
+      rushTimer+=dt;
+      if(progress>=15&&rushTimer>=rushNextT){
+        rushActive=true;rushTimer=0;
+        showBigText('RUSH HOUR! 🔥','#FF7A3C',1.3,'combo','2x points — go go go!');
+        spawnBurst(panX,panY-0.2,'#FF7A3C',20,true,1.2);
+      }
+    }else{
+      rushTimer+=dt;
+      if(rushTimer>=rushDur){rushActive=false;rushTimer=0;rushNextT=38+Math.random()*14;}
+    }
+    rushPill.classList.toggle('hidden',!rushActive);
+  }
   function updateLightning(dt){
     const wt=weatherTypeFor(currentLevel());
     if(wt!=='rain'&&wt!=='confetti'){lightningFlash=Math.max(0,lightningFlash-dt*2);return;}
@@ -521,8 +525,8 @@
     if(squash>0)squash=Math.max(0,squash-dt*3.2);
     if(shakeTimer>0)shakeTimer=Math.max(0,shakeTimer-dt);else shakeAmt=Math.max(0,shakeAmt-dt*40);
     if(growActive){growTimer-=dt;if(growTimer<=0){growActive=false;growTimer=0;}growTimerWrap.classList.remove('hidden');growTimerText.textContent=Math.max(0,Math.ceil(growTimer));}else{growTimerWrap.classList.add('hidden');}
-    updateNeon(dt);updateLightning(dt);updateWeather(dt);updateBigText(dt);
-    spawnTimer-=dt;if(spawnTimer<=0){spawnFaller();spawnTimer=currentSpawnInterval();}
+    updateNeon(dt);updateLightning(dt);updateWeather(dt);updateBigText(dt);updateRush(dt);
+    spawnTimer-=dt;if(spawnTimer<=0){spawnFaller();spawnTimer=currentSpawnInterval()*(rushActive?0.6:1);}
     for(let i=fallers.length-1;i>=0;i--){
       const p=fallers[i];p.y+=p.speed*dt;
       const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom';
@@ -537,7 +541,7 @@
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
         if(p.type==='pizza'){
           combo++;progress++;
-          const mult=comboMultFor(combo);
+          const mult=comboMultFor(combo)*(rushActive?2:1);
           score+=Math.max(1,Math.round(mult));
           towerHeight++;
           maybeAnnounceCombo();
@@ -618,26 +622,26 @@
     px(bctx,cx-bw+2,36,3,8,'#e0ddd8');px(bctx,cx+bw-5,36,3,8,'#e0ddd8');
     for(let row=0;row<22;row++){const t=(row+0.5)/22;const hw=Math.round(Math.sin(Math.PI*t)*bw*breathe);px(bctx,cx-hw,34+row,hw*2,1,'#D64541');px(bctx,cx+hw-Math.max(2,Math.round(hw*0.25)),34+row,Math.max(2,Math.round(hw*0.25)),1,'#A5322E');}
     px(bctx,cx-4,46,8,6,'#e8e5df');px(bctx,cx-3,47,6,4,'#d5d2cc');
-    for(let row=0;row<14;row++){const t=(row+0.5)/14;const hw=Math.round(Math.sin(Math.PI*t)*(14*breathe));px(bctx,cx-hw,20+row,hw*2,1,'#F8E5C2');px(bctx,cx+hw-Math.max(1,Math.round(hw*0.3)),20+row,Math.max(1,Math.round(hw*0.3)),1,'#d9bc8f');}
+    for(let row=0;row<14;row++){const t=(row+0.5)/14;const hw=Math.round(Math.sin(Math.PI*t)*(14*breathe));px(bctx,cx-hw,20+row,hw*2,1,'#FAF8F5');px(bctx,cx+hw-Math.max(1,Math.round(hw*0.3)),20+row,Math.max(1,Math.round(hw*0.3)),1,'#E5E1DA');}
     const waveLift=armWaving?Math.max(0,Math.sin(wavePhase)*8):0;
-    px(bctx,cx-22,28-waveLift,7,12,'#F8E5C2');px(bctx,cx-24,38-waveLift,6,8,'#EFC094');
-    px(bctx,cx+15,28,7,12,'#F8E5C2');px(bctx,cx+18,38,6,8,'#EFC094');
+    px(bctx,cx-22,28-waveLift,7,12,'#FAF8F5');px(bctx,cx-24,38-waveLift,6,8,'#A9AEB6');
+    px(bctx,cx+15,28,7,12,'#FAF8F5');px(bctx,cx+18,38,6,8,'#A9AEB6');
     const hcx=cx+(headShaking?Math.sin(headShakePhase)*2.2:0);
-    px(bctx,hcx-4,14,8,7,'#EFC094');px(bctx,hcx+2,14,2,7,'#D9A374');
-    for(let row=0;row<18;row++){const t=(row+0.5)/18;const hw=Math.round(Math.sin(Math.PI*t)*11);px(bctx,hcx-hw,0+row,hw*2,1,'#EFC094');px(bctx,hcx+hw-Math.max(1,Math.round(hw*0.28)),0+row,Math.max(1,Math.round(hw*0.28)),1,'#D9A374');}
-    px(bctx,hcx-9,9,4,3,'#e8907a');px(bctx,hcx+5,9,4,3,'#e8907a');
-    px(bctx,hcx-1,10,3,4,'#D9A374');px(bctx,hcx-2,12,5,2,'#c8906a');
+    px(bctx,hcx-4,14,8,7,'#A9AEB6');px(bctx,hcx+2,14,2,7,'#8B909A');px(bctx,hcx-5,19,10,2,'#D64541');
+    for(let row=0;row<18;row++){const t=(row+0.5)/18;const hw=Math.round(Math.sin(Math.PI*t)*11);px(bctx,hcx-hw,0+row,hw*2,1,'#A9AEB6');px(bctx,hcx+hw-Math.max(1,Math.round(hw*0.28)),0+row,Math.max(1,Math.round(hw*0.28)),1,'#8B909A');}
+    px(bctx,hcx-9,9,4,3,'#9BA0A8');px(bctx,hcx+5,9,4,3,'#9BA0A8');
+    px(bctx,hcx-1,10,3,4,'#8B909A');px(bctx,hcx-2,12,5,2,'#767B84');
     px(bctx,hcx-9,2,6,2,'#5a3a1a');px(bctx,hcx+3,2,6,2,'#5a3a1a');
     px(bctx,hcx-10,1,2,1,'#5a3a1a');px(bctx,hcx+8,1,2,1,'#5a3a1a');
     if(blinking){px(bctx,hcx-8,5,5,1,'#2C2C2C');px(bctx,hcx+3,5,5,1,'#2C2C2C');}
-    else{px(bctx,hcx-8,4,5,5,'#FAF8F5');px(bctx,hcx+3,4,5,5,'#FAF8F5');px(bctx,hcx-7,5,3,3,'#2C2C2C');px(bctx,hcx+4,5,3,3,'#2C2C2C');px(bctx,hcx-6,5,1,1,'#FAF8F5');px(bctx,hcx+5,5,1,1,'#FAF8F5');}
+    else{px(bctx,hcx-8,4,5,5,'#FAF8F5');px(bctx,hcx+3,4,5,5,'#FAF8F5');px(bctx,hcx-7,5,3,3,'#5C3A21');px(bctx,hcx+4,5,3,3,'#5C3A21');px(bctx,hcx-6,5,1,1,'#FAF8F5');px(bctx,hcx+5,5,1,1,'#FAF8F5');}
     px(bctx,hcx-8,14,16,3,'#5a3a1a');px(bctx,hcx-10,15,5,3,'#4a2e12');px(bctx,hcx+5,15,5,3,'#4a2e12');
     px(bctx,hcx-10,17,4,2,'#3a2208');px(bctx,hcx+6,17,4,2,'#3a2208');
     if(breathAmp>0.5&&!isRunning)px(bctx,hcx-2,18,4,2,'#8f2f1e');
-    px(bctx,hcx-12,-2,24,3,'#F2F0EC');px(bctx,hcx-12,-2,24,1,'#d0cec8');
-    for(let row=0;row<20;row++){const hw=row<3?9-row:8;px(bctx,hcx-hw,-22+row,hw*2,1,'#FAF8F5');px(bctx,hcx+hw-2,-22+row,2,1,'#E5E1DA');}
-    for(let row=0;row<4;row++){const hw=Math.round(8*Math.cos((row/4)*Math.PI*0.5));px(bctx,hcx-hw,-26+row,hw*2,1,'#FAF8F5');}
-    px(bctx,hcx-8,-3,16,2,'#e0ddd8');
+    px(bctx,hcx-12,-2,24,3,'#D64541');px(bctx,hcx-12,-2,24,1,'#A5322E');
+    for(let row=0;row<20;row++){const hw=row<3?9-row:8;px(bctx,hcx-hw,-22+row,hw*2,1,'#E8483F');px(bctx,hcx+hw-2,-22+row,2,1,'#A5322E');}
+    for(let row=0;row<4;row++){const hw=Math.round(8*Math.cos((row/4)*Math.PI*0.5));px(bctx,hcx-hw,-26+row,hw*2,1,'#E8483F');}
+    px(bctx,hcx-8,-3,16,2,'#7a231f');
   }
   function drawFaller(p){
     const x=p.x*W,y=p.y*H,r=p.r*W,pulse=0.7+0.3*Math.sin(glowT*6);
@@ -716,13 +720,64 @@
       ctx.restore();
     }
   }
-  const NEON_SIGNS={'Morning Prep':['OPEN'],'Lunch Rush':['OPEN','HOT SLICE PIZZA!'],'Sunset Slice':['OPEN','HOT SLICE PIZZA!'],'Late Night Kitchen':['OPEN LATE','HOT SLICE PIZZA!'],'Festival Lights':['HOT SLICE PIZZA!','OPEN']};
-  function drawNeon(lvl){
-    const signs=NEON_SIGNS[lvl.name]||['OPEN'];
-    const text=signs[neonIdx%signs.length];
-    ctx.save();ctx.font="bold "+Math.max(11,Math.floor(W*0.045))+"px 'Fredoka',sans-serif";ctx.textAlign='right';
-    ctx.globalAlpha=neonFlicker;ctx.shadowColor='#F2C14E';ctx.shadowBlur=14;ctx.fillStyle='#F2C14E';
-    ctx.fillText(text,W*0.94,H*0.075);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.restore();
+  const OPEN_SIGNS={'Morning Prep':'OPEN','Lunch Rush':'OPEN','Sunset Slice':'OPEN','Late Night Kitchen':'OPEN LATE','Festival Lights':'OPEN LATE','Midnight Rush':'OPEN LATE'};
+  function drawOpenSign(lvl){
+    const text=OPEN_SIGNS[lvl.name]||'OPEN';
+    ctx.save();ctx.font="bold "+Math.max(10,Math.floor(W*0.032))+"px 'Fredoka',sans-serif";ctx.textAlign='right';
+    ctx.globalAlpha=neonFlicker;ctx.shadowColor='#5CD97A';ctx.shadowBlur=10;ctx.fillStyle='#8CF29E';
+    ctx.fillText(text,W*0.95,H*0.062);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.restore();
+  }
+  function drawHotSliceSign(){
+    const s=W*0.0019;
+    ctx.save();
+    ctx.translate(W*0.045,H*0.105);
+    ctx.scale(s,s);
+    ctx.globalAlpha=neonFlicker;
+    ctx.fillStyle='rgba(15,12,8,0.5)';
+    ctx.fillRect(-12,-12,155,178);
+    ctx.lineWidth=4;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle='#FF3D7F';ctx.shadowColor='#FF3D7F';ctx.shadowBlur=16;
+    ctx.beginPath();
+    ctx.moveTo(20,120);
+    ctx.quadraticCurveTo(30,40,70,15);
+    ctx.quadraticCurveTo(100,5,130,30);
+    ctx.quadraticCurveTo(110,70,20,120);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.strokeStyle='#F2C14E';ctx.shadowColor='#F2C14E';ctx.shadowBlur=12;ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(66,22);ctx.quadraticCurveTo(98,13,124,32);
+    ctx.stroke();
+    ctx.fillStyle='#F2C14E';ctx.shadowColor='#F2C14E';ctx.shadowBlur=10;
+    [[55,55],[80,70],[60,90]].forEach(([ppx,ppy])=>{ctx.beginPath();ctx.arc(ppx,ppy,6,0,Math.PI*2);ctx.fill();});
+    ctx.shadowBlur=0;
+    ctx.font="italic 700 30px 'Fredoka',sans-serif";
+    ctx.textAlign='center';
+    ctx.fillStyle='#FF3D7F';ctx.shadowColor='#FF3D7F';ctx.shadowBlur=14;
+    ctx.fillText('Hot Slice!',75,158);
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+    ctx.restore();
+  }
+  function drawShopInterior(lvl){
+    ctx.save();
+    const lightCols=['#F2C14E','#FF3D7F','#5CD97A'];
+    for(let i=0;i<10;i++){
+      const lx=(i+0.5)/10*W;
+      const ly=H*0.018+Math.sin(glowT*1.3+i*1.7)*3;
+      const tw=0.55+0.45*Math.sin(glowT*2.2+i*2.1);
+      ctx.globalAlpha=tw;ctx.fillStyle=lightCols[i%lightCols.length];
+      ctx.shadowColor=lightCols[i%lightCols.length];ctx.shadowBlur=6;
+      ctx.beginPath();ctx.arc(lx,ly,2.6,0,Math.PI*2);ctx.fill();
+    }
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+    ctx.fillStyle='#33302c';
+    ctx.fillRect(0,H*0.775,W,groundTop*H-H*0.775+2);
+    ctx.fillStyle='rgba(255,255,255,0.07)';
+    ctx.fillRect(0,H*0.775,W,2);
+    ctx.fillStyle='#c9a86a';ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=1;
+    ctx.fillRect(W*0.86,H*0.70,W*0.1,H*0.028);ctx.strokeRect(W*0.86,H*0.70,W*0.1,H*0.028);
+    ctx.fillRect(W*0.865,H*0.672,W*0.09,H*0.028);ctx.strokeRect(W*0.865,H*0.672,W*0.09,H*0.028);
+    ctx.restore();
   }
   function drawWindFx(){
     if(!windActive)return;
@@ -754,6 +809,11 @@
     else if(lvl.deco==='lanterns'){
       const cols=['#F2C14E','#D64541','#2E8B57'];for(let i=0;i<6;i++){const lx=(i+0.5)/6*W,ly=H*0.08+Math.sin(glowT*2+i)*4;ctx.beginPath();ctx.arc(lx,ly,7,0,Math.PI*2);ctx.fillStyle=cols[i%cols.length];ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;}
       for(let i=0;i<8;i++){if(Math.random()<0.02){const sx=Math.random()*W,sy=H*0.1+Math.random()*H*0.3;ctx.save();ctx.globalAlpha=0.8;ctx.fillStyle=cols[i%cols.length];ctx.beginPath();ctx.arc(sx,sy,2,0,Math.PI*2);ctx.fill();ctx.restore();}}
+    }
+    else if(lvl.deco==='neonrush'){
+      const cols=['#FF3D7F','#F2C14E','#5CD97A'];
+      for(let i=0;i<9;i++){const lx=(i+0.5)/9*W,ly=H*0.06+Math.sin(glowT*2.6+i)*5;ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fillStyle=cols[i%cols.length];ctx.globalAlpha=0.9;ctx.shadowColor=cols[i%cols.length];ctx.shadowBlur=8;ctx.fill();}
+      ctx.shadowBlur=0;ctx.globalAlpha=1;
     }
     ctx.restore();
   }
@@ -798,7 +858,7 @@
     const lvl=currentLevel();let sx=0,sy=0;
     if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
     ctx.save();ctx.translate(sx,sy);
-    drawBackground(lvl);drawLevelDeco(lvl);drawNeon(lvl);drawWeather();drawGround();
+    drawBackground(lvl);drawShopInterior(lvl);drawLevelDeco(lvl);drawHotSliceSign();drawOpenSign(lvl);drawWeather();drawGround();
     debris.forEach(drawDebris);fallers.forEach(drawFaller);drawArm();
     if(growActive)drawGrowGlow();
     drawPietro();drawPanAndTower();drawParticles();drawWindFx();
@@ -861,7 +921,7 @@
   retryBtn.addEventListener('click',beginPlay);
   pauseBtn.addEventListener('click',pauseGame);
   resumeBtn.addEventListener('click',resumeGame);
-  shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with Pietro in Pizzeria Panic! 🍕 Beat my score: '+challengeUrl(score)+' #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
+  shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with the Chef in Pizzeria Panic! 🍕 Beat my score: '+challengeUrl(score)+' #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
   async function shareScoreImage(){
     const cw=800,chh=1000;
     const c=document.createElement('canvas');c.width=cw;c.height=chh;
@@ -871,7 +931,7 @@
     cx2.textAlign='center';
     cx2.font="800 50px 'Fredoka',sans-serif";cx2.fillStyle='#F2C14E';
     cx2.shadowColor='#A5322E';cx2.shadowOffsetX=3;cx2.shadowOffsetY=3;
-    cx2.fillText("PIETRO'S PIZZERIA PANIC",cw/2,140);
+    cx2.fillText("PIZZERIA PANIC",cw/2,140);
     cx2.shadowOffsetX=0;cx2.shadowOffsetY=0;
     cx2.font="72px sans-serif";cx2.fillText('🍕🍕🍕',cw/2,240);
     cx2.font="800 150px 'Fredoka',sans-serif";cx2.fillStyle='#FAF8F5';cx2.shadowColor='rgba(242,193,78,.5)';cx2.shadowBlur=20;
@@ -880,7 +940,7 @@
     cx2.font="700 44px 'Fredoka',sans-serif";cx2.fillStyle='#F2C14E';
     cx2.fillText(rankFor(score),cw/2,510);
     cx2.font="600 30px 'Fredoka',sans-serif";cx2.fillStyle='#F8E5C2';
-    cx2.fillText('I stacked '+score+' pizzas with Pietro!',cw/2,600);
+    cx2.fillText('I stacked '+score+' pizzas with the Chef!',cw/2,600);
     cx2.font="600 24px 'Fredoka',sans-serif";cx2.fillStyle='rgba(248,229,194,.7)';
     cx2.fillText('A Hot Slice Creative Game · www.1HotSlice.com · @1hotslice',cw/2,chh-60);
     return new Promise(resolve=>c.toBlob(resolve,'image/png'));
@@ -891,7 +951,7 @@
       const blob=await shareScoreImage();
       const file=new File([blob],'pizzeria-panic-score.png',{type:'image/png'});
       const cUrl=challengeUrl(score);
-      const shareData={files:[file],title:"Pizzeria Panic",text:'I stacked '+score+' pizzas with Pietro! 🍕 Beat my score: '+cUrl+' #HotSliceCreative'};
+      const shareData={files:[file],title:"Pizzeria Panic",text:'I stacked '+score+' pizzas with the Chef! 🍕 Beat my score: '+cUrl+' #HotSliceCreative'};
       if(navigator.canShare&&navigator.canShare(shareData)){await navigator.share(shareData);}
       else if(navigator.share){await navigator.share({title:shareData.title,text:shareData.text,url:cUrl});}
       else{
