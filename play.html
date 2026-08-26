@@ -138,6 +138,16 @@
       <button class="btn" id="retryBtn" style="margin-top:20px;">Stack Again</button>
       <button class="btn secondary" id="shareBtn">Copy Score</button>
       <button class="btn secondary" id="shareImgBtn">Share Score</button>
+      <!-- Optional, unobtrusive: link this run to a Chef account. Collapsed
+           by default, never blocks or competes with the flow above. -->
+      <div id="chefLinkWrap" style="margin-top:12px;font-size:12px;">
+        <a href="#" id="chefLinkToggle" style="color:rgba(248,229,194,.55);text-decoration:underline;">Link this run to your Chef account</a>
+        <div id="chefLinkForm" class="hidden" style="margin-top:8px;">
+          <input id="chefLinkEmail" type="email" placeholder="you@email.com" style="font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid rgba(248,229,194,.3);background:rgba(255,255,255,.06);color:#FAF8F5;width:170px;">
+          <button class="btn secondary" id="chefLinkSubmit" style="display:inline-block;margin:0 0 0 6px;padding:6px 14px;font-size:13px;">Save</button>
+          <div id="chefLinkStatus" class="hint" style="margin-top:6px;font-size:11px;"></div>
+        </div>
+      </div>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="pauseScreen" class="hidden" style="position:absolute;inset:0;z-index:8;">
@@ -175,6 +185,7 @@
   const viewBoardBtn=document.getElementById('viewBoardBtn'),closeBoardBtn=document.getElementById('closeBoardBtn');
   const boardListMain=document.getElementById('boardListMain'),boardListEnd=document.getElementById('boardListEnd');
   const scoreSubmitWrap=document.getElementById('scoreSubmitWrap'),initialsInput=document.getElementById('initialsInput'),submitScoreBtn=document.getElementById('submitScoreBtn');
+  const chefLinkToggle=document.getElementById('chefLinkToggle'),chefLinkForm=document.getElementById('chefLinkForm'),chefLinkEmail=document.getElementById('chefLinkEmail'),chefLinkSubmit=document.getElementById('chefLinkSubmit'),chefLinkStatus=document.getElementById('chefLinkStatus');
   const donateBtnStart=document.getElementById('donateBtnStart'),donateBtnPause=document.getElementById('donateBtnPause');
   const bestBadge=document.getElementById('bestBadge'),streakBadge=document.getElementById('streakBadge'),nearMissText=document.getElementById('nearMissText');
   const challengeBadge=document.getElementById('challengeBadge');
@@ -836,6 +847,8 @@
     else nearMissText.textContent='';
     if(qualifies){scoreSubmitWrap.classList.remove('hidden');initialsInput.value='';setTimeout(()=>initialsInput.focus(),50);}
     else scoreSubmitWrap.classList.add('hidden');
+    chefLinkForm.classList.add('hidden');chefLinkEmail.value='';chefLinkStatus.textContent='';
+    chefLinkSubmit.disabled=false;chefLinkSubmit.textContent='Save';
   }
   function pauseGame(){
     if(state!=='playing')return;
@@ -918,6 +931,21 @@
     }catch(e){}
     scoreSubmitWrap.classList.add('hidden');
     submitScoreBtn.disabled=false;submitScoreBtn.textContent='Submit';
+  });
+  chefLinkToggle.addEventListener('click',(e)=>{
+    e.preventDefault();
+    chefLinkForm.classList.toggle('hidden');
+    if(!chefLinkForm.classList.contains('hidden'))setTimeout(()=>chefLinkEmail.focus(),50);
+  });
+  chefLinkSubmit.addEventListener('click',async()=>{
+    const email=(chefLinkEmail.value||'').trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){chefLinkStatus.textContent='Enter a valid email.';return;}
+    chefLinkSubmit.disabled=true;chefLinkSubmit.textContent='Saving...';
+    try{
+      const r=await fetch('/api/chef-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,score,ts:sessionTs,sig:sessionSig})});
+      chefLinkStatus.textContent=r.ok?'Saved — your Chef account will know this run 🍕':'Could not save that. Try again.';
+    }catch(e){chefLinkStatus.textContent='Could not save that. Try again.';}
+    chefLinkSubmit.disabled=false;chefLinkSubmit.textContent='Save';
   });
   resize();requestAnimationFrame(loop);
 })();
