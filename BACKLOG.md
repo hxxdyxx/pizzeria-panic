@@ -2,6 +2,26 @@
 
 Living list from a full audit against genre best practices (endless arcade catchers: Fruit Ninja, Crossy Road, Stack) and top-earning F2P retention/monetization patterns. See session notes for full reasoning.
 
+## Done (2026-08-26) — Recovered a silently-reverted content update, added drift monitoring
+
+A real content update from 2026-08-21 (the "Pietro" -> "the Chef" rebrand,
+Rush Hour mechanic, Midnight Rush level) was deployed directly to Vercel,
+never committed to git, and got silently erased 5 days later by an
+ordinary git-based deploy. Recovered by pulling the actual deployment's
+content straight from Vercel and re-merging it into git (commit c48baff)
+-- see that commit message for the full incident writeup.
+
+**Guardrail added so this can't happen silently again:** `api/build-info.js`
+(this repo) exposes `VERCEL_GIT_COMMIT_SHA` -- empty means the live
+deployment wasn't sourced from git. Polled every 4 hours by a new cron in
+the `chef-app` repo (`api/cron/deploy-drift-check.js`), which emails an
+alert if this or any of the other three Hot Slice properties drifts. See
+that repo's `BACKLOG.md` for the full design.
+
+**If you ever need to deploy this project directly again** (dashboard
+upload, CLI, debugging): commit and push the exact same content to git
+immediately after, or the next ordinary deploy will erase it again.
+
 ## Done (2026-08-15)
 
 - [x] **Leaderboard anti-cheat.** Previously anyone could POST a fake top score directly to `/api/leaderboard` with zero gameplay — no validation existed at all. Added a signed session token (`/api/session`) issued at game start; submissions now require it and are checked against a minimum-plausible-elapsed-time for the claimed score. Verified with automated tests (no token, fake signature, and implausibly-fast submissions all correctly rejected; legitimate timed submissions succeed).
