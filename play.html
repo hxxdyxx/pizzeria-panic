@@ -71,7 +71,7 @@
   @keyframes chefIdleBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
   .chefTalk{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;}
   .chefTalk a{color:rgba(248,229,194,.75);text-decoration:underline;font-size:12px;}
-  model-viewer.chef-mini-3d{width:40px;height:40px;flex:0 0 auto;background:transparent;animation:chefIdleBob 4.5s ease-in-out infinite;}
+  model-viewer.chef-mini-3d{width:110px;height:110px;flex:0 0 auto;background:transparent;animation:chefIdleBob 4.5s ease-in-out infinite;}
   .donateBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;color:var(--glow);background:rgba(242,193,78,.1);border:1.5px solid rgba(242,193,78,.5);border-radius:20px;padding:7px 16px;cursor:pointer;margin-top:12px;touch-action:manipulation;}
   .donateBtn:active{transform:translateY(1px);}
   .pill.combo{border-color:#FF7A3C;color:#FF7A3C;animation:comboPulse .6s ease-in-out infinite;}
@@ -154,7 +154,7 @@
           <div id="chefLinkStatus" class="hint" style="margin-top:6px;font-size:11px;"></div>
         </div>
       </div>
-      <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" disable-zoom disable-pan camera-orbit="0deg 78deg auto" loading="lazy"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef about this run</a></div>
+      <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" camera-orbit="0deg 78deg auto" min-camera-orbit="auto 60deg auto" max-camera-orbit="auto 95deg auto" shadow-intensity="0.7" exposure="1.1" loading="eager"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef about this run</a></div>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="pauseScreen" class="hidden" style="position:absolute;inset:0;z-index:8;">
