@@ -43,6 +43,10 @@ immediately after, or the next ordinary deploy will erase it again.
 - [x] **Near-miss messaging on game over.** Shows "X points from your best" or "X points from the leaderboard" — proven re-engagement hook, previously absent.
 - [x] **"Beat my score" challenge links.** Both share actions now carry a `?beat=N` link. Opening one shows the target on the start screen instead of the generic pitch, and game-over messaging reports the exact gap or a win. Chosen over leaderboard seasons/tutorial/art-pass as the highest-leverage item since it grows the player base rather than polishing for existing players — the right call pre-traffic.
 
+## Done (2026-08-27)
+
+- [x] **Admin leaderboard reset.** There was previously no way to clear the board short of manually wiping the KV key by hand. Added `DELETE /api/leaderboard`, gated behind a shared-secret `x-admin-key` header checked against a new `PPP_ADMIN_KEY` env var (same server-to-server pattern as `chef-link.js`'s bridge key) -- never exposed to the browser. Requires `PPP_ADMIN_KEY` to be set in the deploy environment before it'll work.
+
 ## Needs a business decision before implementing
 
 - [ ] **Real monetization.** The only revenue path today is a voluntary Stripe donate button ($0 raised so far, confirmed). Top F2P games monetize primarily through rewarded video ads (opt-in "watch ad to continue/2x score") and light IAP (cosmetics, remove-ads). Neither exists here. This needs: which ad network (AdMob, etc.), a decision on whether rewarded ads fit the brand, and new account/SDK setup — not something to wire up blind.

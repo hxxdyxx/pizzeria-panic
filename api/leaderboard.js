@@ -74,7 +74,20 @@ module.exports = async (req, res) => {
       res.status(200).json(await topTen());
       return;
     }
-    res.setHeader('Allow', 'GET, POST');
+    if (req.method === 'DELETE') {
+      // Server-to-server only, same shared-secret pattern as chef-link.js's
+      // GET -- never exposed to the browser. Wipes the whole board, so it's
+      // gated behind its own key rather than reusing PPP_BRIDGE_KEY.
+      const expectedKey = process.env.PPP_ADMIN_KEY;
+      if (!expectedKey || req.headers['x-admin-key'] !== expectedKey) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      await redis('del', KEY);
+      res.status(200).json({ ok: true });
+      return;
+    }
+    res.setHeader('Allow', 'GET, POST, DELETE');
     res.status(405).json({ error: 'method not allowed' });
   } catch (e) {
     res.status(500).json({ error: 'leaderboard error' });
