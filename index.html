@@ -6,6 +6,7 @@
 <title>Pizzeria Panic — A Hot Slice Creative Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script type="module" src="/vendor/model-viewer.min.js"></script>
 <style>
   :root{--beige:#F8E5C2; --tomato:#D64541; --tomato-dark:#A5322E; --mozz:#FAF8F5; --basil:#2E8B57; --olive:#2C2C2C; --glow:#F2C14E;}
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -31,6 +32,10 @@
   .playBtn:active{transform:translateY(2px); border-bottom-width:3px;}
   .footer-credit{margin-top:40px; font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.65; line-height:1.7;}
   .footer-credit a{color:var(--glow); text-decoration:underline;}
+  @keyframes chefIdleBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
+  .chefTalk{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:22px;}
+  .chefTalk a{color:var(--beige); opacity:.75; text-decoration:underline; font-size:12px; font-family:'Fredoka',sans-serif;}
+  model-viewer.chef-mini-3d{width:44px; height:44px; flex:0 0 auto; background:transparent; animation:chefIdleBob 4.5s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -44,7 +49,7 @@
   </section>
   <section class="scene-wrap" id="scene3"><div class="scene-pin"><canvas class="scene" id="canvas3"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.35">Catch the falling pizzas.</div><div class="caption-line tomato" data-in="0.4" data-out="0.65">Stack 'em high...</div><div class="caption-line glow" data-in="0.82" data-out="1.0">Stack toward the ceiling — but don't touch it! 🎉</div></div></div></section>
   <section class="scene-wrap" id="scene4"><div class="scene-pin"><canvas class="scene" id="canvas4"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.3">5 lives on the bricks.</div><div class="caption-line basil" data-in="0.38" data-out="0.6">🍄 helps you. 🌶️ and 🍍 HURT you.</div><div class="caption-line glow" data-in="0.68" data-out="1.0">Tilt or tap to move. Catch. Survive.</div></div></div></section>
-  <section class="cta"><h2>Ready to play?</h2><p>Free to play. Tilt or tap to move — see how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div></section>
+  <section class="cta"><h2>Ready to play?</h2><p>Free to play. Tilt or tap to move — see how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" disable-zoom disable-pan camera-orbit="0deg 78deg auto" loading="lazy"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef</a></div><div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div></section>
 <script>
 (function(){
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}

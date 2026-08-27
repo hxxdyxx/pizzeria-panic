@@ -6,6 +6,7 @@
 <title>Pizzeria Panic — A Hot Slice Creative Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script type="module" src="/vendor/model-viewer.min.js"></script>
 <style>
   :root{--beige:#F8E5C2;--beige-dark:#E0C99A;--tomato:#D64541;--tomato-dark:#A5322E;--mozz:#FAF8F5;--basil:#2E8B57;--basil-dark:#1F6640;--olive:#2C2C2C;--glow:#F2C14E;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -67,6 +68,10 @@
   .pauseCard .subtitle{margin:0;}
   .brandCredit{font-family:'Fredoka',sans-serif;font-size:10.5px;color:var(--beige);opacity:.65;margin-top:12px;letter-spacing:.3px;line-height:1.6;}
   .brandCredit a{color:var(--glow);text-decoration:underline;}
+  @keyframes chefIdleBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
+  .chefTalk{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;}
+  .chefTalk a{color:rgba(248,229,194,.75);text-decoration:underline;font-size:12px;}
+  model-viewer.chef-mini-3d{width:40px;height:40px;flex:0 0 auto;background:transparent;animation:chefIdleBob 4.5s ease-in-out infinite;}
   .donateBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;color:var(--glow);background:rgba(242,193,78,.1);border:1.5px solid rgba(242,193,78,.5);border-radius:20px;padding:7px 16px;cursor:pointer;margin-top:12px;touch-action:manipulation;}
   .donateBtn:active{transform:translateY(1px);}
   .pill.combo{border-color:#FF7A3C;color:#FF7A3C;animation:comboPulse .6s ease-in-out infinite;}
@@ -149,6 +154,7 @@
           <div id="chefLinkStatus" class="hint" style="margin-top:6px;font-size:11px;"></div>
         </div>
       </div>
+      <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" disable-zoom disable-pan camera-orbit="0deg 78deg auto" loading="lazy"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef about this run</a></div>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="pauseScreen" class="hidden" style="position:absolute;inset:0;z-index:8;">

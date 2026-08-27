@@ -1,5 +1,18 @@
 # Backlog — Pietro's Pizzeria Panic
 
+## Done (2026-08-26) — 3D Chef avatar link
+
+Added a small idle-bobbing `<model-viewer>` 3D avatar of the Chef next to a
+"Talk to the Chef" link -- landing page (`index.html`) CTA section, and the
+post-game overlay in `play.html` right next to the existing `chefLinkWrap`
+block, same collapsed/unobtrusive placement, never shown during live
+gameplay. Links out to chef.1hotslice.com in a new tab rather than
+embedding the chat itself (the chat's personalization needs chef-app's own
+login session, which doesn't exist here). Vendored `<model-viewer>`
+(`vendor/model-viewer.min.js`) and the model (`avatars/chef-3d.glb`)
+directly in this repo, loaded via relative path since this page is served
+directly by Vercel (unlike THC, which needs absolute URLs there).
+
 Living list from a full audit against genre best practices (endless arcade catchers: Fruit Ninja, Crossy Road, Stack) and top-earning F2P retention/monetization patterns. See session notes for full reasoning.
 
 ## Done (2026-08-26) — Recovered a silently-reverted content update, added drift monitoring
