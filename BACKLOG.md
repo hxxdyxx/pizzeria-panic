@@ -1,5 +1,40 @@
 # Backlog — Pietro's Pizzeria Panic
 
+## Done (2026-08-27) — Updated in-game Chef character to match the newest 3D asset
+
+hoody asked to bring the in-game pixel-art Chef (`drawPietroBuffer()` in
+`play.html`, the standing character who holds the pan) in line with the
+newest Chef assets in `chef-app`'s avatars folder, with explicit
+tie-breakers: brand guidelines first, ADA/accessibility overrides brand
+on conflict, and the newest asset wins for character-build questions.
+Handled autonomously per hoody's request, no check-ins.
+
+Compared the character against 4+ independent new references (the
+textured 3D model, 3 ChatGPT character studies) which agreed
+consistently: red chef hat, pale-grey skin, black-and-white striped
+long-sleeve shirt, black pants, black sneakers with white soles. Verified
+each change with real rendered screenshots (brightened crops of the
+actual canvas output), not just reading the color values in code.
+
+- [x] **Pants: blue jeans -> black.** Was `#2a4a8a`/`#223d75` (denim
+  blue), now `#2C2C2C`/`#1c1c1c` (matches the brand's `--olive-black`).
+- [x] **Shirt: solid red torso -> black-and-white horizontal stripes.**
+  The torso was being drawn as one solid red silhouette (not actually
+  striped, despite reading like stripes in the source) -- rewrote the
+  per-row fill to alternate white/black in ~3px bands on the same
+  silhouette shape, matching the marinière stripe pattern on every new
+  reference asset.
+  - [x] **Shoes: added a 1px white sole highlight** under the existing
+    dark shoe blocks to read as two-tone sneakers, matching the reference.
+- [x] **Left unchanged, already correct:** the red chef hat, pale-grey
+  skin/face tones, and brown eyes/eyebrows were already close matches to
+  the new assets -- no accessibility or brand conflicts found, so no
+  further changes were made there.
+- Checked `index.html` and the rest of `play.html` (shop interior, signs)
+  for any other Chef depiction that might also need updating -- there
+  isn't one; `drawPietroBuffer()` is the only place the character is
+  drawn.
+
 ## Done (2026-08-26) — 3D Chef avatar link
 
 Added a small idle-bobbing `<model-viewer>` 3D avatar of the Chef next to a

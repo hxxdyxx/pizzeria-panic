@@ -619,14 +619,14 @@
     const strideOn=isRunning&&(Math.floor(runPhase*4)%2===0);
     const tapOn=(!isRunning&&footTapping)&&(Math.floor(footTapPhase*4)%2===0);
     const lLift=isRunning?(strideOn?5:0):(tapOn?4:0),rLift=isRunning?(strideOn?0:5):0;
-    px(bctx,cx-14,72-lLift,10,5,'#1a1208');px(bctx,cx-17,74-lLift,5,3,'#1a1208');
-    px(bctx,cx+4,72-rLift,10,5,'#1a1208');px(bctx,cx+12,74-rLift,5,3,'#1a1208');
-    px(bctx,cx-12,58-lLift,9,15,'#2a4a8a');px(bctx,cx+3,58-rLift,9,15,'#223d75');
-    px(bctx,cx-9,60-lLift,2,12,'#3a5aaa');px(bctx,cx+6,60-rLift,2,12,'#3a5aaa');
+    px(bctx,cx-14,72-lLift,10,5,'#1a1208');px(bctx,cx-17,74-lLift,5,3,'#1a1208');px(bctx,cx-17,76-lLift,8,1,'#FAF8F5');
+    px(bctx,cx+4,72-rLift,10,5,'#1a1208');px(bctx,cx+12,74-rLift,5,3,'#1a1208');px(bctx,cx+9,76-rLift,8,1,'#FAF8F5');
+    px(bctx,cx-12,58-lLift,9,15,'#2C2C2C');px(bctx,cx+3,58-rLift,9,15,'#1c1c1c');
+    px(bctx,cx-9,60-lLift,2,12,'#3a3a3a');px(bctx,cx+6,60-rLift,2,12,'#3a3a3a');
     const bw=Math.round(20*breathe);
     px(bctx,cx-bw+4,36,bw*2-8,24,'#FAF8F5');
     px(bctx,cx-bw+2,36,3,8,'#e0ddd8');px(bctx,cx+bw-5,36,3,8,'#e0ddd8');
-    for(let row=0;row<22;row++){const t=(row+0.5)/22;const hw=Math.round(Math.sin(Math.PI*t)*bw*breathe);px(bctx,cx-hw,34+row,hw*2,1,'#D64541');px(bctx,cx+hw-Math.max(2,Math.round(hw*0.25)),34+row,Math.max(2,Math.round(hw*0.25)),1,'#A5322E');}
+    for(let row=0;row<22;row++){const t=(row+0.5)/22;const hw=Math.round(Math.sin(Math.PI*t)*bw*breathe);const stripeOn=Math.floor(row/3)%2===1;const base=stripeOn?'#1a1a1a':'#FAF8F5';const edge=stripeOn?'#000000':'#e0ddd8';px(bctx,cx-hw,34+row,hw*2,1,base);px(bctx,cx+hw-Math.max(2,Math.round(hw*0.25)),34+row,Math.max(2,Math.round(hw*0.25)),1,edge);}
     px(bctx,cx-4,46,8,6,'#e8e5df');px(bctx,cx-3,47,6,4,'#d5d2cc');
     for(let row=0;row<14;row++){const t=(row+0.5)/14;const hw=Math.round(Math.sin(Math.PI*t)*(14*breathe));px(bctx,cx-hw,20+row,hw*2,1,'#FAF8F5');px(bctx,cx+hw-Math.max(1,Math.round(hw*0.3)),20+row,Math.max(1,Math.round(hw*0.3)),1,'#E5E1DA');}
     const waveLift=armWaving?Math.max(0,Math.sin(wavePhase)*8):0;
