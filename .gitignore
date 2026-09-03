@@ -17,3 +17,6 @@ node_modules/
 
 # Local build artifacts / scratch
 *.zip
+
+# Raw / unused source assets kept locally, not deployed
+_assets-src/
