@@ -1,5 +1,68 @@
 # Backlog — Pietro's Pizzeria Panic
 
+## Done (2026-09-08) — v2.0 Foundation Pass: coins, skins, achievements, shift goals, sound, daily special
+
+hoody asked for the game to become "more of a full fledged built out game"
+and provided a design doc pitching a full Pizzeria-2.0 direction (campaign
+shifts, currency, customers/orders, boss rushes, a persistent hub, etc.).
+Rather than build all 20 ideas from the doc at once, built the foundation
+layer that everything else hangs off of, matching the doc's own recommended
+priority order (currency + unlocks, shift objectives, daily challenge,
+character personality, sharing). Client-side only — no `api/*` changes, so
+the leaderboard, session signing, and chef-link flows are untouched.
+
+Shipped as 29 targeted string-replacement patches against `play.html`
+(not a rewrite), verified with a headless jsdom harness that loads the
+patched page, fakes canvas/AudioContext/fetch, clicks through every new
+screen, and plays a full run via real `requestAnimationFrame` timing through
+game-over. Zero runtime errors across that run, including the coin/
+achievement payout path on game-over.
+
+- [x] **Pizza Coins** — earned per run (score/10, floored) plus a bonus per
+  completed Shift Goal. Persisted in `localStorage` (`ppp_coins`).
+- [x] **Shift Goals** — 3 random objectives picked from a 12-item pool each
+  run (catch counts, combo thresholds, survival time, no-drop run, etc.),
+  shown live in the HUD, pay out 15 coins each on completion.
+- [x] **Achievements ("Pizza Book")** — 13 achievements tracked against
+  lifetime stats (`ppp_stats`) and unlocked state (`ppp_achievements`),
+  browsable from a new hub screen, 25-coin bounty on unlock.
+- [x] **Cosmetic unlocks** — 5 Pietro skins (recolored hat/stripes/pants via
+  a palette object, no new art) and 4 pan skins (rim/face recolor),
+  purchasable with coins from a new Skins screen, persisted and equipped
+  live in `drawPietroBuffer()`/`drawPanAndTower()`.
+- [x] **Combo tiers** — named tiers (HOT → EXTRA CHEESE → DOUBLE BAKED →
+  KITCHEN FIRE → PIZZA GOD at 50+, new top multiplier) replacing the raw
+  "COMBO x2!" text, each paired with a random Pietro one-liner.
+- [x] **Stack Danger Meter** — live HUD bar showing proximity to the
+  ceiling/release lines, color-coded green → yellow → red.
+- [x] **Sound** — procedurally synthesized SFX via Web Audio (catch,
+  combo-tier, powerup, hazard, life-lost, coin, achievement, game-over,
+  UI click) since there were previously zero audio files or cues in the
+  game. Mute toggle in the hub and HUD, persisted (`ppp_muted`).
+- [x] **Daily Special** — a modifier seeded from today's date (no
+  mushrooms / pineapple rain / double wind / fast start / extra spicy),
+  shown as a hub badge, with a local best score tracked per day.
+  **Not yet a shared/competitive daily leaderboard** — that needs a new
+  `api/` endpoint keyed by date and is intentionally deferred; flagged as
+  a Phase 2 item, not silently skipped.
+
+**Deferred to a later pass** (from hoody's design doc, in priority order
+per the doc's own "what I'd build next" section): campaign/shift structure
+across named locations, the Customers & Orders mechanic, Boss Rush events,
+a persistent visual Pizzeria Hub (currently a functional hub bolted onto
+the existing start screen, not yet a growing restaurant scene), seasonal
+reskins, a recurring antagonist, and the backend for a shared daily
+leaderboard.
+
+**NOT YET COMMITTED TO GIT.** This was verified in a sandbox with read-only
+GitHub access and no push credentials for this repo. Per the incident this
+file already documents above: if this reaches Vercel via direct deploy
+without an accompanying git commit, the next ordinary git-triggered deploy
+will silently revert it, and `api/build-info.js`'s drift check will fire
+the automated alert email. Either commit this exact `play.html` +
+`BACKLOG.md` change to `main` before/immediately after any direct deploy,
+or hand a token to Claude to commit it directly via the GitHub API.
+
 ## Done (2026-08-27) — Updated in-game Chef character to match the newest 3D asset
 
 hoody asked to bring the in-game pixel-art Chef (`drawPietroBuffer()` in
