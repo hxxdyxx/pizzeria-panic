@@ -54,15 +54,6 @@ the existing start screen, not yet a growing restaurant scene), seasonal
 reskins, a recurring antagonist, and the backend for a shared daily
 leaderboard.
 
-**NOT YET COMMITTED TO GIT.** This was verified in a sandbox with read-only
-GitHub access and no push credentials for this repo. Per the incident this
-file already documents above: if this reaches Vercel via direct deploy
-without an accompanying git commit, the next ordinary git-triggered deploy
-will silently revert it, and `api/build-info.js`'s drift check will fire
-the automated alert email. Either commit this exact `play.html` +
-`BACKLOG.md` change to `main` before/immediately after any direct deploy,
-or hand a token to Claude to commit it directly via the GitHub API.
-
 ## Done (2026-08-27) — Updated in-game Chef character to match the newest 3D asset
 
 hoody asked to bring the in-game pixel-art Chef (`drawPietroBuffer()` in
@@ -144,6 +135,19 @@ immediately after, or the next ordinary deploy will erase it again.
 ## Done (2026-08-27)
 
 - [x] **Admin leaderboard reset.** There was previously no way to clear the board short of manually wiping the KV key by hand. Added `DELETE /api/leaderboard`, gated behind a shared-secret `x-admin-key` header checked against a new `PPP_ADMIN_KEY` env var (same server-to-server pattern as `chef-link.js`'s bridge key) -- never exposed to the browser. Requires `PPP_ADMIN_KEY` to be set in the deploy environment before it'll work.
+
+## Deferred, low-effort when picked back up
+
+- [ ] **Vercel Web Analytics — declined for now, it's paid (2026-09-15).**
+  Would give plays/engagement data if that matters for this project's
+  goals. It's a billed feature (Vercel won't even let it be enabled
+  non-interactively for that reason); hoody said no to the charge, not
+  just "not right now." Don't re-suggest as a quick free toggle — revisit
+  only if he decides the data is worth paying for. If it's ever turned on:
+  `npx vercel project web-analytics enable pizzeria-panic --scope
+  hot-slice-pizza` (run by hoody in his own terminal, confirms the
+  charge) — also check whether this repo needs a manual script-tag add
+  like THC does, or picks it up automatically.
 
 ## Needs a business decision before implementing
 
