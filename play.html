@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Pizzeria Panic — A Hot Slice Creative Game</title>
+<title>Pizzeria Panic: A Hot Slice Creative Game</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<script type="module" src="/vendor/model-viewer.min.js"></script>
+<script type="importmap">{"imports":{"three":"/vendor/three/three.module.min.js"}}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%95%3C/text%3E%3C/svg%3E">
+<script type="module">
+  // model-viewer (post-game Chef avatar) throws on devices without WebGL, so only load it when WebGL exists.
+  try{const c=document.createElement('canvas');if(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))import('/vendor/model-viewer.min.js');}catch(e){}
+</script>
+<script type="module" src="/js/render3d.js"></script>
 <style>
   :root{--beige:#F8E5C2;--beige-dark:#E0C99A;--tomato:#D64541;--tomato-dark:#A5322E;--mozz:#FAF8F5;--basil:#2E8B57;--basil-dark:#1F6640;--olive:#2C2C2C;--glow:#F2C14E;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -14,6 +20,7 @@
   #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--olive);}
   #frame{position:relative;width:100%;height:100%;max-width:520px;background:linear-gradient(180deg,#3a3530 0%,#2C2C2C 60%,#1c1a17 100%);box-shadow:0 0 0 8px var(--olive);overflow:hidden;image-rendering:pixelated;}
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  #game3d{display:none;image-rendering:auto;}
   #hud{position:absolute;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;align-items:flex-start;padding:max(12px,env(safe-area-inset-top)) 12px 0 12px;pointer-events:none;font-family:'Fredoka',sans-serif;gap:8px;}
   .hudCol{display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
   .hudCol.right{align-items:flex-end;}
@@ -126,6 +133,7 @@
 <body>
 <div id="app">
   <div id="frame">
+    <canvas id="game3d"></canvas>
     <canvas id="game"></canvas>
     <div id="floaters"></div>
     <div id="hud">
@@ -484,7 +492,7 @@
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
   let dailyBest=loadDailyBest();
   function renderDailyBadge(){
-    dailyBadge.innerHTML='🍕 <b>Today\'s Special:</b> '+escapeHtml(dailySpecial.name)+' — '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' (best: '+dailyBest+')':'');
+    dailyBadge.innerHTML='🍕 <b>Today\'s Special:</b> '+escapeHtml(dailySpecial.name)+': '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' (best: '+dailyBest+')':'');
     dailyBadge.classList.remove('hidden');
   }
 
@@ -546,7 +554,7 @@
   }
   let streakDays=loadStreak();
   function renderStreakBadge(){
-    if(streakDays>=2){streakBadge.textContent='🔥 Day '+streakDays+' streak'+(streakBonusShield()>0?' — bonus shield!':'');streakBadge.classList.remove('hidden');}
+    if(streakDays>=2){streakBadge.textContent='🔥 Day '+streakDays+' streak'+(streakBonusShield()>0?', bonus shield!':'');streakBadge.classList.remove('hidden');}
     else streakBadge.classList.add('hidden');
   }
   function streakBonusShield(){return streakDays>=2?1:0;}
@@ -621,7 +629,7 @@
     orderText.textContent='Serve '+orderTarget+' pizzas · '+orderProgress+'/'+orderTarget+' · '+Math.max(0,Math.ceil(orderTimer))+'s';
   }
   function completeOrder(){
-    if(!orderActive)return;ordersFilled++;addCoins(5);score+=5;orderTicket.classList.add('success');orderText.textContent='ORDER SERVED! +5';sfxCoin();
+    if(!orderActive)return;fx3d('celebrate');ordersFilled++;addCoins(5);score+=5;orderTicket.classList.add('success');orderText.textContent='ORDER SERVED! +5';sfxCoin();
     setTimeout(()=>{orderActive=false;orderTicket.classList.add('hidden');orderTicket.classList.remove('success');},650);
     orderNextT=22+Math.random()*16;
   }
@@ -696,10 +704,10 @@
     orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
     tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');
-    pickShiftGoals();
+    pickShiftGoals();fx3d('reset');
     panY=computePanY();beginLifeCycleTracking();updateHud();updateComboUI();renderGoalsPanel();
   }
-  function updateHud(){scoreText.textContent=score;livesText.textContent='🍕'.repeat(Math.max(lives,0))||'—';if(shield>0){shieldPill.classList.remove('hidden');shieldText.textContent=shield;}else shieldPill.classList.add('hidden');renderGoalsPanel();updateDangerMeter();}
+  function updateHud(){scoreText.textContent=score;livesText.textContent='🍕'.repeat(Math.max(lives,0))||'0';if(shield>0){shieldPill.classList.remove('hidden');shieldText.textContent=shield;}else shieldPill.classList.add('hidden');renderGoalsPanel();updateDangerMeter();}
   function updateComboUI(){if(combo>=5){comboPill.classList.remove('hidden');const tier=comboTierFor(combo);comboText.textContent=(tier.name?tier.name+' ':'')+'x'+comboMultFor(combo)+' ('+combo+')';}else comboPill.classList.add('hidden');}
   const RANKS=[
     {min:0,title:'Dish Boy'},{min:20,title:'Prep Cook'},{min:50,title:'Line Cook'},{min:100,title:'Sous Chef'},
@@ -795,7 +803,7 @@
       const line=pietroLineFor(tier.name);
       showBigText((tier.name||('x'+tier.mult))+'!','#F2C14E',1.1,'comboUp',line);
       spawnBurst(panX,panY-0.2,'#F2C14E',18,true,1.2);
-      sfxComboTier(tier.mult);
+      sfxComboTier(tier.mult);fx3d('celebrate');
     }
   }
   function updateTowerPhysics(dt){
@@ -860,7 +868,7 @@
       rushTimer+=dt;
       if(progress>=15&&rushTimer>=rushNextT){
         rushActive=true;rushTimer=0;lifeStats.rushCount++;saveStats();
-        showBigText('RUSH HOUR! 🔥','#FF7A3C',1.3,'combo','2x points — go go go!');
+        showBigText('RUSH HOUR! 🔥','#FF7A3C',1.3,'combo','2x points, go go go!');
         spawnBurst(panX,panY-0.2,'#FF7A3C',20,true,1.2);
       }
     }else{
@@ -899,7 +907,7 @@
     if(hubShift)hubShift.textContent=lvlNow.name;
     updateOrders(dt);updateInspection(dt);updateTutorial(dt);
     if(lvlNow.name!==lastLevelName){
-      if(lastLevelName){showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',2.0,'level','NEW SHIFT STARTING');spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
+      if(lastLevelName){fx3d('celebrate');showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',2.0,'level','NEW SHIFT STARTING');spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
       lastLevelName=lvlNow.name;neonIdx=0;neonT=0;
     }
     const input=getControlInput(),moving=Math.abs(input)>0.08;
@@ -928,7 +936,7 @@
       const whipExtend=isGood?Math.min(0.085,Math.abs(panVelocity)*0.06):0;
       const reach=panHalfW+whipExtend;
       if(inBand&&Math.abs(p.x-panX)<reach){
-        fallers.splice(i,1);squash=1;triggerBlink();
+        fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch');
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
         if(p.type==='pizza'){
           combo++;progress++;runCatches++;runMaxCombo=Math.max(runMaxCombo,combo);
@@ -947,7 +955,7 @@
         else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15;spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
         else if(p.type==='pineapple'){
           runHazardHits++;
-          sfxHazard();spawnBurst(panX,panY-0.1,'#E8C24A',10,false);
+          sfxHazard();spawnBurst(panX,panY-0.1,'#E8C24A',10,false);if(!growActive)fx3d('stumble');
           if(growActive){floatText('Too big to care! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -957,7 +965,7 @@
         }
         else if(p.type==='burnt'){
           runHazardHits++;
-          sfxHazard();lifeStats.burntCaught++;saveStats();spawnBurst(panX,panY-0.1,'#5a3a1a',12,false);
+          sfxHazard();lifeStats.burntCaught++;saveStats();spawnBurst(panX,panY-0.1,'#5a3a1a',12,false);if(!growActive)fx3d('stumble');
           if(growActive){floatText('Even burnt? Whatever! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -967,7 +975,7 @@
         }
         else if(p.type==='pepper'){
           runHazardHits++;
-          sfxHazard();triggerShake(9.45);spawnBurst(panX,panY-0.14,'#D64541',15,false,1.05);
+          sfxHazard();triggerShake(9.45);spawnBurst(panX,panY-0.14,'#D64541',15,false,1.05);if(!growActive)fx3d('stumble');
           if(growActive){floatText('Too spicy? Not for me! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -982,7 +990,7 @@
         fallers.splice(i,1);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
         if(p.type==='pizza'){
-          comboSilentReset();runPizzaDrops++;
+          comboSilentReset();runPizzaDrops++;fx3d('miss');
           debris.push({x:clamp(p.x,0,1),y:groundTop+0.008+Math.random()*0.014,r:p.r,life:2.6,maxLife:2.6});
           if(shield>0){shield--;floatText('Saved! 🛡️',clamp(p.x,0.05,0.95),0.78,'#2E8B57');}
           else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText(missLines[Math.floor(Math.random()*missLines.length)],clamp(p.x,0.05,0.95),0.75,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
@@ -1253,7 +1261,26 @@
       ctx.fillText(bigText.sub,0,0);ctx.restore();
     }
   }
+  // 3D renderer bridge (js/render3d.js). When it is active, the 3D scene draws the
+  // world and this canvas becomes a transparent overlay for particles, weather and text.
+  // Without WebGL (or before the model loads) the original 2D renderer below is used.
+  function fx3d(name){const r=window.PPP3D;if(r&&r.active)r.event(name);}
+  const view3d={};
+  function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.rush=rushActive;return v;}
+  function drawStackLabel(){const h=Math.min(towerHeight,STACK_VISUAL_CAP);if(h<=0)return;const lastSway=segSway[h-1]||0;ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;ctx.fillText('x'+towerHeight,panX*W+lastSway*30,panY*H+2-(h+1)*SEG_LIFT_PX);ctx.restore();}
+  function draw3d(r3){
+    const lvl=currentLevel();let sx=0,sy=0;
+    if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
+    ctx.clearRect(0,0,W,H);
+    r3.render(snapshot3d(sx,sy,lvl));
+    ctx.save();ctx.translate(sx,sy);
+    drawWeather();drawStackLabel();drawParticles();drawWindFx();
+    if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
+    drawBigText();
+    ctx.restore();
+  }
   function draw(){
+    const r3=window.PPP3D;if(r3&&r3.active){draw3d(r3);return;}
     const lvl=currentLevel();let sx=0,sy=0;
     if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
     ctx.save();ctx.translate(sx,sy);
@@ -1388,7 +1415,7 @@
   function renderBoard(el,entries){
     el.innerHTML='';
     if(!entries){const li=document.createElement('li');li.className='boardEmpty';li.textContent='Leaderboard unavailable';el.appendChild(li);return;}
-    if(!entries.length){const li=document.createElement('li');li.className='boardEmpty';li.textContent='No scores yet — be the first!';el.appendChild(li);return;}
+    if(!entries.length){const li=document.createElement('li');li.className='boardEmpty';li.textContent='No scores yet. Be the first!';el.appendChild(li);return;}
     entries.forEach((e,i)=>{
       const li=document.createElement('li');
       const rankCls=i===0?' rank1':i===1?' rank2':i===2?' rank3':'';
@@ -1422,7 +1449,7 @@
     chefLinkSubmit.disabled=true;chefLinkSubmit.textContent='Saving...';
     try{
       const r=await fetch('/api/chef-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,score,ts:sessionTs,sig:sessionSig})});
-      chefLinkStatus.textContent=r.ok?'Saved — your Chef account will know this run 🍕':'Could not save that. Try again.';
+      chefLinkStatus.textContent=r.ok?'Saved! Your Chef account will know this run 🍕':'Could not save that. Try again.';
     }catch(e){chefLinkStatus.textContent='Could not save that. Try again.';}
     chefLinkSubmit.disabled=false;chefLinkSubmit.textContent='Save';
   });

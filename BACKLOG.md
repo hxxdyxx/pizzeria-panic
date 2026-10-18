@@ -1,4 +1,86 @@
-# Backlog — Pietro's Pizzeria Panic
+# Backlog: Pietro's Pizzeria Panic
+
+## Done (2026-10-18): 3D renderer (Three.js, toon Chef, 2D fallback)
+
+hoody asked to replace the 2D pixel-art rendering in `play.html` with a 3D
+Three.js scene using the chibi Chef, keeping game logic, scoring,
+leaderboard, anti-cheat tokens, streaks and challenge links functionally
+identical. Confirmed first that main already had the v2.0 Foundation Pass
+(and the v2.1 pass on top), so nothing needed restoring.
+
+**Architecture: logic untouched, renderer swapped.** All game rules still
+live in the existing 2D script. `js/render3d.js` is a separate ES module
+that reads a per-frame snapshot (`snapshot3d()` in `play.html`) and draws
+the world. Every gameplay object is placed by ray-casting its exact 2D
+screen position onto the 3D plane z=0, so what the player sees lines up
+pixel for pixel with the collision math. The 2D canvas stays on top as a
+transparent overlay for particles, weather, wind, lightning, big text and
+the stack count. The only logic-file edits are one-line `fx3d('...')` event
+hooks (catch, hazard hit, pizza drop, milestone, level change, order
+filled, reset) that only trigger animations.
+
+- [x] **Three.js r170 vendored** at `vendor/three/` (core, GLTFLoader,
+  BufferGeometryUtils, LICENSE), loaded through an import map. No CDN.
+- [x] **Chef model:** `avatars/chef-3d-game.glb` is a 2.1MB game copy of the
+  canonical `avatars/chef-3d.glb` (14MB). Same mesh, rig and all 11 clips;
+  only the 4096px PNG texture was downscaled to a 1024px JPEG. The
+  canonical file is untouched and still used by the post-game avatar.
+- [x] **Clip map:** idle `Idle_11`; run left/right `Running` with the body
+  yawed toward the direction of travel; start screen greeting
+  `Wave_One_Hand`; impatient pause (29s+) `Finger_Wag_No`; game over
+  `Shrug`. No clip existed for catch, stumble or celebrate, so they are
+  procedural: catch is squash and stretch (same values as the 2D sprite),
+  stumble (pepper, pineapple, burnt) is a decaying roll wobble plus a red
+  rim flash, a dropped pizza is a small flinch, and celebrate (combo tier,
+  new shift, order served) is a hop, gold rim flash and a one-arm wave.
+  Root motion is stripped so clips play in place. Simple aim IK keeps both
+  hands on the pan, released for the game over shrug.
+- [x] **Look:** MeshToonMaterial with a 3-step ramp and a fresnel rim on
+  everything, warm key light, back rim light, oven point light, inverted
+  hull outlines. Pizzeria backdrop: brick wall, checkered floor, counter,
+  brick oven with flickering mouth, window showing each level's sky
+  colors, neon HOT SLICE sign, hanging lamps, and string lights for the
+  Festival Lights and Midnight Rush levels. Night levels dim and cool the
+  room.
+- [x] **Props:** placeholder primitives for pizza, burnt pizza, mushroom,
+  green mushroom, pepper, pineapple, brick and rolling pin, each merged
+  into one vertex-colored geometry (one draw call each; the stack is a
+  single InstancedMesh). Agent B's GLBs in `assets/props/` (PR #6) are
+  loaded automatically when present: `GET /api/props` (new,
+  `api/props.js`) lists the GLBs bundled into the deployment, so the
+  browser never requests a missing file. Bricks and rolling pins render
+  if those faller types return, but current spawn logic has no such types
+  (they were replaced by pineapple and burnt pizza earlier), and no spawn
+  logic was changed.
+- [x] **Performance:** pixel ratio capped at 2. Three tiers (2: DPR 2 +
+  outlines + rim; 1: DPR 1.5, no outlines; 0: DPR 1, no rim, no deco
+  lights). If fps stays under 45 for 3 seconds while playing, it drops one
+  tier (with a 2s grace period after each change). The 2D renderer remains
+  the fallback whenever WebGL is unavailable, the Chef fails to load, or
+  the WebGL context is lost.
+- [x] **Console hygiene:** added an inline pizza favicon to `play.html`
+  and `index.html` (production was logging a favicon.ico 404) and load model-viewer only when WebGL exists
+  (it threw errors on no-WebGL devices). Replaced the em dashes in
+  player-facing copy per brand rules.
+- **Debug switches:** `/play?r=2d` forces the 2D renderer; `/play?fx=0|1|2`
+  pins an effects tier and disables auto-downgrade.
+- **Verified:** headless Chrome at a 390x844 phone viewport. Full runs to
+  game over with zero console errors, warnings or failed requests, both
+  with and without Agent B's props; the auto-downgrade fired as expected
+  under software rendering; and the forced-2D and no-WebGL paths render
+  the original game with zero errors.
+
+**Follow-ups:**
+- [ ] **Chef skins in 3D.** The 5 coin skins recolor the 2D sprite's hat,
+  stripes and pants. The GLB uses one baked texture atlas, so 3D currently
+  shows the equipped skin only as the Chef's rim-light accent color. A
+  real recolor needs region masks for the atlas. Pan skins do recolor.
+- [ ] **Wire in `assets/fx/effects.js`** once PR #6 merges (glow rings,
+  3D milestone bursts, sauce splats). Use either its injected shake or
+  the existing `triggerShake` call per event, not both.
+- [ ] **Real-device fps check** on a mid-range Android phone. Headless
+  testing uses software WebGL, so it can't confirm 60fps.
+
 
 ## Done (2026-09-08) — v2.0 Foundation Pass: coins, skins, achievements, shift goals, sound, daily special
 

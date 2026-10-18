@@ -2,5 +2,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/play", "destination": "/play.html" }
-  ]
+  ],
+  "functions": {
+    "api/props.js": { "includeFiles": "assets/props/**" }
+  }
 }
