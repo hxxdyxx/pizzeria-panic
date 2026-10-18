@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+const require = createRequire(new URL('../props/package.json', import.meta.url));
+const THREE = require('three');
+const source = fs.readFileSync(new URL('./effects.js', import.meta.url), 'utf8');
+const { createEffects } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+const scene = new THREE.Scene(), shakes = [];
+const fx = createEffects({ THREE, scene, triggerShake: n => shakes.push(n), maxParticles: 12, random: () => 0.5 });
+const pizza = new THREE.Object3D(); pizza.scale.set(2, 3, 4); scene.add(pizza);
+fx.catchPizza(pizza); fx.update(0.04); assert.notEqual(pizza.scale.y, 3);
+fx.catchPizza(pizza); fx.update(1); assert.deepEqual(pizza.scale.toArray(), [2, 3, 4]);
+fx.powerUp([0,0,0]); fx.powerUp([0,0,0], 'pepper'); fx.milestone([0,0,0]); fx.miss([0,0,0]);
+assert.deepEqual(shakes, [9,18]); assert.equal(fx.stats.particles, 12); assert.equal(fx.stats.rings, 2);
+fx.update(2); assert.equal(fx.stats.particles, 0); assert.equal(fx.stats.rings, 0);
+fx.miss([0,0,0]); assert.equal(fx.stats.pooled, 0); fx.clear(); assert.equal(fx.stats.particles, 0);
+for(let i=0;i<25;i++) fx.glowRing([0,0,0]); assert.equal(fx.stats.rings,16);
+fx.catchPizza(pizza); fx.update(.05); fx.dispose(); fx.dispose();
+assert.deepEqual(pizza.scale.toArray(), [2,3,4]); assert.equal(scene.children.length, 1);
+fx.milestone([0,0,0]); assert.equal(fx.stats.particles, 0);
+const quiet = createEffects({ THREE, scene, reducedMotion: true, triggerShake: () => assert.fail('Reduced motion shake') });
+quiet.catchPizza(pizza); quiet.powerUp([0,0,0],'pepper'); quiet.milestone([0,0,0]);
+assert.equal(quiet.stats.catches,0); quiet.dispose();
+// World coordinates resolve correctly under a transformed parent scene.
+scene.position.set(5,0,0);
+const mapped = createEffects({ THREE, scene }); mapped.miss([6,0,0],{count:1});
+const root=scene.getObjectByName('PizzeriaPanicFX'); assert.equal(root.children[0].position.x,1); mapped.dispose();
+console.log('Effects checks passed: scale restoration, overlapping catches, shake strengths, caps, expiry, pooling, cleanup, reduced motion, transformed scenes.');
