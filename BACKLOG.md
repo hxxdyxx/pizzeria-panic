@@ -70,17 +70,29 @@ filled, reset) that only trigger animations.
   under software rendering; and the forced-2D and no-WebGL paths render
   the original game with zero errors.
 
-**Follow-ups:**
-- [ ] **Chef skins in 3D.** The 5 coin skins recolor the 2D sprite's hat,
-  stripes and pants. The GLB uses one baked texture atlas, so 3D currently
-  shows the equipped skin only as the Chef's rim-light accent color. A
-  real recolor needs region masks for the atlas. Pan skins do recolor.
-- [ ] **Wire in `assets/fx/effects.js`** once PR #6 merges (glow rings,
-  3D milestone bursts, sauce splats). Use either its injected shake or
-  the existing `triggerShake` call per event, not both.
-- [ ] **Real-device fps check** on a mid-range Android phone. Headless
-  testing uses software WebGL, so it can't confirm 60fps.
-
+**Follow-ups (all closed the same day, 2026-10-18, branch feat/3d-polish):**
+- [x] **Chef skins in 3D.** The coin skins now truly recolor the 3D Chef:
+  hat, shirt stripes and trousers. No new art; a shader picks regions by
+  bind-pose height (head 0.90 to 1.70, torso and arms 0.38 to 0.93, legs
+  below) plus texel color, so the red shoes, skin, face and eyes are never
+  touched. Classic keeps the original texture. Verified with screenshots of
+  all five skins.
+- [x] **`assets/fx/effects.js` wired in:** pan bounce on every catch, green
+  floor ring on mushrooms (bigger for the green one), red pulsing ring on
+  pepper hits, 3D gold/tomato/white burst at the stack top on milestones,
+  sauce splat where a pizza hits the floor, cleared on restart. Shake stays
+  owned by the game (the pack gets a no-op shake), so there is still exactly
+  one shake per event. Honors prefers-reduced-motion. Loaded only when
+  `/api/props` reports `fx: true`, so it switches on by itself once PR #6
+  (the props and FX pack) is merged, with no 404s before that.
+- [x] **FPS check.** `/play?debug=fps` shows a live readout (fps, tier,
+  pixel ratio, props, fx) for checking on a real phone. Measured on a real
+  GPU (Intel HD 6000, a 2015 laptop integrated chip, weaker than most
+  current mid-range phones) at a 390x844 phone viewport, 3x screen: a steady
+  60fps on every tier, including the top tier with props and FX loaded, and
+  auto mode stayed on the top tier.
+- [ ] **PR #6 (props and FX pack) still needs merging.** Everything above
+  that depends on it activates automatically after the merge.
 
 ## Done (2026-09-08) — v2.0 Foundation Pass: coins, skins, achievements, shift goals, sound, daily special
 

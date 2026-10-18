@@ -936,7 +936,7 @@
       const whipExtend=isGood?Math.min(0.085,Math.abs(panVelocity)*0.06):0;
       const reach=panHalfW+whipExtend;
       if(inBand&&Math.abs(p.x-panX)<reach){
-        fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch');
+        fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch',p.type);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
         if(p.type==='pizza'){
           combo++;progress++;runCatches++;runMaxCombo=Math.max(runMaxCombo,combo);
@@ -955,7 +955,7 @@
         else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15;spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
         else if(p.type==='pineapple'){
           runHazardHits++;
-          sfxHazard();spawnBurst(panX,panY-0.1,'#E8C24A',10,false);if(!growActive)fx3d('stumble');
+          sfxHazard();spawnBurst(panX,panY-0.1,'#E8C24A',10,false);if(!growActive)fx3d('stumble','pineapple');
           if(growActive){floatText('Too big to care! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -965,7 +965,7 @@
         }
         else if(p.type==='burnt'){
           runHazardHits++;
-          sfxHazard();lifeStats.burntCaught++;saveStats();spawnBurst(panX,panY-0.1,'#5a3a1a',12,false);if(!growActive)fx3d('stumble');
+          sfxHazard();lifeStats.burntCaught++;saveStats();spawnBurst(panX,panY-0.1,'#5a3a1a',12,false);if(!growActive)fx3d('stumble','burnt');
           if(growActive){floatText('Even burnt? Whatever! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -975,7 +975,7 @@
         }
         else if(p.type==='pepper'){
           runHazardHits++;
-          sfxHazard();triggerShake(9.45);spawnBurst(panX,panY-0.14,'#D64541',15,false,1.05);if(!growActive)fx3d('stumble');
+          sfxHazard();triggerShake(9.45);spawnBurst(panX,panY-0.14,'#D64541',15,false,1.05);if(!growActive)fx3d('stumble','pepper');
           if(growActive){floatText('Too spicy? Not for me! 😤',panX,panY-0.1,'#2E8B57');}
           else{
             const wasCombo=combo>=5;breakCombo();
@@ -990,7 +990,7 @@
         fallers.splice(i,1);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
         if(p.type==='pizza'){
-          comboSilentReset();runPizzaDrops++;fx3d('miss');
+          comboSilentReset();runPizzaDrops++;fx3d('miss',p.x);
           debris.push({x:clamp(p.x,0,1),y:groundTop+0.008+Math.random()*0.014,r:p.r,life:2.6,maxLife:2.6});
           if(shield>0){shield--;floatText('Saved! 🛡️',clamp(p.x,0.05,0.95),0.78,'#2E8B57');}
           else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText(missLines[Math.floor(Math.random()*missLines.length)],clamp(p.x,0.05,0.95),0.75,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
@@ -1264,7 +1264,7 @@
   // 3D renderer bridge (js/render3d.js). When it is active, the 3D scene draws the
   // world and this canvas becomes a transparent overlay for particles, weather and text.
   // Without WebGL (or before the model loads) the original 2D renderer below is used.
-  function fx3d(name){const r=window.PPP3D;if(r&&r.active)r.event(name);}
+  function fx3d(name,arg){const r=window.PPP3D;if(r&&r.active)r.event(name,arg);}
   const view3d={};
   function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.rush=rushActive;return v;}
   function drawStackLabel(){const h=Math.min(towerHeight,STACK_VISUAL_CAP);if(h<=0)return;const lastSway=segSway[h-1]||0;ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;ctx.fillText('x'+towerHeight,panX*W+lastSway*30,panY*H+2-(h+1)*SEG_LIFT_PX);ctx.restore();}

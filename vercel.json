@@ -4,6 +4,6 @@
     { "source": "/play", "destination": "/play.html" }
   ],
   "functions": {
-    "api/props.js": { "includeFiles": "assets/props/**" }
+    "api/props.js": { "includeFiles": "assets/**" }
   }
 }
