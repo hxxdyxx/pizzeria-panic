@@ -182,7 +182,8 @@ function init() {
     return geo;
   }
   function loadProps() {
-    fetch('/api/props', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { files: [] }).catch(() => ({ files: [] })).then(({ files }) => {
+    fetch('/api/props', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { files: [] }).catch(() => ({ files: [] })).then(({ files, fx: hasFx }) => {
+      if (hasFx) loadFx();
       const have = new Set(files || []);
       Object.entries(PROP_FILES).forEach(([type, file]) => {
         if (!have.has(file)) return;
@@ -195,6 +196,17 @@ function init() {
         }, undefined, () => {});
       });
     });
+  }
+
+  // Optional effects pack (assets/fx/effects.js). The game keeps owning screen shake,
+  // so the pack gets a no-op shake callback (one shake per event).
+  let fxLib = null;
+  function loadFx() {
+    import('/assets/fx/effects.js').then(m => {
+      const reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      fxLib = m.createEffects({ THREE, scene, triggerShake: () => {}, reducedMotion: reduced, maxParticles: 96 });
+      api.fx = true;
+    }).catch(() => {});
   }
 
   // ---------- backdrop: a simple pizzeria ----------
@@ -275,11 +287,12 @@ function init() {
 
   // ---------- pan + stack ----------
   const panGroup = new THREE.Group(); scene.add(panGroup);
+  const panInner = new THREE.Group(); panGroup.add(panInner);
   const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' }), panHandleMat = toon({ color: '#3a2a22' });
   let panPropGeo = null, panMeshes = [];
   const panOutlineMat = outlineMaterial(0.05);
   function rebuildPan() {
-    panMeshes.forEach(m => panGroup.remove(m)); panMeshes = [];
+    panMeshes.forEach(m => panInner.remove(m)); panMeshes = [];
     if (panPropGeo) {
       const m = new THREE.Mesh(panPropGeo, toon({ vertexColors: true, flatShading: true })); m.scale.setScalar(1 / 0.8);
       const tint = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.02, 28), panFaceMat); tint.position.y = 0.0;
@@ -290,9 +303,9 @@ function init() {
       const handle = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.2), panHandleMat); handle.position.set(1.4, -0.02, 0);
       panMeshes.push(face, rim, handle);
     }
-    panMeshes.forEach(m => panGroup.add(m));
+    panMeshes.forEach(m => panInner.add(m));
     const ol = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.9, 0.2, 28), panOutlineMat); ol.position.y = -0.06; ol.userData.outline = true;
-    panGroup.add(ol); panMeshes.push(ol);
+    ol.visible = TIERS[tier].outline; panInner.add(ol); panMeshes.push(ol);
   }
   rebuildPan();
   const STACK_MAX = 100;
@@ -345,13 +358,32 @@ function init() {
 
   // ---------- state for procedural moves ----------
   const fx = { stumble: 0, stumbleDir: 1, miss: 0, celebrate: 0, flash: 0, flashColor: new THREE.Color(), greet: 2.2, lastState: '' };
-  api.event = (name) => {
-    if (name === 'stumble') { fx.stumble = 0.7; fx.stumbleDir = Math.random() < 0.5 ? -1 : 1; fx.flash = 0.45; fx.flashColor.set('#ff3b2f'); }
-    else if (name === 'miss') { fx.miss = 0.5; }
-    else if (name === 'celebrate') { fx.celebrate = 1.3; fx.flash = 0.6; fx.flashColor.set(C.glow); }
-    else if (name === 'catch') { /* squash comes from game state */ }
-    else if (name === 'reset') { fx.stumble = fx.miss = fx.celebrate = fx.flash = 0; }
+  const lastChefFeet = new THREE.Vector3(), lastStackTop = new THREE.Vector3();
+  let lastChefHeight = 1, lastGroundTop = 0.885;
+  const ringAt = () => [lastChefFeet.x, floorY + 0.02, lastChefFeet.z + 0.35];
+  api.event = (name, arg) => {
+    if (name === 'stumble') {
+      fx.stumble = 0.7; fx.stumbleDir = Math.random() < 0.5 ? -1 : 1; fx.flash = 0.45; fx.flashColor.set('#ff3b2f');
+      if (fxLib && arg === 'pepper') fxLib.powerUp(ringAt(), 'pepper', { radius: lastChefHeight * 0.45 });
+    }
+    else if (name === 'miss') {
+      fx.miss = 0.5;
+      if (fxLib && typeof arg === 'number') { screenToFloor(arg * W, lastGroundTop * H + 8, _fxp); fxLib.miss([_fxp.x, floorY + 0.03, _fxp.z], { count: 10 }); }
+    }
+    else if (name === 'celebrate') {
+      fx.celebrate = 1.3; fx.flash = 0.6; fx.flashColor.set(C.glow);
+      if (fxLib) fxLib.milestone(lastStackTop, { count: 36 });
+    }
+    else if (name === 'catch') {
+      // squash/stretch of the Chef comes from game state; the pack adds a pan bounce and power-up rings
+      if (fxLib) {
+        fxLib.catchPizza(panInner);
+        if (arg === 'mushroom' || arg === 'greenmushroom') fxLib.powerUp(ringAt(), 'mushroom', { radius: lastChefHeight * (arg === 'greenmushroom' ? 0.6 : 0.45) });
+      }
+    }
+    else if (name === 'reset') { fx.stumble = fx.miss = fx.celebrate = fx.flash = 0; if (fxLib) fxLib.clear(); }
   };
+  const _fxp = new THREE.Vector3();
 
   function fadeTo(name, dur = 0.25) {
     const next = actions[name];
@@ -376,6 +408,39 @@ function init() {
     bone.updateMatrixWorld(true);
   }
 
+  // Coin skins: recolor the hat, shirt stripes and trousers of the baked texture.
+  // Regions come from the bind-pose height (the head is 0.90 to 1.70, torso and arms
+  // 0.38 to 0.93, legs below) combined with the texel color, so the red shoes, skin,
+  // face and eyes are never touched. Classic keeps the original texture.
+  const SKIN = { on: { value: 0 }, hat: { value: new THREE.Color() }, sd: { value: new THREE.Color() }, sl: { value: new THREE.Color() }, pants: { value: new THREE.Color() } };
+  let lastSkinKey = null;
+  function addSkinRecolor(m) {
+    const base = m.onBeforeCompile;
+    m.onBeforeCompile = s => {
+      base(s);
+      s.uniforms.uSkinOn = SKIN.on; s.uniforms.uSkinHat = SKIN.hat; s.uniforms.uSkinSD = SKIN.sd; s.uniforms.uSkinSL = SKIN.sl; s.uniforms.uSkinPants = SKIN.pants;
+      s.vertexShader = 'varying float vBindY;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvBindY = position.y;');
+      s.fragmentShader = 'varying float vBindY;\nuniform float uSkinOn;\nuniform vec3 uSkinHat;\nuniform vec3 uSkinSD;\nuniform vec3 uSkinSL;\nuniform vec3 uSkinPants;\n' + s.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+  if (uSkinOn > 0.5) {
+    vec3 c = diffuseColor.rgb;
+    float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
+    float sat = mx > 0.001 ? (mx - mn) / mx : 0.0;
+    float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    if (vBindY > 1.22 && c.r > 0.2 && c.r > c.g * 2.2 && c.r > c.b * 2.2) diffuseColor.rgb = uSkinHat * clamp(c.r / 0.6, 0.35, 1.3);
+    else if (vBindY > 0.38 && vBindY < 0.93 && sat < 0.25) diffuseColor.rgb = mix(uSkinSD, uSkinSL, smoothstep(0.04, 0.45, lum));
+    else if (vBindY < 0.93 && c.b > c.r * 1.2 && c.b > 0.12) diffuseColor.rgb = uSkinPants * clamp(lum / 0.35, 0.4, 1.4);
+  }`);
+    };
+    m.customProgramCacheKey = () => 'toonrim-chefskin';
+  }
+  function applySkin(v) {
+    const key = v.skinId || 'classic';
+    if (key === lastSkinKey || !v.skin) return;
+    lastSkinKey = key;
+    SKIN.on.value = key === 'classic' ? 0 : 1;
+    SKIN.hat.value.set(v.skin.hatTop); SKIN.sd.value.set(v.skin.stripeDark); SKIN.sl.value.set(v.skin.stripeLight); SKIN.pants.value.set(v.skin.pantsL);
+  }
+
   loader.load('/avatars/chef-3d-game.glb', gltf => {
     const root = gltf.scene;
     let skinned = null;
@@ -383,6 +448,7 @@ function init() {
     if (!skinned) { console.warn('Chef model missing skinned mesh, staying 2D'); return; }
     const src = skinned.material;
     chefMat = toon({ map: src.map || null, color: 0xffffff }, CHEF_RIM);
+    addSkinRecolor(chefMat);
     skinned.material = chefMat; skinned.frustumCulled = false;
     chefOutline = new THREE.SkinnedMesh(skinned.geometry, outlineMaterial(0.012));
     chefOutline.bind(skinned.skeleton, skinned.bindMatrix);
@@ -424,6 +490,13 @@ function init() {
     lastSize = '';
   }
   let fpsAcc = 0, fpsFrames = 0, lowSecs = 0, lastNow = performance.now(), graceT = 2;
+  // /play?debug=fps shows a small live readout, for checking real phones.
+  let fpsEl = null;
+  if (qs.get('debug') === 'fps') {
+    fpsEl = document.createElement('div');
+    fpsEl.style.cssText = 'position:absolute;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;background:rgba(0,0,0,.72);color:#F2C14E;font:600 12px/1.2 monospace;padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap';
+    frame.appendChild(fpsEl);
+  }
 
   // ---------- screen to world mapping ----------
   const _ray = new THREE.Vector3(), _out = new THREE.Vector3();
@@ -518,6 +591,7 @@ function init() {
     if (fx.stumble > 0) { roll += Math.sin(fx.stumble * 26) * 0.28 * (fx.stumble / 0.7) * fx.stumbleDir; fx.stumble -= dt; }
     if (fx.miss > 0) { roll += Math.sin(fx.miss * 30) * 0.08 * (fx.miss / 0.5); fx.miss -= dt; }
     chef.position.set(_out.x, floorY + hop, chefZ);
+    lastChefFeet.set(_out.x, floorY, chefZ); lastChefHeight = height; lastGroundTop = v.groundTop;
     chefInner.scale.set(s * (1 + sq * 0.12), s * (1 - sq * 0.16), s * (1 + sq * 0.12));
     const targetYaw = st === 'playing' && v.isRunning ? v.facing * 0.55 : 0;
     yaw += (targetYaw - yaw) * Math.min(1, dt * 10);
@@ -540,7 +614,8 @@ function init() {
     aim(bones.RightArm, bones.RightForeArm, _hr, ikR); aim(bones.RightForeArm, bones.RightHand, _hr, ikR);
 
     // Rim tint: skin accent color, green while big, flash on hits and milestones
-    const baseRim = v.growActive ? '#7ED957' : (v.skinId && v.skinId !== 'classic' && v.skin ? v.skin.hatTop : '#ffe2b0');
+    applySkin(v);
+    const baseRim = v.growActive ? '#7ED957' : '#ffe2b0';
     CHEF_RIM.color.value.set(baseRim);
     if (fx.flash > 0) { CHEF_RIM.color.value.lerp(fx.flashColor, Math.min(1, fx.flash * 2.5)); fx.flash -= dt; }
     CHEF_RIM.strength.value = 0.55 * TIERS[tier].rim + (fx.flash > 0 ? 0.8 : 0) + (v.growActive ? 0.4 : 0);
@@ -557,6 +632,7 @@ function init() {
     fpsAcc += dt; fpsFrames++;
     if (fpsAcc >= 1) {
       api.fps = Math.round(fpsFrames / fpsAcc);
+      if (fpsEl) fpsEl.textContent = '3D | ' + api.fps + ' fps | tier ' + tier + ' | dpr ' + renderer.getPixelRatio().toFixed(2) + (api.props.length ? ' | props' : '') + (fxLib ? ' | fx' : '');
       if (v.state === 'playing' && !document.hidden && graceT <= 0 && !forcedTier) {
         lowSecs = api.fps < 45 ? lowSecs + 1 : 0;
         if (lowSecs >= 3 && tier > 0) { setTier(tier - 1); lowSecs = 0; graceT = 2; }
@@ -597,6 +673,8 @@ function init() {
       stackMesh.setMatrixAt(i, _m.compose(_p, _qq, _s));
     }
     stackMesh.count = h; stackMesh.instanceMatrix.needsUpdate = true;
+    screenToPlane(v.panX * W, v.panY * H - (h + 1) * v.segLift, 0, lastStackTop);
+    if (fxLib) fxLib.update(dt);
 
     // Fallers
     for (const key in used) used[key] = 0;
