@@ -58,8 +58,8 @@ filled, reset) that only trigger animations.
   tier (with a 2s grace period after each change). The 2D renderer remains
   the fallback whenever WebGL is unavailable, the Chef fails to load, or
   the WebGL context is lost.
-- [x] **Console hygiene:** added an inline pizza favicon (production was
-  logging a favicon.ico 404) and load model-viewer only when WebGL exists
+- [x] **Console hygiene:** added an inline pizza favicon to `play.html`
+  and `index.html` (production was logging a favicon.ico 404) and load model-viewer only when WebGL exists
   (it threw errors on no-WebGL devices). Replaced the em dashes in
   player-facing copy per brand rules.
 - **Debug switches:** `/play?r=2d` forces the 2D renderer; `/play?fx=0|1|2`
