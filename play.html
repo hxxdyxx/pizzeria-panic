@@ -86,9 +86,6 @@
   @keyframes comboPulse{0%,100%{box-shadow:0 0 0 rgba(255,122,60,0);}50%{box-shadow:0 0 16px rgba(255,122,60,.8);}}
   .dangerWrap{width:96px;height:9px;border-radius:5px;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.25);overflow:hidden;margin-top:2px;}
   .dangerFill{height:100%;width:0%;background:#2E8B57;transition:width .15s linear,background-color .2s linear;}
-  .goalsPanel{display:flex;flex-direction:column;gap:3px;margin-top:2px;}
-  .goalLine{font-family:'Fredoka',sans-serif;font-size:10.5px;color:rgba(248,229,194,.85);background:rgba(0,0,0,.35);border-radius:5px;padding:2px 7px;white-space:nowrap;transition:color .2s,background .2s;}
-  .goalLine.done{color:#2E8B57;background:rgba(46,139,87,.22);text-decoration:line-through;}
   .coinPill{border-color:var(--glow) !important;color:var(--glow) !important;}
   .hubRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
   .hubBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;color:var(--beige);background:rgba(255,255,255,.07);border:2px solid rgba(242,193,78,.4);border-radius:9px;padding:8px 12px;cursor:pointer;touch-action:manipulation;}
@@ -157,6 +154,49 @@
   .pauseCard .controlPicker{margin-top:0;}
   #frame:has(#startScreen:not(.hidden)) .footer-credit,#frame:has(#pauseScreen:not(.hidden)) .footer-credit{display:none;}
 
+  /* ===== Play screen cleanup (2026-10-19): icon-only lives/shield, goals off the HUD, celebrations ===== */
+  #livesText{letter-spacing:1px;}
+  .pill.shield{display:flex;align-items:center;gap:3px;padding:4px 8px;}
+  .shieldCross{width:16px;height:16px;fill:#2E8B57;stroke:#FAF8F5;stroke-width:1.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(46,139,87,.6));}
+  .goalsList{display:flex;flex-direction:column;gap:6px;width:100%;}
+  .goalRow{display:flex;align-items:center;gap:8px;font-family:'Fredoka',sans-serif;font-size:14px;color:var(--mozz);text-align:left;}
+  .goalBox{flex:0 0 18px;height:18px;border:2px solid rgba(242,193,78,.7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;}
+  .goalRow.done .goalBox{background:var(--basil);border-color:var(--basil);}
+  .goalRow.done .goalDesc{text-decoration:line-through;opacity:.6;}
+  .goalDesc{flex:1;}
+  .goalProg{font-size:12px;color:var(--glow);font-weight:700;white-space:nowrap;}
+  .goalsCard{position:absolute;left:50%;top:max(118px,calc(env(safe-area-inset-top) + 106px));transform:translateX(-50%);z-index:9;width:min(80%,300px);background:rgba(36,27,18,.94);border:2px solid var(--glow);border-radius:14px;padding:10px 14px 12px;pointer-events:none;box-shadow:0 4px 0 rgba(0,0,0,.3);}
+  .goalsCardTitle{font-family:'Fredoka',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;color:var(--glow);text-align:center;margin-bottom:8px;}
+  .goalsCard.in{animation:cardIn .4s cubic-bezier(.2,1.4,.4,1) both;}
+  .goalsCard.out{animation:cardOut .4s ease-in both;}
+  @keyframes cardIn{from{opacity:0;transform:translate(-50%,-14px) scale(.9);}to{opacity:1;transform:translate(-50%,0) scale(1);}}
+  @keyframes cardOut{to{opacity:0;transform:translate(-50%,-12px) scale(.95);}}
+  .pauseGoals{width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(242,193,78,.25);border-radius:10px;padding:10px 12px;}
+  .pauseGoalsTitle{font-family:'Fredoka',sans-serif;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:rgba(248,229,194,.7);margin-bottom:8px;text-align:left;}
+  .pauseLinks{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;}
+  #celebrateLayer{position:absolute;inset:0;z-index:30;pointer-events:none;overflow:hidden;}
+  .celebBurst{position:absolute;left:50%;top:36%;width:0;height:0;}
+  .burstTitle{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:max-content;text-align:center;font-family:'Fredoka',sans-serif;font-weight:800;font-size:clamp(30px,9.5vw,44px);line-height:1.02;color:var(--glow);-webkit-text-stroke:2px #7a3a0a;paint-order:stroke fill;text-shadow:0 0 18px rgba(242,193,78,.85),0 3px 0 #7a3a0a;animation:burstTitle 2s ease both;}
+  .goalTicket~.burstTitle{animation-delay:.8s;}
+  .burstSub{position:absolute;left:50%;top:58px;transform:translateX(-50%);width:max-content;max-width:86vw;font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;color:var(--mozz);text-shadow:0 2px 4px rgba(0,0,0,.8);animation:burstSub 2s ease both;}
+  .goalTicket~.burstTitle~.burstSub{animation-delay:.8s;}
+  @keyframes burstTitle{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);}14%{opacity:1;transform:translate(-50%,-50%) scale(1.18);}22%{transform:translate(-50%,-50%) scale(.96);}30%,78%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35);}}
+  @keyframes burstSub{0%,12%{opacity:0;transform:translateX(-50%) translateY(8px);}26%,80%{opacity:1;transform:translateX(-50%) translateY(0);}100%{opacity:0;}}
+  .trophy{position:absolute;left:0;top:0;font-size:30px;transform:translate(-50%,-50%);opacity:0;animation:trophyFly 1.5s cubic-bezier(.15,.8,.3,1) both;}
+  @keyframes trophyFly{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0);}12%{opacity:1;}70%{opacity:1;}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.25) rotate(var(--rot));}}
+  .goalTicket{position:absolute;left:50%;top:-96px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:84vw;background:rgba(36,27,18,.96);border:2px solid var(--glow);border-radius:12px;padding:9px 14px;font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;color:var(--mozz);box-shadow:0 0 22px rgba(242,193,78,.55);animation:ticketLife 1.35s ease both;}
+  .goalTicketBox{flex:0 0 22px;height:22px;border-radius:6px;background:var(--basil);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;animation:tickPop .3s .35s cubic-bezier(.2,1.6,.4,1) both;}
+  .goalTicketText{position:relative;}
+  .goalStrike{position:absolute;left:44px;right:14px;top:50%;height:3px;border-radius:2px;background:#D64541;transform-origin:left;transform:scaleX(0);animation:strike .35s .4s ease-out forwards;}
+  @keyframes tickPop{from{transform:scale(0);}to{transform:scale(1);}}
+  @keyframes strike{to{transform:scaleX(1);}}
+  @keyframes ticketLife{0%{opacity:0;transform:translateX(-50%) scale(.6);}16%{opacity:1;transform:translateX(-50%) scale(1.08);}24%,62%{opacity:1;transform:translateX(-50%) scale(1) rotate(0);}100%{opacity:0;transform:translateX(-50%) translateY(-120px) scale(1.7) rotate(-14deg);filter:blur(2px);}}
+  .confetti{position:absolute;left:0;top:-80px;width:9px;height:14px;border-radius:2px;opacity:0;animation:confettiFly 1.6s cubic-bezier(.1,.7,.3,1) both;}
+  @keyframes confettiFly{0%{opacity:0;transform:translate(-50%,-50%) rotate(0);}8%{opacity:1;}75%{opacity:1;}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 60px)) rotate(var(--rot));}}
+  /* Reduced motion: no flying trophies or confetti, just a steady fade in and out */
+  @keyframes calmFade{0%{opacity:0;}12%,82%{opacity:1;}100%{opacity:0;}}
+  @media (prefers-reduced-motion: reduce){.trophy,.confetti{display:none;}.burstTitle,.burstSub,.goalTicket{animation-name:calmFade !important;}.goalStrike,.goalTicketBox{animation-duration:.01s;}}
+
 </style>
 </head>
 <body>
@@ -167,15 +207,13 @@
     <div id="floaters"></div>
     <div id="hud">
       <div class="hudCol">
-        <div class="pill" id="livesPill">LIVES: <span id="livesText">🍕🍕🍕🍕🍕</span></div>
-        <div class="pill shield hidden" id="shieldPill">SHIELD: <span id="shieldText">0</span></div>
+        <div class="pill" id="livesPill" role="img" aria-label="Lives"><span id="livesText">🍕🍕🍕🍕🍕</span></div>
+        <div class="pill shield hidden" id="shieldPill" role="img" aria-label="Shield"><span id="shieldText"></span></div>
         <div class="pill combo hidden" id="comboPill">COMBO: <span id="comboText">x1.5 (5)</span></div>
         <div class="pill rush hidden" id="rushPill">🔥 RUSH x2</div>
-        <div class="goalsPanel" id="goalsPanel"></div>
       </div>
       <div class="hudCol right">
         <div style="display:flex;gap:6px;">
-          <button class="iconBtn" id="muteBtnHud" aria-label="Mute">🔊</button>
           <button class="iconBtn hidden" id="pauseBtn" aria-label="Pause">⏸</button>
         </div>
         <div class="pill">STACK: <span id="scoreText">0</span></div>
@@ -188,6 +226,8 @@
     <div id="orderTicket" class="orderTicket hidden"><strong>ORDER UP</strong><span id="orderText"></span></div>
     <div id="inspectionHud" class="hidden" style="position:absolute;top:max(48px,calc(env(safe-area-inset-top) + 44px));right:12px;z-index:6;"><div class="pill inspectionPill">HEALTH INSPECTION <span id="inspectionText"></span></div></div>
     <div id="tutorialToast" class="tutorialToast hidden"></div>
+    <div id="goalsCard" class="goalsCard hidden" aria-live="polite"><div class="goalsCardTitle" id="goalsCardTitle">SHIFT GOALS</div><div class="goalsList" id="goalsCardList"></div></div>
+    <div id="celebrateLayer" aria-live="polite"></div>
     <div id="startScreen" class="overlay menu">
       <h1 class="title">
         <span class="titleLine">PIZZERI<span class="pizzaA">🍕</span></span>
@@ -216,7 +256,7 @@
         </div>
       </div>
       <div class="menuFoot">
-        <button class="textLink" id="donateBtnStart">🍕 Buy the Chef a Slice</button>
+        <button class="textLink" id="donateBtnStart">💵 Tip the kitchen crew</button>
         <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HotSlice.com</a></div>
       </div>
     </div>
@@ -282,6 +322,7 @@
       <div class="pauseCard">
         <div class="pauseTitle">Paused</div>
         <button class="btn playBtn" id="resumeBtn">Resume</button>
+        <div class="pauseGoals"><div class="pauseGoalsTitle">Shift Goals</div><div class="goalsList" id="pauseGoalsList"></div></div>
         <div class="controlPicker" id="controlPickerPause">
           <span class="controlPickerLabel">Controls</span>
           <div class="controlPickerRow seg">
@@ -289,7 +330,7 @@
             <button class="modeBtn" data-mode="tilt">📱 Tilt</button>
           </div>
         </div>
-        <button class="textLink" id="donateBtnPause">🍕 Buy the Chef a Slice</button>
+        <div class="pauseLinks"><button class="textLink" id="muteBtnHud" aria-label="Sound">🔊 Sound</button><button class="textLink" id="donateBtnPause">💵 Tip the kitchen crew</button></div>
       </div>
     </div>
     <div class="footer-credit">A Hot Slice Creative Game</div>
@@ -301,7 +342,7 @@
   const startScreen=document.getElementById('startScreen'),gameOverScreen=document.getElementById('gameOverScreen');
   const leaderboardScreen=document.getElementById('leaderboardScreen'),pauseScreen=document.getElementById('pauseScreen');
   const startBtn=document.getElementById('startBtn'),retryBtn=document.getElementById('retryBtn'),shareBtn=document.getElementById('shareBtn'),shareImgBtn=document.getElementById('shareImgBtn');
-  const scoreText=document.getElementById('scoreText'),livesText=document.getElementById('livesText');
+  const scoreText=document.getElementById('scoreText'),livesText=document.getElementById('livesText'),livesPill=document.getElementById('livesPill');
   const shieldPill=document.getElementById('shieldPill'),shieldText=document.getElementById('shieldText');
   const comboPill=document.getElementById('comboPill'),comboText=document.getElementById('comboText');
   const rushPill=document.getElementById('rushPill');
@@ -320,12 +361,18 @@
   function openDonate(){if(DONATE_URL)window.open(DONATE_URL,'_blank','noopener');}
   donateBtnStart.addEventListener('click',openDonate);
   donateBtnPause.addEventListener('click',openDonate);
+  // Tip line rotates each time the start or pause screen opens. Kitchen-crew sentiment,
+  // nothing alcoholic (no "shift drink" either, it reads as beer in restaurant talk).
+  const TIP_LINES=['💵 Tip the kitchen crew','💵 Send a tip to the back of house','🧑‍🍳 Tip the line cooks','🥤 Buy the cooks a cold drink','☕ Buy the crew a round of coffee','🍽️ Tip the bussers and servers','🧽 Tip the dish pit','💵 Tip the Chef'];
+  let tipIdx=Math.floor(Math.random()*TIP_LINES.length);
+  function rotateTipLine(){tipIdx=(tipIdx+1+Math.floor(Math.random()*(TIP_LINES.length-1)))%TIP_LINES.length;donateBtnStart.textContent=donateBtnPause.textContent=TIP_LINES[tipIdx];}
+  rotateTipLine();
 
   const coinsText=document.getElementById('coinsText'),coinsTextSkins=document.getElementById('coinsTextSkins'),dailyBadge=document.getElementById('dailyBadge');
   const openSkinsBtn=document.getElementById('openSkinsBtn'),openBookBtn=document.getElementById('openBookBtn'),muteBtnStart=document.getElementById('muteBtnStart'),muteBtnHud=document.getElementById('muteBtnHud');
   const skinsScreen=document.getElementById('skinsScreen'),closeSkinsBtn=document.getElementById('closeSkinsBtn'),skinGrid=document.getElementById('skinGrid'),panGrid=document.getElementById('panGrid');
   const bookScreen=document.getElementById('bookScreen'),closeBookBtn=document.getElementById('closeBookBtn'),achList=document.getElementById('achList'),achProgressText=document.getElementById('achProgressText');
-  const goalsPanel=document.getElementById('goalsPanel'),dangerFill=document.getElementById('dangerFill');
+  const goalsCard=document.getElementById('goalsCard'),goalsCardTitle=document.getElementById('goalsCardTitle'),goalsCardList=document.getElementById('goalsCardList'),pauseGoalsList=document.getElementById('pauseGoalsList'),celebrateLayer=document.getElementById('celebrateLayer'),dangerFill=document.getElementById('dangerFill');
   const orderTicket=document.getElementById('orderTicket'),orderText=document.getElementById('orderText'),inspectionHud=document.getElementById('inspectionHud'),inspectionText=document.getElementById('inspectionText'),tutorialToast=document.getElementById('tutorialToast');
   const hubShift=document.getElementById('hubShift'),hubBook=document.getElementById('hubBook');
   const recapCombo=document.getElementById('recapCombo'),recapShift=document.getElementById('recapShift'),recapGoals=document.getElementById('recapGoals'),recapCoins=document.getElementById('recapCoins');
@@ -411,7 +458,7 @@
     });
   }
   openSkinsBtn.addEventListener('click',()=>{startScreen.classList.add('hidden');skinsScreen.classList.remove('hidden');renderSkinsScreen();});
-  closeSkinsBtn.addEventListener('click',()=>{skinsScreen.classList.add('hidden');startScreen.classList.remove('hidden');});
+  closeSkinsBtn.addEventListener('click',()=>{skinsScreen.classList.add('hidden');startScreen.classList.remove('hidden');rotateTipLine();});
 
   function loadStats(){return lsGetJSON('ppp_stats',{pineapplesDodged:0,peppersDodged:0,burntCaught:0,coinsEarned:0,rushCount:0,fourDropsSurvived:0,combo30Survived:0,oshaTriggered:0,bestComboEver:0,bestScoreEver:0,reachedMidnight:0,perfectRuns:0});}
   let lifeStats=loadStats();
@@ -437,7 +484,7 @@
     let changed=false;
     ACHIEVEMENTS.forEach(a=>{
       if(!unlockedAch[a.id]&&a.check()){unlockedAch[a.id]=true;changed=true;
-        floatText('🏆 '+a.name,panX,0.4,'#F2C14E');addCoins(25);sfxAchievement();
+        addCoins(25);sfxAchievement();queueCelebration({sub:(a.icon?a.icon+' ':'')+a.name});
       }
     });
     if(changed)lsSetJSON('ppp_achievements',unlockedAch);
@@ -455,7 +502,7 @@
     if(hubBook)hubBook.textContent=count+' / '+ACHIEVEMENTS.length+' unlocked';
   }
   openBookBtn.addEventListener('click',()=>{startScreen.classList.add('hidden');bookScreen.classList.remove('hidden');renderBookScreen();});
-  closeBookBtn.addEventListener('click',()=>{bookScreen.classList.add('hidden');startScreen.classList.remove('hidden');});
+  closeBookBtn.addEventListener('click',()=>{bookScreen.classList.add('hidden');startScreen.classList.remove('hidden');rotateTipLine();});
 
   const GOAL_POOL=[
     {id:'catch30',desc:'Catch 30 pizzas',target:30,get:()=>runCatches},
@@ -466,7 +513,7 @@
     {id:'survive180',desc:'Survive 3 minutes',target:180,get:()=>Math.floor(gameClock)},
     {id:'mush3',desc:'Catch 3 mushrooms',target:3,get:()=>runMushroomsCaught},
     {id:'dodge8',desc:'Dodge 8 hazards',target:8,get:()=>runHazardsDodged},
-    {id:'noDrop',desc:"Don't drop a single pizza",target:1,get:()=>(runPizzaDrops===0&&score>0)?1:0},
+    {id:'noDrop',desc:"Don't drop a single pizza",target:1,endOnly:true,get:()=>(runPizzaDrops===0&&score>0)?1:0},
     {id:'clear1',desc:'Trigger a stack clear',target:1,get:()=>runStackClears},
     {id:'score100',desc:'Score 100 points',target:100,get:()=>score},
     {id:'score250',desc:'Score 250 points',target:250,get:()=>score}
@@ -481,17 +528,80 @@
       pool.splice(idx,1);
     }
   }
-  function renderGoalsPanel(){
-    goalsPanel.innerHTML='';
+  // Goals stay off the play screen. They show on a card at the start of a run and each
+  // new shift, and on the pause screen. A goal hit mid-run gets a full celebration.
+  // endOnly goals (no-drop) can only be judged once the run is over.
+  function checkGoals(final){
     activeGoals.forEach(g=>{
-      const cur=g.get();
-      if(cur>=g.target&&!g.done)g.done=true;
-      const line=document.createElement('div');line.className='goalLine'+(g.done?' done':'');
-      line.textContent=(g.done?'✓ ':'')+g.desc;
-      goalsPanel.appendChild(line);
+      if(g.done||(g.endOnly&&!final))return;
+      if(g.get()>=g.target){g.done=true;if(!final&&state==='playing')celebrateGoal(g);}
     });
   }
-  function goalsCoinPayout(){return activeGoals.filter(g=>g.done).length*15;}
+  function renderGoalsPanel(){checkGoals(false);if(state==='paused')renderGoalList(pauseGoalsList);}
+  function renderGoalList(el,onlyOpen){
+    el.innerHTML='';
+    activeGoals.filter(g=>!onlyOpen||!g.done).forEach(g=>{
+      const cur=Math.min(g.get(),g.target);
+      const line=document.createElement('div');line.className='goalRow'+(g.done?' done':'');
+      const prog=g.done?'✓':(g.endOnly?'':(g.target>1?cur+'/'+g.target:''));
+      line.innerHTML='<span class="goalBox">'+(g.done?'✓':'')+'</span><span class="goalDesc">'+escapeHtml(g.desc)+'</span><span class="goalProg">'+(g.done?'':prog)+'</span>';
+      el.appendChild(line);
+    });
+  }
+  let goalsCardTimer=null;
+  function showGoalsCard(title){
+    const open=activeGoals.filter(g=>!g.done);
+    if(!open.length)return;
+    goalsCardTitle.textContent=title;renderGoalList(goalsCardList,true);
+    goalsCard.classList.remove('hidden','out');void goalsCard.offsetWidth;goalsCard.classList.add('in');
+    clearTimeout(goalsCardTimer);
+    goalsCardTimer=setTimeout(()=>{goalsCard.classList.add('out');goalsCardTimer=setTimeout(()=>goalsCard.classList.add('hidden'),450);},3600);
+  }
+  function hideGoalsCard(){clearTimeout(goalsCardTimer);goalsCard.classList.add('hidden');}
+  // Celebration layer (DOM, so it also shows over the game over and menu screens).
+  // One burst at a time; extra unlocks queue up.
+  const celebQueue=[];let celebBusy=false;
+  function queueCelebration(c){celebQueue.push(c);if(!celebBusy)nextCelebration();}
+  function nextCelebration(){
+    const c=celebQueue.shift();if(!c){celebBusy=false;return;}
+    celebBusy=true;
+    const wrap=document.createElement('div');wrap.className='celebBurst';
+    let html='';
+    if(c.goal)html+='<div class="goalTicket"><span class="goalTicketBox">✓</span><span class="goalTicketText">'+escapeHtml(c.goal)+'</span><span class="goalStrike"></span></div>';
+    html+='<div class="burstTitle">ACHIEVEMENT<br>UNLOCKED</div>';
+    if(c.sub)html+='<div class="burstSub">'+escapeHtml(c.sub)+'</div>';
+    wrap.innerHTML=html;
+    const N=16;
+    for(let i=0;i<N;i++){
+      const t=document.createElement('span');t.className='trophy';t.textContent=i%4===3?'⭐':'🏆';
+      const ang=(i/N)*Math.PI*2+Math.random()*0.3,dist=120+Math.random()*90;
+      t.style.setProperty('--dx',Math.cos(ang)*dist+'px');t.style.setProperty('--dy',Math.sin(ang)*dist*0.9+'px');
+      t.style.setProperty('--rot',(Math.random()*540-270)+'deg');t.style.animationDelay=(c.goal?0.9:0)+Math.random()*0.12+'s';
+      wrap.appendChild(t);
+    }
+    if(c.goal){
+      const COLORS=['#F2C14E','#D64541','#2E8B57','#FAF8F5','#FF7A3C'];
+      for(let i=0;i<26;i++){
+        const k=document.createElement('span');k.className='confetti';k.style.background=COLORS[i%COLORS.length];
+        const ang=-Math.PI/2+(Math.random()-0.5)*Math.PI*1.6,dist=90+Math.random()*170;
+        k.style.setProperty('--dx',Math.cos(ang)*dist+'px');k.style.setProperty('--dy',Math.sin(ang)*dist+'px');
+        k.style.setProperty('--rot',(Math.random()*900-450)+'deg');k.style.animationDelay=0.85+Math.random()*0.1+'s';
+        wrap.appendChild(k);
+      }
+    }
+    celebrateLayer.appendChild(wrap);
+    const total=c.goal?2900:2100;
+    setTimeout(()=>{wrap.remove();nextCelebration();},total);
+  }
+  function celebrateGoal(g){
+    // As big as a hazard hit (same shake, burst and Chef reaction), but nothing is lost.
+    triggerShake(9.45);sfxAchievement();
+    spawnBurst(panX,panY-0.14,'#F2C14E',26,true,1.3);spawnBurst(panX,panY-0.14,'#2E8B57',14,true,1.05);
+    fx3d('celebrate');
+    hideGoalsCard();
+    queueCelebration({goal:g.desc,sub:'Shift goal complete'});
+  }
+  function goalsCoinPayout(){checkGoals(true);return activeGoals.filter(g=>g.done).length*15;}
 
   const COMBO_TIERS=[{min:50,name:'PIZZA GOD',mult:5},{min:30,name:'KITCHEN FIRE',mult:4},{min:20,name:'DOUBLE BAKED',mult:3},{min:10,name:'EXTRA CHEESE',mult:2},{min:5,name:'HOT',mult:1.5},{min:0,name:'',mult:1}];
   function comboTierFor(c){for(const t of COMBO_TIERS){if(c>=t.min)return t;}return COMBO_TIERS[COMBO_TIERS.length-1];}
@@ -543,7 +653,7 @@
   function sfxAchievement(){ensureAudio();tone(660,0.1,'triangle',0.1,990);setTimeout(()=>tone(990,0.16,'triangle',0.1,1320),90);}
   function sfxGameOver(){ensureAudio();tone(300,0.22,'sawtooth',0.12,150);setTimeout(()=>tone(180,0.32,'sawtooth',0.12,90),160);}
   function sfxUIClick(){ensureAudio();tone(900,0.05,'square',0.06);}
-  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon;}
+  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon+' Sound';}
   function toggleMute(){isMuted=!isMuted;lsSet('ppp_muted',isMuted?'1':'0');renderMuteButtons();}
   muteBtnStart.addEventListener('click',()=>{ensureAudio();toggleMute();});
   muteBtnHud.addEventListener('click',()=>{ensureAudio();toggleMute();});
@@ -695,6 +805,9 @@
   let lightningT=6,lightningFlash=0;
   let bigText=null;
   function showBigText(text,color,duration,style,sub){bigText={text,color,t:0,duration:duration||1.6,style:style||'flash',sub:sub||null};}
+  const bigTextQueue=[];
+  function queueBigText(text,color,duration,style,sub){if(bigText)bigTextQueue.push([text,color,duration,style,sub]);else showBigText(text,color,duration,style,sub);}
+  function flashShield(){queueBigText('SHIELD','#3CCB7F',1.3,'shield');}
   let pendingReason='lives';
   const CEILING_REASONS=['FAILED HEALTH INSPECTION! 🚫','FIRE CODE VIOLATION! 🔥','STRUCTURAL PIZZA INSTABILITY! 🍕💥','SAUCE-RELATED INCIDENT! 🍅','HEALTH DEPARTMENT SHUTDOWN! 🚔','TOWER TOPPLED THE CEILING FAN! 🌀','MOZZARELLA AVALANCHE! 🧀'];
   const BODY_Y=0.885;
@@ -725,7 +838,7 @@
     growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
-    neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;pendingReason='lives';
+    neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
     rushActive=false;rushTimer=0;rushNextT=32+Math.random()*10;rushPill.classList.add('hidden');
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
     orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
@@ -734,7 +847,7 @@
     pickShiftGoals();fx3d('reset');
     panY=computePanY();beginLifeCycleTracking();updateHud();updateComboUI();renderGoalsPanel();
   }
-  function updateHud(){scoreText.textContent=score;livesText.textContent='🍕'.repeat(Math.max(lives,0))||'0';if(shield>0){shieldPill.classList.remove('hidden');shieldText.textContent=shield;}else shieldPill.classList.add('hidden');renderGoalsPanel();updateDangerMeter();}
+  function updateHud(){scoreText.textContent=score;livesText.textContent='🍕'.repeat(Math.max(lives,0))||'0';livesPill.setAttribute('aria-label','Lives: '+Math.max(lives,0));if(shield>0){shieldPill.classList.remove('hidden');shieldText.innerHTML="<svg class=\"shieldCross\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8.5 2h7v6.5H22v7h-6.5V22h-7v-6.5H2v-7h6.5z\"/></svg>".repeat(shield);shieldPill.setAttribute('aria-label','Shield: '+shield);}else shieldPill.classList.add('hidden');renderGoalsPanel();updateDangerMeter();}
   function updateComboUI(){if(combo>=5){comboPill.classList.remove('hidden');const tier=comboTierFor(combo);comboText.textContent=(tier.name?tier.name+' ':'')+'x'+comboMultFor(combo)+' ('+combo+')';}else comboPill.classList.add('hidden');}
   const RANKS=[
     {min:0,title:'Dish Boy'},{min:20,title:'Prep Cook'},{min:50,title:'Line Cook'},{min:100,title:'Sous Chef'},
@@ -927,14 +1040,14 @@
       else if(p.type==='streak'){p.x+=p.speed*dt;if(p.x<-0.1||p.x>1.1)weatherParticles.splice(i,1);}
     }
   }
-  function updateBigText(dt){if(!bigText)return;bigText.t+=dt;if(bigText.t>=bigText.duration)bigText=null;}
+  function updateBigText(dt){if(!bigText){if(bigTextQueue.length)showBigText(...bigTextQueue.shift());return;}bigText.t+=dt;if(bigText.t>=bigText.duration)bigText=null;}
   function update(dt){
     glowT+=dt;gameClock+=dt;
     const lvlNow=currentLevel();
     if(hubShift)hubShift.textContent=lvlNow.name;
     updateOrders(dt);updateInspection(dt);updateTutorial(dt);
     if(lvlNow.name!==lastLevelName){
-      if(lastLevelName){fx3d('celebrate');showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',2.0,'level','NEW SHIFT STARTING');spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
+      if(lastLevelName){fx3d('celebrate');showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',2.0,'level','NEW SHIFT STARTING');setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
       lastLevelName=lvlNow.name;neonIdx=0;neonT=0;
     }
     const input=getControlInput(),moving=Math.abs(input)>0.08;
@@ -978,7 +1091,7 @@
           else if(topY<=RELEASE_LINE&&gameClock-lastReleaseT>=RELEASE_COOLDOWN){explodeStack('release');lastReleaseT=gameClock;}
           else{floatText(catchLines[Math.floor(Math.random()*catchLines.length)]+(mult>1?' x'+mult:''),panX,panY-0.1,'#2E8B57');}
         }
-        else if(p.type==='mushroom'){runMushroomsCaught++;sfxPowerup();if(lives<5){lives++;floatText('Extra life! 🍄',panX,panY-0.1,'#2E8B57');}else if(shield<MAX_SHIELD){shield++;floatText('Shield +1 🍄',panX,panY-0.1,'#2E8B57');}else{floatText('Full up! 🍄',panX,panY-0.1,'#FAF8F5');}}
+        else if(p.type==='mushroom'){runMushroomsCaught++;sfxPowerup();if(lives<5){lives++;floatText('Extra life! 🍄',panX,panY-0.1,'#2E8B57');}else if(shield<MAX_SHIELD){shield++;floatText('Shield +1 🍄',panX,panY-0.1,'#2E8B57');flashShield();}else{floatText('Full up! 🍄',panX,panY-0.1,'#FAF8F5');}}
         else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15;spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
         else if(p.type==='pineapple'){
           runHazardHits++;
@@ -1277,7 +1390,7 @@
     ctx.translate(W/2,H*(bigText.style==='combo'?0.42:0.34));
     ctx.scale(scale,scale);ctx.globalAlpha=alpha*flicker;
     ctx.font="800 "+size+"px 'Fredoka',sans-serif";ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.lineWidth=Math.max(3,size*0.09);ctx.strokeStyle=bigText.style==='combo'?'#5c0e0a':'#7a3a0a';
+    ctx.lineWidth=Math.max(3,size*0.09);ctx.strokeStyle=bigText.style==='combo'?'#5c0e0a':bigText.style==='shield'?'#0d3a22':'#7a3a0a';
     ctx.strokeText(bigText.text,0,0);
     ctx.fillStyle=bigText.color;ctx.shadowColor=bigText.color;ctx.shadowBlur=size*0.35;
     ctx.fillText(bigText.text,0,0);
@@ -1334,7 +1447,7 @@
     }
     startGame();
   }
-  function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');}
+  function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');showGoalsCard('SHIFT GOALS');if(shield>0)flashShield();}
   function endGame(reason){
     if(state==='gameover'||state==='ending')return;
     pendingReason=reason||'lives';
@@ -1343,7 +1456,7 @@
     explodeStack('gameover');
     setTimeout(finishGameOver,380);
   }
-  async function finishGameOver(){
+  async function finishGameOver(){hideGoalsCard();
     state='gameover';finalScore.textContent=score;rankText.textContent=rankFor(score);
     gameOverHeadline.textContent=pendingReason==='ceiling'?CEILING_REASONS[Math.floor(Math.random()*CEILING_REASONS.length)]:'MAMMA MIA!';
     gameOverScreen.classList.remove('hidden');pauseScreen.classList.add('hidden');
@@ -1386,7 +1499,7 @@
   function pauseGame(){
     if(state!=='playing')return;
     state='paused';pauseTime=0;footTapping=false;headShaking=false;armWaving=false;footTapPhase=0;headShakePhase=0;wavePhase=0;waveTimer=0;reactionT=0;reactionIdx=0;movingTimer=0;
-    pauseScreen.classList.remove('hidden');renderControlButtons();
+    pauseScreen.classList.remove('hidden');renderControlButtons();hideGoalsCard();rotateTipLine();renderGoalList(pauseGoalsList);
   }
   function resumeGame(){if(state!=='paused')return;state='playing';pauseScreen.classList.add('hidden');}
   function togglePause(){if(state==='playing')pauseGame();else if(state==='paused')resumeGame();}
@@ -1454,7 +1567,7 @@
     startScreen.classList.add('hidden');leaderboardScreen.classList.remove('hidden');
     const entries=await fetchLeaderboard();renderBoard(boardListMain,entries);
   });
-  closeBoardBtn.addEventListener('click',()=>{leaderboardScreen.classList.add('hidden');startScreen.classList.remove('hidden');});
+  closeBoardBtn.addEventListener('click',()=>{leaderboardScreen.classList.add('hidden');startScreen.classList.remove('hidden');rotateTipLine();});
   submitScoreBtn.addEventListener('click',async()=>{
     const initials=(initialsInput.value||'AAA').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3)||'AAA';
     submitScoreBtn.disabled=true;submitScoreBtn.textContent='Saving...';

@@ -245,6 +245,23 @@ function init() {
   const dome = new THREE.Mesh(new THREE.SphereGeometry(1.3, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), ovenBrick); dome.position.y = 0.65; oven.add(dome);
   const mouthMat = new THREE.MeshBasicMaterial({ color: 0xff8a3c });
   const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24, 0, Math.PI), mouthMat); mouth.position.set(0, 0.62, 1.12); oven.add(mouth);
+  // Fire mouth on the oven front: dark arched opening, ember bed and flickering flames
+  const fire = new THREE.Group(); fire.position.set(0, -0.42, 0.71); oven.add(fire);
+  const archShape = new THREE.Shape(); archShape.moveTo(-0.55, 0); archShape.lineTo(-0.55, 0.32); archShape.absarc(0, 0.32, 0.55, Math.PI, 0, true); archShape.lineTo(0.55, 0); archShape.lineTo(-0.55, 0);
+  const archRim = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 16), toon({ color: '#5a2a1c' })); archRim.scale.setScalar(1.14); archRim.position.set(0, -0.02, 0.001); fire.add(archRim);
+  const arch = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 16), new THREE.MeshBasicMaterial({ color: 0x1a0a05 })); arch.position.z = 0.004; fire.add(arch);
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xff6a1c, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), glowMat); glow.scale.set(1, 0.55, 1); glow.position.set(0, 0.12, 0.006); fire.add(glow);
+  const emberMat = new THREE.MeshBasicMaterial({ color: 0xff4a10 });
+  for (let i = 0; i < 7; i++) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.07 + (i % 3) * 0.02, 8, 6), emberMat); e.scale.y = 0.55; e.position.set(-0.36 + i * 0.12, 0.04, 0.02); fire.add(e); }
+  const FLAME_COLORS = [0xff4a12, 0xff8a1c, 0xffd23c];
+  const flames = [];
+  [[-0.27, 0.15, 0.32, 0], [0.27, 0.15, 0.3, 0], [-0.1, 0.2, 0.48, 0], [0.12, 0.19, 0.44, 0], [0, 0.22, 0.56, 0],
+   [-0.18, 0.12, 0.3, 1], [0.18, 0.12, 0.28, 1], [0, 0.15, 0.4, 1], [-0.06, 0.08, 0.22, 2], [0.07, 0.08, 0.2, 2]].forEach(([x, r, h, layer], i) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 10, 1, true), new THREE.MeshBasicMaterial({ color: FLAME_COLORS[layer], transparent: true, opacity: layer === 2 ? 0.95 : 0.85, depthWrite: false, side: THREE.DoubleSide }));
+    m.geometry.translate(0, h / 2, 0); m.position.set(x, 0.06, 0.03 + layer * 0.02); m.renderOrder = 2 + layer;
+    flames.push({ m, h, seed: i * 1.7 + layer * 0.9, base: x }); fire.add(m);
+  });
   const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 3, 10), toon({ color: '#3a2a22' })); chimney.position.set(0, 3, -0.2); oven.add(chimney);
   // Window showing the level sky
   const skyCanvas = document.createElement('canvas'); skyCanvas.width = 8; skyCanvas.height = 64;
@@ -649,6 +666,14 @@ function init() {
     // Oven + string light animation
     const flick = 0.85 + Math.sin(t * 7.3) * 0.08 + Math.sin(t * 13.1) * 0.05;
     mouthMat.color.setRGB(1, 0.5 * flick + 0.05, 0.18 * flick);
+    for (const f of flames) {
+      const n = Math.sin(t * 9.1 + f.seed) * 0.5 + Math.sin(t * 15.7 + f.seed * 2.3) * 0.3 + Math.sin(t * 23.3 + f.seed * 0.7) * 0.2;
+      f.m.scale.set(1 + n * 0.12, 1 + n * 0.32, 1);
+      f.m.position.x = f.base + Math.sin(t * 6.2 + f.seed) * 0.025;
+      f.m.rotation.z = Math.sin(t * 5.3 + f.seed) * 0.1;
+    }
+    glowMat.opacity = 0.42 + flick * 0.18;
+    emberMat.color.setRGB(1, 0.24 + Math.sin(t * 4.1) * 0.06, 0.05);
     ovenLight.intensity = 6 * flick * (1 + NIGHT[Math.max(0, Math.min(5, v.levelIdx))] * 0.6);
     if (stringLights.visible) for (let i = 0; i < STRING_N; i++) stringLights.setColorAt(i, tmpC.copy(STRING_COLORS[(i + Math.floor(t * 2)) % STRING_COLORS.length]).multiplyScalar(v.rush ? 1.4 : 1));
     if (stringLights.instanceColor) stringLights.instanceColor.needsUpdate = true;
