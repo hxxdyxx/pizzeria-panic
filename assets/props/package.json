@@ -1,0 +1,14 @@
+{
+  "name": "pizzeria-panic-props-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-props.mjs",
+    "validate": "node validate.cjs",
+    "test:fx": "node ../fx/effects.test.mjs"
+  },
+  "devDependencies": {
+    "three": "0.180.0",
+    "gltf-validator": "2.0.0-dev.3.10"
+  }
+}
