@@ -1,5 +1,29 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): App icon and favicons
+
+hoody wanted Pizzeria Panic to have a home screen icon like The Chef app
+(chef.1hotslice.com) instead of the generic "P" iOS was generating.
+
+- [x] **Icon art:** a 3D render of the Chef from the canonical
+  `avatars/chef-3d.glb`, holding the handle-free pan with two pepperoni
+  pizzas, on a warm gold gradient. Same character and render style as The
+  Chef's icon, but gold instead of dark so the two are easy to tell apart on
+  a home screen. Source: `assets/brand/icon-1024.png`; the render page that
+  made it is `assets/brand/icon-render.html` (Three.js, same aim IK as the
+  game, matte materials, neutral tone mapping so the hat stays red).
+- [x] **Files at the site root:** `apple-touch-icon.png` (180),
+  `icon-192.png`, `icon-512.png`, `favicon-32.png`, `favicon-16.png`,
+  `favicon.ico` (16/32/48). The small favicons use a tighter face-and-hat
+  crop so they read at 16px.
+- [x] **`manifest.json`:** short name "Pizzeria Panic", opens `/play`,
+  standalone, portrait, `#2C2C2C` theme.
+- [x] **Head tags** in `index.html` and `play.html` replace the inline pizza
+  emoji SVG favicon: icon links, apple-touch-icon, manifest,
+  `apple-mobile-web-app-title`, theme color.
+- To see the new icon on an iPhone, remove the old home screen shortcut and
+  add it again from Safari (iOS caches the icon at add time).
+
 ## Done (2026-10-18): 3D renderer (Three.js, toon Chef, 2D fallback)
 
 hoody asked to replace the 2D pixel-art rendering in `play.html` with a 3D
