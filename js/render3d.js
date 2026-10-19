@@ -589,7 +589,7 @@ function init() {
     fx.greet = Math.max(0, fx.greet - dt);
     if (!actions[want]) want = CLIPS.idle;
     fadeTo(want, want === CLIPS.run ? 0.15 : 0.3);
-    if (actions[CLIPS.run]) actions[CLIPS.run].timeScale = 1.15;
+    if (actions[CLIPS.run]) actions[CLIPS.run].timeScale = v.isSprinting ? 1.9 : 1.15;
     mixer.update(dt);
 
     // Placement: feet on the floor at bodyX, a bit behind the pan
@@ -609,7 +609,7 @@ function init() {
     chef.position.set(_out.x, floorY + hop, chefZ);
     lastChefFeet.set(_out.x, floorY, chefZ); lastChefHeight = height; lastGroundTop = v.groundTop;
     chefInner.scale.set(s * (1 + sq * 0.12), s * (1 - sq * 0.16), s * (1 + sq * 0.12));
-    const targetYaw = st === 'playing' && v.isRunning ? v.facing * 0.55 : 0;
+    const targetYaw = st === 'playing' && v.isRunning ? v.facing * (v.isSprinting ? 0.8 : 0.55) : 0;
     yaw += (targetYaw - yaw) * Math.min(1, dt * 10);
     chef.rotation.set(0, yaw, roll);
     chefShadow.position.set(_out.x, floorY + 0.01, chefZ + 0.1);

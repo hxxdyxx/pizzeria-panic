@@ -1,5 +1,24 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): Tips out of the way, double-tap to run
+
+hoody: the in-game tip boxes blocked Pietro too much (make them transparent,
+higher, shorter, or closable), and add a double-tap left/right "run" vs "walk".
+
+- Tutorial tips moved from 18% above the bottom (on top of Pietro) to the top
+  of the play area, below the HUD. See-through (62% background, light blur),
+  smaller text, 2.4 to 2.6 s instead of 3.2 to 3.4 s, and a tap closes them (✕).
+  They wait until the goals card has closed so the two never stack up.
+- Goals card: same see-through style, 2.6 s instead of 3.6 s, tap to close.
+- Didn't pause the game for tips: with the tips short, high and closable,
+  pausing would just interrupt the run.
+- Run: double-tap a side of Pietro (or double-press an arrow/A/D key within
+  300 ms). Keep the finger or key down to keep running at 1.85x speed; a quick
+  tap-tap gives a short burst. Dust puffs, a whoosh, faster stride and more
+  lean (2D and 3D). With the finger down, the finger stays the target, so he
+  doesn't overshoot it. Works in Tilt mode too (tap-tap gives the burst).
+- First tutorial tip now mentions it: "Double-tap a side to run."
+
 ## Done (2026-10-19): Link-preview image
 
 hoody: wanted a link-preview image for shared pppanic.com links (no
