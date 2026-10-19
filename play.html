@@ -146,7 +146,8 @@
   .recapCell{background:rgba(255,255,255,.05);border:1px solid rgba(242,193,78,.25);border-radius:8px;padding:7px 8px;}
   .recapK{font-family:'Fredoka',sans-serif;font-size:9.5px;color:rgba(248,229,194,.65);text-transform:uppercase;letter-spacing:.5px;}
   .recapV{font-family:'Fredoka',sans-serif;font-size:15px;font-weight:700;color:var(--mozz);margin-top:1px;}
-  .tutorialToast{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);z-index:9;width:min(86%,340px);background:rgba(36,27,18,.96);border:2px solid var(--glow);border-radius:12px;padding:12px 14px;color:var(--mozz);font-family:'Fredoka',sans-serif;text-align:center;box-shadow:0 4px 0 rgba(0,0,0,.3);pointer-events:none;}
+  .tutorialToast{position:absolute;left:50%;top:max(118px,calc(env(safe-area-inset-top) + 106px));transform:translateX(-50%);z-index:9;width:min(82%,320px);background:rgba(36,27,18,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);border:1.5px solid rgba(242,193,78,.7);border-radius:12px;padding:8px 30px 8px 12px;color:var(--mozz);font-family:'Fredoka',sans-serif;font-size:14px;line-height:1.3;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.2);pointer-events:auto;cursor:pointer;animation:cardIn .35s cubic-bezier(.2,1.4,.4,1) both;}
+  .tipClose{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;color:var(--beige);background:rgba(255,255,255,.12);}
   .tutorialToast b{color:var(--glow);}
   @media(max-width:380px){.hubStatus{grid-template-columns:1fr}.recapBox{grid-template-columns:1fr 1fr}.orderTicket{top:max(70px,calc(env(safe-area-inset-top) + 60px));}}
 
@@ -190,7 +191,7 @@
   .goalRow.done .goalDesc{text-decoration:line-through;opacity:.6;}
   .goalDesc{flex:1;}
   .goalProg{font-size:12px;color:var(--glow);font-weight:700;white-space:nowrap;}
-  .goalsCard{position:absolute;left:50%;top:max(118px,calc(env(safe-area-inset-top) + 106px));transform:translateX(-50%);z-index:9;width:min(80%,300px);background:rgba(36,27,18,.94);border:2px solid var(--glow);border-radius:14px;padding:10px 14px 12px;pointer-events:none;box-shadow:0 4px 0 rgba(0,0,0,.3);}
+  .goalsCard{position:absolute;left:50%;top:max(118px,calc(env(safe-area-inset-top) + 106px));transform:translateX(-50%);z-index:9;width:min(80%,300px);background:rgba(36,27,18,.62);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);border:1.5px solid rgba(242,193,78,.7);border-radius:14px;padding:8px 14px 10px;pointer-events:auto;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.2);}
   .goalsCardTitle{font-family:'Fredoka',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;color:var(--glow);text-align:center;margin-bottom:8px;}
   .goalsCard.in{animation:cardIn .4s cubic-bezier(.2,1.4,.4,1) both;}
   .goalsCard.out{animation:cardOut .4s ease-in both;}
@@ -251,7 +252,7 @@
     <div id="orderTicket" class="orderTicket hidden"><strong>ORDER UP</strong><span id="orderText"></span></div>
     <div id="inspectionHud" class="hidden" style="position:absolute;top:max(48px,calc(env(safe-area-inset-top) + 44px));right:12px;z-index:6;"><div class="pill inspectionPill">HEALTH INSPECTION <span id="inspectionText"></span></div></div>
     <div id="tutorialToast" class="tutorialToast hidden"></div>
-    <div id="goalsCard" class="goalsCard hidden" aria-live="polite"><div class="goalsCardTitle" id="goalsCardTitle">SHIFT GOALS</div><div class="goalsList" id="goalsCardList"></div></div>
+    <div id="goalsCard" class="goalsCard hidden" aria-live="polite" title="Tap to close"><div class="goalsCardTitle" id="goalsCardTitle">SHIFT GOALS</div><div class="goalsList" id="goalsCardList"></div></div>
     <div id="celebrateLayer" aria-live="polite"></div>
     <div id="startScreen" class="overlay menu">
       <h1 class="title">
@@ -580,8 +581,10 @@
     goalsCardTitle.textContent=title;renderGoalList(goalsCardList,true);
     goalsCard.classList.remove('hidden','out');void goalsCard.offsetWidth;goalsCard.classList.add('in');
     clearTimeout(goalsCardTimer);
-    goalsCardTimer=setTimeout(()=>{goalsCard.classList.add('out');goalsCardTimer=setTimeout(()=>goalsCard.classList.add('hidden'),450);},3600);
+    goalsCardTimer=setTimeout(closeGoalsCard,2600);
   }
+  function closeGoalsCard(){clearTimeout(goalsCardTimer);if(goalsCard.classList.contains('hidden'))return;goalsCard.classList.add('out');goalsCardTimer=setTimeout(()=>goalsCard.classList.add('hidden'),450);}
+  goalsCard.addEventListener('pointerdown',e=>{e.stopPropagation();closeGoalsCard();});
   function hideGoalsCard(){clearTimeout(goalsCardTimer);goalsCard.classList.add('hidden');}
   // Celebration layer (DOM, so it also shows over the game over and menu screens).
   // One burst at a time; extra unlocks queue up.
@@ -674,6 +677,7 @@
   function sfxPowerup(){ensureAudio();tone(500,0.22,'sine',0.11,1100);}
   function sfxHazard(){ensureAudio();tone(140,0.18,'sawtooth',0.12,70);}
   function sfxLifeLost(){ensureAudio();tone(220,0.28,'sawtooth',0.13,90);}
+  function sfxRun(){ensureAudio();tone(260,0.14,'sawtooth',0.035,780);}
   function sfxCoin(){ensureAudio();tone(880,0.08,'square',0.08,1400);setTimeout(()=>tone(1180,0.09,'square',0.08),60);}
   function sfxAchievement(){ensureAudio();tone(660,0.1,'triangle',0.1,990);setTimeout(()=>tone(990,0.16,'triangle',0.1,1320),90);}
   function sfxGameOver(){ensureAudio();tone(300,0.22,'sawtooth',0.12,150);setTimeout(()=>tone(180,0.32,'sawtooth',0.12,90),160);}
@@ -755,9 +759,16 @@
   let state='start',motionEnabled=false,targetTilt=0,motionListenerAdded=false;
   let controlMode=localStorage.getItem('ppp_controlMode')||'touch';
   let keyLeft=false,keyRight=false,dragActive=false,dragX=null;
+  // Run: double-tap a side of Pietro (or double-press an arrow key) to run at RUN_MUL speed.
+  // A tap-tap gives a short burst; keeping the finger or key down keeps him running.
+  const RUN_MUL=1.85,RUN_BURST=0.16,DOUBLE_TAP_MS=300;
+  let runHeld=false,runBurstT=0,runDir=0,lastTapT=-1e9,lastTapDir=0,lastKeyT=-1e9,lastKeyDir=0,runDustT=0;
+  function startRun(dir,held){if(state!=='playing'||!dir)return;const fresh=!runHeld&&runBurstT<=0;runDir=dir;runHeld=held;runBurstT=RUN_BURST;if(fresh){sfxRun();spawnRunDust(true);}}
+  function stopRun(){runHeld=false;runBurstT=0;}
+  function spawnRunDust(big){const fx=bodyX-runDir*0.04,fy=groundTop-0.005;for(let i=0;i<(big?8:2);i++)particles.push({x:fx+(Math.random()-0.5)*0.03,y:fy,vx:-runDir*(0.12+Math.random()*0.18),vy:-(0.05+Math.random()*0.12),life:0.35+Math.random()*0.25,maxLife:0.6,color:'#E9DCC4',size:2+Math.random()*(big?4:2.5)});}
   let panX=0.5,bodyX=0.5,facing=1,panVelocity=0;
   const panSpeed=1.6,panHalfW=0.1134;
-  let movingTimer=0,isRunning=false,runPhase=0,idlePhase=0,breathAmp=0;
+  let movingTimer=0,isRunning=false,isSprinting=false,runPhase=0,idlePhase=0,breathAmp=0;
   let blinking=false,blinkPhase=0,blinkTimer=2.5;
   function triggerBlink(){blinking=true;blinkPhase=0;}
   let squash=0;
@@ -815,13 +826,15 @@
       else showBigText('INSPECTION COMPLETE','#D64541',1.3,'combo','THE INSPECTOR SAW ENOUGH');
     }
   }
-  function showTutorial(text,dur){tutorialToast.innerHTML=text;tutorialToast.classList.remove('hidden');tutorialTimer=dur||3;}
+  function showTutorial(text,dur){tutorialToast.innerHTML=text+'<span class="tipClose" aria-hidden="true">✕</span>';tutorialToast.classList.remove('hidden');tutorialTimer=dur||2.4;}
+  tutorialToast.addEventListener('pointerdown',e=>{e.stopPropagation();tutorialTimer=0.001;});
   function updateTutorial(dt){
     if(tutorialSeen)return;
     if(tutorialTimer>0){tutorialTimer-=dt;if(tutorialTimer<=0)tutorialToast.classList.add('hidden');return;}
-    if(tutorialStep===0&&gameClock>.6){showTutorial('<b>MOVE THE PAN.</b> Catch pizzas and keep them off the floor.',3.2);tutorialStep=1;}
-    else if(tutorialStep===1&&runCatches>=3){showTutorial('<b>BUILD THE STACK.</b> Higher scores come with higher risk.',3.2);tutorialStep=2;}
-    else if(tutorialStep===2&&progress>=8){showTutorial('<b>WATCH THE DANGER METER.</b> Hit the ceiling and the shop closes.',3.4);tutorialStep=3;lsSet('ppp_tutorial_seen','1');}
+    if(!goalsCard.classList.contains('hidden'))return;
+    if(tutorialStep===0&&gameClock>.6){showTutorial('<b>MOVE THE PAN.</b> Catch pizzas. Double-tap a side to run.',2.6);tutorialStep=1;}
+    else if(tutorialStep===1&&runCatches>=3){showTutorial('<b>BUILD THE STACK.</b> Higher scores, higher risk.',2.4);tutorialStep=2;}
+    else if(tutorialStep===2&&progress>=8){showTutorial('<b>WATCH THE DANGER METER.</b> Hit the top and the shop closes.',2.6);tutorialStep=3;lsSet('ppp_tutorial_seen','1');}
   }
   function comboMultFor(c){if(c>=50)return 5;if(c>=30)return 4;if(c>=20)return 3;if(c>=10)return 2;if(c>=5)return 1.5;return 1;}
   let windActive=false,windTimer=0,windNextT=10+Math.random()*8,windForce=0,windDir=1,windAgeT=0,windDur=0;
@@ -868,7 +881,7 @@
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
     orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
-    tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');
+    tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');stopRun();isSprinting=false;lastTapT=-1e9;lastKeyT=-1e9;
     pickShiftGoals();fx3d('reset');
     panY=computePanY();beginLifeCycleTracking();updateHud();updateComboUI();renderGoalsPanel();
   }
@@ -893,11 +906,11 @@
     }else{if(onDeny)onDeny();}
   }
   function onOrient(e){if(e.gamma!=null)targetTilt=clamp(e.gamma,-30,30);}
-  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keyLeft=true;if(k==='arrowright'||k==='d')keyRight=true;if(e.key==='Escape')togglePause();});
-  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keyLeft=false;if(k==='arrowright'||k==='d')keyRight=false;});
-  canvas.addEventListener('pointerdown',e=>{dragActive=true;dragX=getPointerX(e);});
+  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const dir=(k==='arrowleft'||k==='a')?-1:(k==='arrowright'||k==='d')?1:0;if(dir<0)keyLeft=true;if(dir>0)keyRight=true;if(dir&&!e.repeat){const now=performance.now();if(dir===lastKeyDir&&now-lastKeyT<DOUBLE_TAP_MS)startRun(dir,true);lastKeyT=now;lastKeyDir=dir;}if(e.key==='Escape')togglePause();});
+  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a'){keyLeft=false;if(runDir<0)runHeld=false;}if(k==='arrowright'||k==='d'){keyRight=false;if(runDir>0)runHeld=false;}});
+  canvas.addEventListener('pointerdown',e=>{dragActive=true;dragX=getPointerX(e);const now=performance.now(),dir=Math.abs(dragX-panX)<0.02?0:Math.sign(dragX-panX);if(dir&&dir===lastTapDir&&now-lastTapT<DOUBLE_TAP_MS){startRun(dir,true);lastTapT=-1e9;}else{lastTapT=now;lastTapDir=dir;}});
   canvas.addEventListener('pointermove',e=>{if(dragActive)dragX=getPointerX(e);});
-  window.addEventListener('pointerup',()=>{dragActive=false;});
+  window.addEventListener('pointerup',()=>{dragActive=false;runHeld=false;});
   function getPointerX(e){const r=canvas.getBoundingClientRect();return(e.clientX-r.left)/r.width;}
   function getControlInput(){if(controlMode==='tilt'&&motionEnabled)return targetTilt/30;if(dragActive&&dragX!==null)return clamp((dragX-panX)*10,-1,1);let k=0;if(keyLeft)k-=1;if(keyRight)k+=1;return k;}
   function renderControlButtons(){
@@ -1075,13 +1088,21 @@
       if(lastLevelName){fx3d('celebrate');showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',2.0,'level','NEW SHIFT STARTING');setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
       lastLevelName=lvlNow.name;neonIdx=0;neonT=0;
     }
-    const input=getControlInput(),moving=Math.abs(input)>0.08;
-    if(moving){const edgeZone=0.18,distEdge=Math.min(panX-panHalfW,(1-panHalfW)-panX);const edgeBoost=1+Math.max(0,(edgeZone-Math.max(0,distEdge))/edgeZone)*0.9;panX+=input*panSpeed*edgeBoost*dt;facing=input>0?1:-1;movingTimer=0.18;runPhase+=dt*(2.6+Math.min(2,Math.abs(input)*2));breathAmp=Math.min(1,breathAmp+dt*1.6);}else{movingTimer-=dt;breathAmp=Math.max(0,breathAmp-dt*0.35);}
+    let input=getControlInput();
+    if(runBurstT>0)runBurstT-=dt;
+    // With the finger down, the finger stays the target (no overshoot); otherwise the burst pushes him along.
+    const dragSteers=dragActive&&!(controlMode==='tilt'&&motionEnabled);
+    if(runBurstT>0&&!dragSteers&&Math.sign(input)!==runDir)input=runDir;
+    if(runHeld&&!dragActive&&!keyLeft&&!keyRight)runHeld=false;
+    const sprinting=(runHeld||runBurstT>0)&&Math.abs(input)>0.08&&Math.sign(input)===runDir;
+    const moving=Math.abs(input)>0.08;
+    if(sprinting){runDustT-=dt;if(runDustT<=0){spawnRunDust(false);runDustT=0.06;}}
+    if(moving){const edgeZone=0.18,distEdge=Math.min(panX-panHalfW,(1-panHalfW)-panX);const edgeBoost=1+Math.max(0,(edgeZone-Math.max(0,distEdge))/edgeZone)*0.9;panX+=input*panSpeed*edgeBoost*(sprinting?RUN_MUL:1)*dt;facing=input>0?1:-1;movingTimer=0.18;runPhase+=dt*(2.6+Math.min(2,Math.abs(input)*2))*(sprinting?1.6:1);breathAmp=Math.min(1,breathAmp+dt*1.6);}else{movingTimer-=dt;breathAmp=Math.max(0,breathAmp-dt*0.35);}
     panX=clamp(panX,panHalfW,1-panHalfW);
     updateWind(dt);
     panX+=windForce*windEnvelope()*dt;
     panX=clamp(panX,panHalfW,1-panHalfW);
-    isRunning=movingTimer>0;
+    isRunning=movingTimer>0;isSprinting=sprinting;
     if(!isRunning)idlePhase+=dt;else idlePhase=0;
     bodyX+=(panX-bodyX)*Math.min(1,6.5*dt);
     updateTowerPhysics(dt);
@@ -1401,7 +1422,7 @@
   function drawGround(){const gy=groundTop*H,bandH=H-gy;ctx.save();const shadow=ctx.createLinearGradient(0,gy-18,0,gy);shadow.addColorStop(0,'rgba(0,0,0,0)');shadow.addColorStop(1,'rgba(0,0,0,0.28)');ctx.fillStyle=shadow;ctx.fillRect(0,gy-18,W,18);ctx.fillStyle='#5a301b';ctx.fillRect(0,gy,W,bandH);const rowH=Math.max(12,bandH/3.2),brickW=rowH*2.1;let ri=0;for(let y=gy;y<H;y+=rowH){const offset=(ri%2===0)?0:brickW/2;ctx.fillStyle=ri%2===0?'#A5322E':'#8f3626';for(let bx=-brickW+offset;bx<W;bx+=brickW)ctx.fillRect(bx+1.5,y+1.5,brickW-3,Math.min(rowH,H-y)-3);ri++;}ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();ctx.restore();}
   function drawPanAndTower(){const x=panX*W,y=panY*H;const pc=currentPanColors();ctx.save();ctx.translate(x,y);ctx.beginPath();ctx.ellipse(0,7.2,35.64,10.53,0,0,Math.PI*2);ctx.fillStyle=pc.rim;ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=pc.rimEdge;ctx.stroke();ctx.beginPath();ctx.ellipse(0,4.5,30.78,7.29,0,0,Math.PI*2);ctx.fillStyle=pc.face;ctx.fill();const h=Math.min(towerHeight,STACK_VISUAL_CAP);let lastSway=0;for(let i=0;i<h;i++){const t=(i+1)/Math.max(1,h);const sway=segSway[i]||0;lastSway=sway;const lift=(i+1)*SEG_LIFT_PX;ctx.save();ctx.translate(sway*30,2-lift);ctx.rotate(sway*0.5);const rx=20-Math.min(t*3,10),ry=7;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fillStyle=i%2===0?'#D9A15A':'#e0b06e';ctx.fill();ctx.strokeStyle='#8f5322';ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.ellipse(0,-1,rx*0.72,ry*0.6,0,0,Math.PI*2);ctx.fillStyle='#FAF0C8';ctx.fill();ctx.fillStyle='#D64541';[[-0.32,-0.1],[0.28,0.18],[0,-0.4]].forEach(([ppx,ppy])=>{ctx.beginPath();ctx.arc(ppx*rx,ppy*ry,rx*0.14,0,Math.PI*2);ctx.fill();});ctx.restore();}if(h>0){ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.fillText('x'+towerHeight,lastSway*30,2-(h+1)*SEG_LIFT_PX);ctx.restore();}ctx.restore();}
   function drawArm(){const armScale=(W*0.16)/BUF_W;const x1=bodyX*W,y1=BODY_Y*H-16*armScale,x2=panX*W,y2=panY*H+4*armScale;ctx.save();ctx.strokeStyle='#F8E5C2';ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
-  function drawPietro(){drawPietroBuffer();const x=bodyX*W,y=H*BODY_Y;const growScale=growActive?1.25:1;const scale=(W*0.16)/BUF_W*growScale;const bob=isRunning?Math.sin(runPhase*4)*2:Math.sin(idlePhase*2.4)*0.6;const lean=isRunning?facing*0.09:0;const squashY=1-squash*0.16,squashX=1+squash*0.12;ctx.save();ctx.translate(x,y+bob);if(isRunning&&facing<0)ctx.scale(-1,1);ctx.rotate(lean);ctx.scale(squashX,squashY);ctx.scale(scale,scale);ctx.imageSmoothingEnabled=false;ctx.drawImage(buf,-BUF_W/2,-BUF_H+12);ctx.restore();}
+  function drawPietro(){drawPietroBuffer();const x=bodyX*W,y=H*BODY_Y;const growScale=growActive?1.25:1;const scale=(W*0.16)/BUF_W*growScale;const bob=isRunning?Math.sin(runPhase*4)*2:Math.sin(idlePhase*2.4)*0.6;const lean=isRunning?facing*(isSprinting?0.2:0.09):0;const squashY=1-squash*0.16,squashX=1+squash*0.12;ctx.save();ctx.translate(x,y+bob);if(isRunning&&facing<0)ctx.scale(-1,1);ctx.rotate(lean);ctx.scale(squashX,squashY);ctx.scale(scale,scale);ctx.imageSmoothingEnabled=false;ctx.drawImage(buf,-BUF_W/2,-BUF_H+12);ctx.restore();}
   function drawBigText(){
     if(!bigText)return;
     const p=clamp(bigText.t/bigText.duration,0,1),inT=0.22,outT=0.22;
@@ -1431,7 +1452,7 @@
   // Without WebGL (or before the model loads) the original 2D renderer below is used.
   function fx3d(name,arg){const r=window.PPP3D;if(r&&r.active)r.event(name,arg);}
   const view3d={};
-  function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.rush=rushActive;return v;}
+  function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.isSprinting=isSprinting;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.rush=rushActive;return v;}
   function drawStackLabel(){const h=Math.min(towerHeight,STACK_VISUAL_CAP);if(h<=0)return;const lastSway=segSway[h-1]||0;ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;ctx.fillText('x'+towerHeight,panX*W+lastSway*30,panY*H+2-(h+1)*SEG_LIFT_PX);ctx.restore();}
   function draw3d(r3){
     const lvl=currentLevel();let sx=0,sy=0;
@@ -1523,7 +1544,7 @@
   }
   function pauseGame(){
     if(state!=='playing')return;
-    state='paused';pauseTime=0;footTapping=false;headShaking=false;armWaving=false;footTapPhase=0;headShakePhase=0;wavePhase=0;waveTimer=0;reactionT=0;reactionIdx=0;movingTimer=0;
+    state='paused';stopRun();pauseTime=0;footTapping=false;headShaking=false;armWaving=false;footTapPhase=0;headShakePhase=0;wavePhase=0;waveTimer=0;reactionT=0;reactionIdx=0;movingTimer=0;
     pauseScreen.classList.remove('hidden');renderControlButtons();hideGoalsCard();rotateTipLine();renderGoalList(pauseGoalsList);
   }
   function resumeGame(){if(state!=='paused')return;state='playing';pauseScreen.classList.add('hidden');}
