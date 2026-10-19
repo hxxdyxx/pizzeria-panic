@@ -1,5 +1,37 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): Handle-free pan, uncrossed arms, cleaner start and pause screens
+
+hoody reported from a phone that Pietro's arms were crossed and the pan
+handle didn't sit in his hands, and that the start and pause screens were
+too cluttered.
+
+- [x] **Pan has no handle.** `assets/props/build-props.mjs` no longer adds
+  the handle bar and wooden grip; `pan.glb` was rebuilt (12,224 bytes, glTF
+  Validator 0 errors / 0 warnings) and is otherwise the same round saucer.
+  The primitive fallback pan in `js/render3d.js` lost its handle too.
+- [x] **Arms uncrossed, hands on the pan.** Root cause: the aim IK sent the
+  Chef's left hand to the screen-left rim, but he faces the camera, so his
+  left hand is on screen right; both arms crossed the body to reach. Each
+  hand now grips the rim on its own side (side picked from the shoulder
+  bones' world positions, so it stays right while running), and the
+  celebrate wave uses the right hand's own side.
+- [x] **Start screen:** one primary Play button; best, streak and coins as
+  small chips; challenge line only when a `?beat=` link is used; daily
+  special as one short line; Skins / Book / Scores / Sound as a 4-tile row;
+  Touch/Tilt as a compact segmented toggle; donate as a quiet text link next
+  to the credit. Removed the Current Shift card (always Morning Prep before
+  a run), the Pizza Book counter card (the Book screen shows it), and the
+  long rules paragraph (the in-game tutorial covers it). The scrim fades
+  toward the bottom so the waving Chef stays visible.
+- [x] **Pause screen:** Paused, Resume, Controls toggle, and a small donate
+  link. Removed the brand credit block from the card.
+- **Verified** in headless Chrome at 390x844 with the local build: all hub
+  buttons open and close their screens, sound and control toggles persist,
+  pause/resume, a full run to game over, and retry, with zero console
+  errors. The 2D fallback renderer still draws its own pixel pan with a
+  handle; not changed.
+
 ## Done (2026-10-18): 3D renderer (Three.js, toon Chef, 2D fallback)
 
 hoody asked to replace the 2D pixel-art rendering in `play.html` with a 3D

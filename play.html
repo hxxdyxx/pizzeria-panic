@@ -128,6 +128,35 @@
   .tutorialToast b{color:var(--glow);}
   @media(max-width:380px){.hubStatus{grid-template-columns:1fr}.recapBox{grid-template-columns:1fr 1fr}.orderTicket{top:max(70px,calc(env(safe-area-inset-top) + 60px));}}
 
+  /* ===== Menu cleanup (2026-10-19): one primary action, compact chips, quiet footer ===== */
+  .overlay.menu{background:radial-gradient(ellipse at 50% 30%,rgba(214,69,65,.26),transparent 60%),linear-gradient(180deg,rgba(20,18,15,.9) 0%,rgba(20,18,15,.84) 55%,rgba(20,18,15,.5) 100%);justify-content:flex-start;padding:max(48px,calc(env(safe-area-inset-top) + 32px)) 20px max(20px,env(safe-area-inset-bottom));gap:0;}
+  .overlay.menu h1.title{margin-top:auto;}
+  .overlay.menu .subtitle{margin:4px 0 14px;}
+  .statRow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:28px;}
+  .statChip{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;color:var(--mozz);background:rgba(255,255,255,.08);border:1.5px solid rgba(242,193,78,.35);border-radius:999px;padding:4px 11px;white-space:nowrap;}
+  .statChip.streak{color:#FF9A5C;border-color:rgba(255,122,60,.45);}
+  #coinsBadge{color:var(--glow);}
+  .rankBadge.challenge{font-size:16px;color:var(--glow);margin:0 0 10px;}
+  .btn.playBtn{font-size:24px;padding:14px 0;width:min(78%,280px);margin-top:18px;border-radius:14px;letter-spacing:.5px;}
+  .overlay.menu .dailyBadge{margin-top:14px;font-size:12px;max-width:300px;line-height:1.4;}
+  .overlay.menu .hubRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(100%,340px);margin-top:18px;}
+  .overlay.menu .hubBtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:12px;min-height:58px;}
+  .hubIcon{font-size:20px;line-height:1;}
+  .controlPicker{gap:6px;}
+  .seg{gap:0;background:rgba(255,255,255,.06);border:1.5px solid rgba(242,193,78,.35);border-radius:999px;padding:3px;flex-wrap:nowrap;}
+  .seg .modeBtn{border:none;border-radius:999px;background:none;padding:6px 14px;min-height:32px;}
+  .seg .modeBtn.active{background:var(--basil);}
+  .overlay.menu .controlPicker{margin-top:16px;}
+  .menuFoot{margin-top:auto;padding-top:18px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .menuFoot .brandCredit{margin-top:4px;}
+  .menuFoot .textLink,.menuFoot .brandCredit{text-shadow:0 1px 3px rgba(0,0,0,.8);opacity:1;}
+  .textLink{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;color:var(--glow);background:none;border:none;padding:8px 10px;cursor:pointer;touch-action:manipulation;opacity:.85;}
+  .pauseCard{margin:30% auto 0;gap:14px;padding:22px 20px 14px;}
+  .pauseTitle{font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;color:var(--glow);letter-spacing:.5px;}
+  .pauseCard .btn.playBtn{margin-top:0;width:100%;}
+  .pauseCard .controlPicker{margin-top:0;}
+  #frame:has(#startScreen:not(.hidden)) .footer-credit,#frame:has(#pauseScreen:not(.hidden)) .footer-credit{display:none;}
+
 </style>
 </head>
 <body>
@@ -159,38 +188,37 @@
     <div id="orderTicket" class="orderTicket hidden"><strong>ORDER UP</strong><span id="orderText"></span></div>
     <div id="inspectionHud" class="hidden" style="position:absolute;top:max(48px,calc(env(safe-area-inset-top) + 44px));right:12px;z-index:6;"><div class="pill inspectionPill">HEALTH INSPECTION <span id="inspectionText"></span></div></div>
     <div id="tutorialToast" class="tutorialToast hidden"></div>
-    <div id="startScreen" class="overlay">
+    <div id="startScreen" class="overlay menu">
       <h1 class="title">
         <span class="titleLine">PIZZERI<span class="pizzaA">🍕</span></span>
         <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
       </h1>
       <div class="subtitle">Catch. Stack. Survive the rush.</div>
-      <div class="rankBadge hidden" id="bestBadge" style="font-size:15px;margin-top:0;"></div>
-      <div class="rankBadge hidden" id="streakBadge" style="font-size:15px;color:#FF7A3C;margin-top:2px;"></div>
-      <div class="rankBadge hidden" id="challengeBadge" style="font-size:15px;color:#F2C14E;margin-top:2px;"></div>
-      <div class="pill coinPill" id="coinsBadge" style="margin-top:4px;">🍕 COINS: <span id="coinsText">0</span></div>
+      <div class="rankBadge challenge hidden" id="challengeBadge"></div>
+      <div class="statRow">
+        <span class="statChip hidden" id="bestBadge"></span>
+        <span class="statChip streak hidden" id="streakBadge"></span>
+        <span class="statChip" id="coinsBadge">🍕 <span id="coinsText">0</span></span>
+      </div>
+      <button class="btn playBtn" id="startBtn">Play</button>
       <div class="dailyBadge hidden" id="dailyBadge"></div>
-      <div class="hubStatus">
-        <div class="hubStatusCard"><div class="hubStatusLabel">Current Shift</div><div class="hubStatusValue" id="hubShift">Morning Prep</div></div>
-        <div class="hubStatusCard"><div class="hubStatusLabel">Pizza Book</div><div class="hubStatusValue" id="hubBook">0 / 13 unlocked</div></div>
-      </div>
-      <button class="btn" id="startBtn">Tap to Start</button>
       <div class="hubRow">
-        <button class="hubBtn" id="openSkinsBtn">🎨 Skins</button>
-        <button class="hubBtn" id="openBookBtn">📖 Pizza Book</button>
-        <button class="hubBtn" id="muteBtnStart">🔊 Sound</button>
+        <button class="hubBtn" id="openSkinsBtn"><span class="hubIcon">🎨</span>Skins</button>
+        <button class="hubBtn" id="openBookBtn"><span class="hubIcon">📖</span>Book</button>
+        <button class="hubBtn" id="viewBoardBtn"><span class="hubIcon">🏆</span>Scores</button>
+        <button class="hubBtn" id="muteBtnStart" aria-label="Sound">🔊 Sound</button>
       </div>
-      <div class="hint">Move the pan to catch pizzas. Stack 'em high. 🍄 helps, 🌶️ hurts. Don't let five 🍕 hit the floor!</div>
       <div class="controlPicker" id="controlPickerStart">
-        <div class="controlPickerRow">
+        <span class="controlPickerLabel">Controls</span>
+        <div class="controlPickerRow seg">
           <button class="modeBtn" data-mode="touch">👆 Touch</button>
           <button class="modeBtn" data-mode="tilt">📱 Tilt</button>
         </div>
-        <span class="controlPickerLabel">Set Your Controls</span>
       </div>
-      <button class="linkBtn" id="viewBoardBtn">🏆 Leaderboard</button>
-      <button class="donateBtn" id="donateBtnStart">🍕 Buy the Chef a Slice</button>
-      <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+      <div class="menuFoot">
+        <button class="textLink" id="donateBtnStart">🍕 Buy the Chef a Slice</button>
+        <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HotSlice.com</a></div>
+      </div>
     </div>
     <div id="leaderboardScreen" class="overlay hidden">
       <div class="leaderboardTitle">🏆 LEADERBOARD 🏆</div>
@@ -252,17 +280,16 @@
     <div id="pauseScreen" class="hidden" style="position:absolute;inset:0;z-index:8;">
       <div class="pauseScrim"></div>
       <div class="pauseCard">
-        <div class="subtitle">PAUSED</div>
-        <button class="btn" id="resumeBtn">Resume</button>
+        <div class="pauseTitle">Paused</div>
+        <button class="btn playBtn" id="resumeBtn">Resume</button>
         <div class="controlPicker" id="controlPickerPause">
-          <div class="controlPickerRow">
+          <span class="controlPickerLabel">Controls</span>
+          <div class="controlPickerRow seg">
             <button class="modeBtn" data-mode="touch">👆 Touch</button>
             <button class="modeBtn" data-mode="tilt">📱 Tilt</button>
           </div>
-          <span class="controlPickerLabel">Set Your Controls</span>
         </div>
-        <button class="donateBtn" id="donateBtnPause">🍕 Buy the Chef a Slice</button>
-        <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+        <button class="textLink" id="donateBtnPause">🍕 Buy the Chef a Slice</button>
       </div>
     </div>
     <div class="footer-credit">A Hot Slice Creative Game</div>
@@ -492,7 +519,7 @@
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
   let dailyBest=loadDailyBest();
   function renderDailyBadge(){
-    dailyBadge.innerHTML='🍕 <b>Today\'s Special:</b> '+escapeHtml(dailySpecial.name)+': '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' (best: '+dailyBest+')':'');
+    dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Best '+dailyBest:'');
     dailyBadge.classList.remove('hidden');
   }
 
@@ -516,7 +543,7 @@
   function sfxAchievement(){ensureAudio();tone(660,0.1,'triangle',0.1,990);setTimeout(()=>tone(990,0.16,'triangle',0.1,1320),90);}
   function sfxGameOver(){ensureAudio();tone(300,0.22,'sawtooth',0.12,150);setTimeout(()=>tone(180,0.32,'sawtooth',0.12,90),160);}
   function sfxUIClick(){ensureAudio();tone(900,0.05,'square',0.06);}
-  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.textContent=icon+' Sound';muteBtnHud.textContent=icon;}
+  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon;}
   function toggleMute(){isMuted=!isMuted;lsSet('ppp_muted',isMuted?'1':'0');renderMuteButtons();}
   muteBtnStart.addEventListener('click',()=>{ensureAudio();toggleMute();});
   muteBtnHud.addEventListener('click',()=>{ensureAudio();toggleMute();});
@@ -534,7 +561,7 @@
   function saveBest(v){try{localStorage.setItem('ppp_best',String(v));}catch(e){}}
   let personalBest=loadBest();
   function renderBestBadge(){
-    if(personalBest>0){bestBadge.textContent='Best: '+personalBest;bestBadge.classList.remove('hidden');}
+    if(personalBest>0){bestBadge.textContent='🏅 Best '+personalBest;bestBadge.classList.remove('hidden');}
     else bestBadge.classList.add('hidden');
   }
 
@@ -554,7 +581,7 @@
   }
   let streakDays=loadStreak();
   function renderStreakBadge(){
-    if(streakDays>=2){streakBadge.textContent='🔥 Day '+streakDays+' streak'+(streakBonusShield()>0?', bonus shield!':'');streakBadge.classList.remove('hidden');}
+    if(streakDays>=2){streakBadge.textContent='🔥 '+streakDays+'-day streak'+(streakBonusShield()>0?' +1 shield':'');streakBadge.classList.remove('hidden');}
     else streakBadge.classList.add('hidden');
   }
   function streakBonusShield(){return streakDays>=2?1:0;}

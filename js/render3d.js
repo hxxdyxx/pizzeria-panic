@@ -173,9 +173,9 @@ function init() {
     const geo = merge(parts);
     geo.computeBoundingBox();
     const b = geo.boundingBox, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2, cz = (b.min.z + b.max.z) / 2;
-    // Pan prop: disc is centered on x=0/z=0 with the handle toward +Z. Put the cooking
-    // surface at y=0 and swing the handle to +X (the Chef's right hand).
-    if (type === 'pan') { geo.translate(0, -0.14, 0); geo.rotateY(Math.PI / 2); return geo; }
+    // Pan prop: a round, handle-free saucer centered on x=0/z=0. Put the cooking surface
+    // at y=0; the Chef holds it by the rim with both hands.
+    if (type === 'pan') { geo.translate(0, -0.14, 0); return geo; }
     geo.translate(-cx, -cy, -cz);
     const half = (type === 'pizza' || type === 'burnt') ? Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 : Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 2;
     geo.scale(1 / half, 1 / half, 1 / half);
@@ -288,7 +288,7 @@ function init() {
   // ---------- pan + stack ----------
   const panGroup = new THREE.Group(); scene.add(panGroup);
   const panInner = new THREE.Group(); panGroup.add(panInner);
-  const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' }), panHandleMat = toon({ color: '#3a2a22' });
+  const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' });
   let panPropGeo = null, panMeshes = [];
   const panOutlineMat = outlineMaterial(0.05);
   function rebuildPan() {
@@ -300,8 +300,7 @@ function init() {
     } else {
       const face = new THREE.Mesh(new THREE.CylinderGeometry(1, 0.9, 0.16, 28), panFaceMat); face.position.y = -0.08;
       const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 8, 32), panRimMat); rim.rotation.x = Math.PI / 2;
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.2), panHandleMat); handle.position.set(1.4, -0.02, 0);
-      panMeshes.push(face, rim, handle);
+      panMeshes.push(face, rim);
     }
     panMeshes.forEach(m => panInner.add(m));
     const ol = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.9, 0.2, 28), panOutlineMat); ol.position.y = -0.06; ol.userData.outline = true;
@@ -607,9 +606,12 @@ function init() {
     ikL += ((holding ? 1 : 0) - ikL) * Math.min(1, dt * 8);
     ikR += ((holding ? 1 : 0) - ikR) * Math.min(1, dt * 8);
     chef.updateMatrixWorld(true);
-    _hl.set(panPos.x - panR * 0.95, panPos.y - panR * 0.05, panPos.z - panR * 0.1);
-    if (waving) _hr.set(_out.x + height * 0.35 + Math.sin(v.glowT * 18) * height * 0.08, floorY + height * 1.05, chefZ + 0.2);
-    else _hr.set(panPos.x + panR * 1.3, panPos.y - panR * 0.02, panPos.z);
+    // Each hand grips the rim on its own side of the body. The Chef faces the camera, so
+    // his left hand is on screen right; aiming it at the screen-left rim crossed his arms.
+    const lSide = bones.LeftArm && bones.RightArm ? Math.sign(bones.LeftArm.getWorldPosition(_a).x - bones.RightArm.getWorldPosition(_b).x) || 1 : 1;
+    _hl.set(panPos.x + lSide * panR * 0.92, panPos.y - panR * 0.08, panPos.z - panR * 0.12);
+    if (waving) _hr.set(_out.x - lSide * height * 0.35 + Math.sin(v.glowT * 18) * height * 0.08, floorY + height * 1.05, chefZ + 0.2);
+    else _hr.set(panPos.x - lSide * panR * 0.92, panPos.y - panR * 0.08, panPos.z - panR * 0.12);
     aim(bones.LeftArm, bones.LeftForeArm, _hl, ikL); aim(bones.LeftForeArm, bones.LeftHand, _hl, ikL);
     aim(bones.RightArm, bones.RightForeArm, _hr, ikR); aim(bones.RightForeArm, bones.RightHand, _hr, ikR);
 
