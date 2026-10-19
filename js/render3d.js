@@ -173,9 +173,9 @@ function init() {
     const geo = merge(parts);
     geo.computeBoundingBox();
     const b = geo.boundingBox, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2, cz = (b.min.z + b.max.z) / 2;
-    // Pan prop: disc is centered on x=0/z=0 with the handle toward +Z. Put the cooking
-    // surface at y=0 and swing the handle to +X (the Chef's right hand).
-    if (type === 'pan') { geo.translate(0, -0.14, 0); geo.rotateY(Math.PI / 2); return geo; }
+    // Pan prop: a round, handle-free saucer centered on x=0/z=0. Put the cooking surface
+    // at y=0; the Chef holds it by the rim with both hands.
+    if (type === 'pan') { geo.translate(0, -0.14, 0); return geo; }
     geo.translate(-cx, -cy, -cz);
     const half = (type === 'pizza' || type === 'burnt') ? Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 : Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 2;
     geo.scale(1 / half, 1 / half, 1 / half);
@@ -245,6 +245,23 @@ function init() {
   const dome = new THREE.Mesh(new THREE.SphereGeometry(1.3, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), ovenBrick); dome.position.y = 0.65; oven.add(dome);
   const mouthMat = new THREE.MeshBasicMaterial({ color: 0xff8a3c });
   const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24, 0, Math.PI), mouthMat); mouth.position.set(0, 0.62, 1.12); oven.add(mouth);
+  // Fire mouth on the oven front: dark arched opening, ember bed and flickering flames
+  const fire = new THREE.Group(); fire.position.set(0, -0.42, 0.71); oven.add(fire);
+  const archShape = new THREE.Shape(); archShape.moveTo(-0.55, 0); archShape.lineTo(-0.55, 0.32); archShape.absarc(0, 0.32, 0.55, Math.PI, 0, true); archShape.lineTo(0.55, 0); archShape.lineTo(-0.55, 0);
+  const archRim = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 16), toon({ color: '#5a2a1c' })); archRim.scale.setScalar(1.14); archRim.position.set(0, -0.02, 0.001); fire.add(archRim);
+  const arch = new THREE.Mesh(new THREE.ShapeGeometry(archShape, 16), new THREE.MeshBasicMaterial({ color: 0x1a0a05 })); arch.position.z = 0.004; fire.add(arch);
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xff6a1c, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), glowMat); glow.scale.set(1, 0.55, 1); glow.position.set(0, 0.12, 0.006); fire.add(glow);
+  const emberMat = new THREE.MeshBasicMaterial({ color: 0xff4a10 });
+  for (let i = 0; i < 7; i++) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.07 + (i % 3) * 0.02, 8, 6), emberMat); e.scale.y = 0.55; e.position.set(-0.36 + i * 0.12, 0.04, 0.02); fire.add(e); }
+  const FLAME_COLORS = [0xff4a12, 0xff8a1c, 0xffd23c];
+  const flames = [];
+  [[-0.27, 0.15, 0.32, 0], [0.27, 0.15, 0.3, 0], [-0.1, 0.2, 0.48, 0], [0.12, 0.19, 0.44, 0], [0, 0.22, 0.56, 0],
+   [-0.18, 0.12, 0.3, 1], [0.18, 0.12, 0.28, 1], [0, 0.15, 0.4, 1], [-0.06, 0.08, 0.22, 2], [0.07, 0.08, 0.2, 2]].forEach(([x, r, h, layer], i) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 10, 1, true), new THREE.MeshBasicMaterial({ color: FLAME_COLORS[layer], transparent: true, opacity: layer === 2 ? 0.95 : 0.85, depthWrite: false, side: THREE.DoubleSide }));
+    m.geometry.translate(0, h / 2, 0); m.position.set(x, 0.06, 0.03 + layer * 0.02); m.renderOrder = 2 + layer;
+    flames.push({ m, h, seed: i * 1.7 + layer * 0.9, base: x }); fire.add(m);
+  });
   const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 3, 10), toon({ color: '#3a2a22' })); chimney.position.set(0, 3, -0.2); oven.add(chimney);
   // Window showing the level sky
   const skyCanvas = document.createElement('canvas'); skyCanvas.width = 8; skyCanvas.height = 64;
@@ -288,7 +305,7 @@ function init() {
   // ---------- pan + stack ----------
   const panGroup = new THREE.Group(); scene.add(panGroup);
   const panInner = new THREE.Group(); panGroup.add(panInner);
-  const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' }), panHandleMat = toon({ color: '#3a2a22' });
+  const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' });
   let panPropGeo = null, panMeshes = [];
   const panOutlineMat = outlineMaterial(0.05);
   function rebuildPan() {
@@ -300,8 +317,7 @@ function init() {
     } else {
       const face = new THREE.Mesh(new THREE.CylinderGeometry(1, 0.9, 0.16, 28), panFaceMat); face.position.y = -0.08;
       const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 8, 32), panRimMat); rim.rotation.x = Math.PI / 2;
-      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.2), panHandleMat); handle.position.set(1.4, -0.02, 0);
-      panMeshes.push(face, rim, handle);
+      panMeshes.push(face, rim);
     }
     panMeshes.forEach(m => panInner.add(m));
     const ol = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.9, 0.2, 28), panOutlineMat); ol.position.y = -0.06; ol.userData.outline = true;
@@ -607,9 +623,12 @@ function init() {
     ikL += ((holding ? 1 : 0) - ikL) * Math.min(1, dt * 8);
     ikR += ((holding ? 1 : 0) - ikR) * Math.min(1, dt * 8);
     chef.updateMatrixWorld(true);
-    _hl.set(panPos.x - panR * 0.95, panPos.y - panR * 0.05, panPos.z - panR * 0.1);
-    if (waving) _hr.set(_out.x + height * 0.35 + Math.sin(v.glowT * 18) * height * 0.08, floorY + height * 1.05, chefZ + 0.2);
-    else _hr.set(panPos.x + panR * 1.3, panPos.y - panR * 0.02, panPos.z);
+    // Each hand grips the rim on its own side of the body. The Chef faces the camera, so
+    // his left hand is on screen right; aiming it at the screen-left rim crossed his arms.
+    const lSide = bones.LeftArm && bones.RightArm ? Math.sign(bones.LeftArm.getWorldPosition(_a).x - bones.RightArm.getWorldPosition(_b).x) || 1 : 1;
+    _hl.set(panPos.x + lSide * panR * 0.92, panPos.y - panR * 0.08, panPos.z - panR * 0.12);
+    if (waving) _hr.set(_out.x - lSide * height * 0.35 + Math.sin(v.glowT * 18) * height * 0.08, floorY + height * 1.05, chefZ + 0.2);
+    else _hr.set(panPos.x - lSide * panR * 0.92, panPos.y - panR * 0.08, panPos.z - panR * 0.12);
     aim(bones.LeftArm, bones.LeftForeArm, _hl, ikL); aim(bones.LeftForeArm, bones.LeftHand, _hl, ikL);
     aim(bones.RightArm, bones.RightForeArm, _hr, ikR); aim(bones.RightForeArm, bones.RightHand, _hr, ikR);
 
@@ -647,6 +666,14 @@ function init() {
     // Oven + string light animation
     const flick = 0.85 + Math.sin(t * 7.3) * 0.08 + Math.sin(t * 13.1) * 0.05;
     mouthMat.color.setRGB(1, 0.5 * flick + 0.05, 0.18 * flick);
+    for (const f of flames) {
+      const n = Math.sin(t * 9.1 + f.seed) * 0.5 + Math.sin(t * 15.7 + f.seed * 2.3) * 0.3 + Math.sin(t * 23.3 + f.seed * 0.7) * 0.2;
+      f.m.scale.set(1 + n * 0.12, 1 + n * 0.32, 1);
+      f.m.position.x = f.base + Math.sin(t * 6.2 + f.seed) * 0.025;
+      f.m.rotation.z = Math.sin(t * 5.3 + f.seed) * 0.1;
+    }
+    glowMat.opacity = 0.42 + flick * 0.18;
+    emberMat.color.setRGB(1, 0.24 + Math.sin(t * 4.1) * 0.06, 0.05);
     ovenLight.intensity = 6 * flick * (1 + NIGHT[Math.max(0, Math.min(5, v.levelIdx))] * 0.6);
     if (stringLights.visible) for (let i = 0; i < STRING_N; i++) stringLights.setColorAt(i, tmpC.copy(STRING_COLORS[(i + Math.floor(t * 2)) % STRING_COLORS.length]).multiplyScalar(v.rush ? 1.4 : 1));
     if (stringLights.instanceColor) stringLights.instanceColor.needsUpdate = true;

@@ -70,10 +70,10 @@
   },
   {
     "file": "pan.glb",
-    "bytes": 18884,
+    "bytes": 12224,
     "numErrors": 0,
     "numWarnings": 0,
-    "numInfos": 2,
+    "numInfos": 1,
     "numHints": 0,
     "messages": [
       {
@@ -81,12 +81,6 @@
         "message": "This object may be unused.",
         "severity": 2,
         "pointer": "/meshes/0/primitives/0/attributes/TEXCOORD_0"
-      },
-      {
-        "code": "UNUSED_OBJECT",
-        "message": "This object may be unused.",
-        "severity": 2,
-        "pointer": "/meshes/1/primitives/0/attributes/TEXCOORD_0"
       }
     ],
     "truncated": false
