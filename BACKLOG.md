@@ -1,5 +1,18 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): Link-preview image
+
+hoody: wanted a link-preview image for shared pppanic.com links (no
+Instagram graphics).
+
+- `og-image.jpg` (1200x630, 145 KB) at the site root: the 3D Chef holding a
+  pan of pepperoni pizzas, the gold PIZZERIA PANIC title, "Catch. Stack.
+  Survive the rush." and "Play free · pppanic.com".
+- Source: `assets/brand/og-card.html` (layout) and `assets/brand/og-image.png`.
+  The Chef is rendered with the same aim-IK setup as the app icon.
+- `index.html` and `play.html` now have a meta description, canonical URL,
+  Open Graph tags and a `summary_large_image` Twitter card.
+
 ## Done (2026-10-19): Cleaner play screen, goal and achievement celebrations, oven fire, tip lines
 
 hoody: the play screen was too cluttered; remove the sound button and the
