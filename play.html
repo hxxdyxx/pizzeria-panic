@@ -176,6 +176,21 @@
   .menuFoot{margin-top:auto;padding-top:18px;display:flex;flex-direction:column;align-items:center;gap:2px;}
   .menuFoot .brandCredit{margin-top:4px;}
   .menuFoot .textLink,.menuFoot .brandCredit{text-shadow:0 1px 3px rgba(0,0,0,.8);opacity:1;}
+  .continueOverlay{z-index:10;background:radial-gradient(ellipse at 50% 40%,rgba(242,193,78,.18),transparent 60%),rgba(20,18,15,.72);}
+  .continueCard{display:flex;flex-direction:column;align-items:center;gap:6px;width:min(88%,330px);animation:cardInC .35s cubic-bezier(.2,1.4,.4,1) both;}
+  .continueTitle{font-family:'Fredoka',sans-serif;font-weight:700;font-size:30px;line-height:1.1;color:var(--glow);text-shadow:3px 3px 0 var(--tomato-dark);}
+  .continueSub{font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;color:var(--beige);opacity:.92;}
+  .continueRing{position:relative;width:84px;height:84px;margin:10px 0 2px;}
+  .continueRing svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .continueRing circle{fill:none;stroke-width:7;}
+  .continueRing .track{stroke:rgba(255,255,255,.14);}
+  .continueRing .bar{stroke:var(--glow);stroke-linecap:round;stroke-dasharray:220;stroke-dashoffset:0;}
+  .continueRing.run .bar{animation:ringDrain var(--secs,6s) linear forwards;}
+  .continueRing span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:34px;color:var(--mozz);}
+  .continueCoins{font-family:'Fredoka',sans-serif;font-size:12.5px;color:rgba(248,229,194,.7);}
+  @keyframes ringDrain{to{stroke-dashoffset:220;}}
+  @keyframes cardInC{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion:reduce){.continueCard{animation:none;}.continueRing.run .bar{animation:none;}}
   .textLink{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12.5px;color:var(--glow);background:none;border:none;padding:8px 10px;cursor:pointer;touch-action:manipulation;opacity:.85;}
   .pauseCard{margin:30% auto 0;gap:14px;padding:22px 20px 14px;}
   .pauseTitle{font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;color:var(--glow);letter-spacing:.5px;}
@@ -345,6 +360,16 @@
       </div>
       <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" camera-orbit="0deg 78deg auto" shadow-intensity="0.7" exposure="1.1" loading="eager"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef about this run</a></div>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+    </div>
+    <div id="continueScreen" class="overlay continueOverlay hidden" role="dialog" aria-labelledby="continueTitle">
+      <div class="continueCard">
+        <div class="continueTitle" id="continueTitle">KEEP THE SHIFT<br>GOING?</div>
+        <div class="continueSub" id="continueSub"></div>
+        <div class="continueRing" id="continueRing" aria-hidden="true"><svg viewBox="0 0 84 84"><circle class="track" cx="42" cy="42" r="35"/><circle class="bar" cx="42" cy="42" r="35"/></svg><span id="continueCount">6</span></div>
+        <button class="btn playBtn" id="continueBtn">Continue · 🍕 50</button>
+        <div class="continueCoins" id="continueCoins"></div>
+        <button class="textLink" id="continueNoBtn">No thanks, end the shift</button>
+      </div>
     </div>
     <div id="pauseScreen" class="hidden" style="position:absolute;inset:0;z-index:8;">
       <div class="pauseScrim"></div>
@@ -886,7 +911,7 @@
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
     orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
-    tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');stopRun();isSprinting=false;lastTapT=-1e9;lastKeyT=-1e9;
+    tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');continueUsed=false;closeContinue();stopRun();isSprinting=false;lastTapT=-1e9;lastKeyT=-1e9;
     pickShiftGoals();fx3d('reset');
     panY=computePanY();beginLifeCycleTracking();updateHud();updateComboUI();renderGoalsPanel();
   }
@@ -1499,13 +1524,43 @@
     startGame();
   }
   function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');showGoalsCard('SHIFT GOALS');if(shield>0)flashShield();}
+  // Continue: once per run, for coins, offered when the run ends and before the results (so score,
+  // coins and the leaderboard only count the final total). Back in with CONTINUE_LIVES and a short breather.
+  const CONTINUE_COST=50,CONTINUE_LIVES=3,CONTINUE_SECS=6;
+  const continueScreen=document.getElementById('continueScreen'),continueBtn=document.getElementById('continueBtn'),continueNoBtn=document.getElementById('continueNoBtn'),continueRing=document.getElementById('continueRing'),continueCount=document.getElementById('continueCount'),continueSub=document.getElementById('continueSub'),continueCoins=document.getElementById('continueCoins');
+  let continueUsed=false,continueTick=null,continueLeft=0;
+  function canContinue(){return !continueUsed&&coins>=CONTINUE_COST&&state==='ending';}
+  function offerContinue(){
+    hideGoalsCard();tutorialToast.classList.add('hidden');tutorialTimer=0;
+    continueLeft=CONTINUE_SECS;continueCount.textContent=continueLeft;
+    continueSub.textContent='Score '+score+' kept · back in with '+'🍕'.repeat(CONTINUE_LIVES);
+    continueBtn.textContent='Continue · 🍕 '+CONTINUE_COST;continueCoins.textContent='You have '+coins+' coins';
+    continueRing.style.setProperty('--secs',CONTINUE_SECS+'s');continueRing.classList.remove('run');void continueRing.offsetWidth;continueRing.classList.add('run');
+    continueScreen.classList.remove('hidden');
+    clearInterval(continueTick);
+    continueTick=setInterval(()=>{continueLeft--;continueCount.textContent=Math.max(0,continueLeft);if(continueLeft<=0)declineContinue();},1000);
+  }
+  function closeContinue(){clearInterval(continueTick);continueTick=null;continueScreen.classList.add('hidden');}
+  function declineContinue(){if(continueScreen.classList.contains('hidden'))return;closeContinue();finishGameOver();}
+  function acceptContinue(){
+    if(continueScreen.classList.contains('hidden')||!canContinue())return;
+    closeContinue();ensureAudio();
+    addCoins(-CONTINUE_COST);continueUsed=true;
+    lives=CONTINUE_LIVES;fallers=[];spawnTimer=1.6;comboSilentReset();
+    state='playing';pauseBtn.classList.remove('hidden');
+    updateHud();sfxPowerup();fx3d('celebrate');
+    queueBigText('BACK ON THE LINE!','#F2C14E',1.5,'level');
+    spawnBurst(panX,panY-0.2,'#F2C14E',22,true,1.2);
+  }
+  continueBtn.addEventListener('click',acceptContinue);
+  continueNoBtn.addEventListener('click',declineContinue);
   function endGame(reason){
     if(state==='gameover'||state==='ending')return;
     pendingReason=reason||'lives';
     state='ending';
     pauseBtn.classList.add('hidden');
     explodeStack('gameover');
-    setTimeout(finishGameOver,380);
+    setTimeout(()=>{if(state!=='ending')return;if(canContinue())offerContinue();else finishGameOver();},380);
   }
   async function finishGameOver(){hideGoalsCard();
     state='gameover';finalScore.textContent=score;rankText.textContent=rankFor(score);
