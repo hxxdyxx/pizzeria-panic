@@ -306,12 +306,15 @@ function init() {
   const panGroup = new THREE.Group(); scene.add(panGroup);
   const panInner = new THREE.Group(); panGroup.add(panInner);
   const panFaceMat = toon({ color: '#e7e9ec' }), panRimMat = toon({ color: '#cfd2d6' });
-  let panPropGeo = null, panMeshes = [];
+  // Pan skins on the prop pan: Classic keeps the baked vertex colors; other skins swap in a
+  // solid material tinted with the skin's rim3d color so the whole rim changes, not just the face.
+  const panPropMat = toon({ vertexColors: true, flatShading: true }), panSkinMat = toon({ color: '#46545b', flatShading: true });
+  let panPropGeo = null, panMeshes = [], panPropMesh = null;
   const panOutlineMat = outlineMaterial(0.05);
   function rebuildPan() {
     panMeshes.forEach(m => panInner.remove(m)); panMeshes = [];
     if (panPropGeo) {
-      const m = new THREE.Mesh(panPropGeo, toon({ vertexColors: true, flatShading: true })); m.scale.setScalar(1 / 0.8);
+      const m = panPropMesh = new THREE.Mesh(panPropGeo, panPropMat); m.scale.setScalar(1 / 0.8);
       const tint = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.02, 28), panFaceMat); tint.position.y = 0.0;
       panMeshes.push(m, tint);
     } else {
@@ -685,7 +688,10 @@ function init() {
     panGroup.position.copy(_pan);
     panGroup.scale.setScalar(panR);
     panGroup.rotation.set(TILT, 0, 0);
-    if (v.pan) { panFaceMat.color.set(v.pan.face); panRimMat.color.set(v.pan.rim); }
+    if (v.pan) {
+      panFaceMat.color.set(v.pan.face); panRimMat.color.set(v.pan.rim);
+      if (panPropMesh) { const r3 = v.pan.rim3d; panPropMesh.material = r3 ? panSkinMat : panPropMat; if (r3) panSkinMat.color.set(r3); }
+    }
 
     updateChef(v, dt, _pan, panR);
 
