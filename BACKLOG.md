@@ -1,5 +1,25 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-20): Continue after a run
+
+hoody: add a continue button after each run. Chose: pay with coins, once per
+run, back with 3 lives.
+
+- When a run ends (lives or ceiling), a "KEEP THE SHIFT GOING?" card shows
+  over the game before the results: score kept, back in with 🍕🍕🍕, a 6 s
+  countdown ring, "Continue · 🍕 50" and "No thanks, end the shift".
+- Continue costs 50 coins (`CONTINUE_COST`), once per run (`continueUsed`).
+  Comes back with 3 lives (`CONTINUE_LIVES`); score, level, goals and run stats
+  are kept; falling items are cleared, the combo resets, 1.6 s before the next
+  spawn, and "BACK ON THE LINE!" flashes.
+- Only offered when the player has 50+ coins; otherwise straight to results.
+  Countdown running out or "No thanks" goes to results.
+- Offered before the results on purpose: coins, best score, achievements and
+  the leaderboard submit only happen once, for the final total. The server's
+  play-session check only needs enough elapsed time, so a longer run is fine.
+- Closes the "Paid or ad-based continue" backlog item with a coin-based
+  version (no ads or real money).
+
 ## Done (2026-10-19): Keep the 3D Pietro sharp
 
 hoody: the first 3D Pietro looked sharp and focused; has quality degraded?
@@ -409,7 +429,7 @@ immediately after, or the next ordinary deploy will erase it again.
 ## Needs a business decision before implementing
 
 - [ ] **Real monetization.** The only revenue path today is a voluntary Stripe donate button ($0 raised so far, confirmed). Top F2P games monetize primarily through rewarded video ads (opt-in "watch ad to continue/2x score") and light IAP (cosmetics, remove-ads). Neither exists here. This needs: which ad network (AdMob, etc.), a decision on whether rewarded ads fit the brand, and new account/SDK setup — not something to wire up blind.
-- [ ] **Paid or ad-based "continue"** after game over — common, effective retention+monetization lever in this genre. Needs a decision on mechanism (ad-gated vs. small paid continue) before building.
+- [x] **Paid or ad-based "continue"** (done 2026-10-20 as a coin-based continue, see top; ads/real money still undecided) after game over — common, effective retention+monetization lever in this genre. Needs a decision on mechanism (ad-gated vs. small paid continue) before building.
 - [ ] **Leaderboard seasons/resets.** Right now it's an evergreen top-10, which becomes an unreachable wall for new players once populated. A weekly-reset board (keeping an all-time board too) is standard practice but is a real schema/UX change — worth doing once there's actual traffic to protect.
 
 ## Nice-to-have, lower priority
