@@ -1,5 +1,22 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): Keep the 3D Pietro sharp
+
+hoody: the first 3D Pietro looked sharp and focused; has quality degraded?
+
+- The tier settings hadn't changed, but the auto-downgrade did more harm than
+  needed: under 45 fps for 3 s it dropped resolution and outlines, twice, down
+  to 1x pixel ratio (about a third of an iPhone's sharpness), and never stepped
+  back up. A 30 fps cap (iOS Low Power Mode) always triggered it within ~6 s of
+  play. Later additions (oven fire, celebrations, run dust) add load too.
+- Now 4 tiers, sharpest last to go: wall deco off, then rim light off, then
+  1.5x. Outlines stay on at every tier. Dropping below 1.5x needs under 24 fps,
+  so Low Power Mode settles at 1.5x with outlines. 8 s at 55+ fps steps back up.
+- `?fx=0..3` still forces a tier; `?debug=fps` shows fps, tier and pixel ratio.
+- Tested with a simulated frame rate: 60 fps stays at tier 3 (2x); 30 fps
+  settles at tier 1 (1.5x); back to 60 fps recovers to tier 3; 10 fps goes to
+  tier 0. Not yet measured on a real phone.
+
 ## Done (2026-10-19): Tips out of the way, double-tap to run
 
 hoody: the in-game tip boxes blocked Pietro too much (make them transparent,

@@ -9,15 +9,20 @@ import * as THREE from 'three';
 import { GLTFLoader } from '/vendor/three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from '/vendor/three/addons/utils/BufferGeometryUtils.js';
 
-const api = window.PPP3D = { active: false, tier: 2, fps: 0, clips: [], props: [], render() {}, event() {} };
+const api = window.PPP3D = { active: false, tier: 3, fps: 0, clips: [], props: [], render() {}, event() {} };
 const qs = new URLSearchParams(location.search);
 
-// Effect tiers. Auto-downgrade steps down one tier when fps stays under 45 for 3s.
+// Effect tiers, sharpest last to go: a slow device loses the wall deco, then rim light, then
+// resolution, and keeps the black outlines throughout. Auto-downgrade steps down one tier when fps
+// stays under 45 for 3s, but only drops below 1.5x for a device under 24 fps, so a 30 fps cap
+// (iOS Low Power Mode) settles at tier 1 instead of going blurry. 8s at 55+ fps steps back up.
 const TIERS = [
-  { dpr: 1, outline: false, rim: 0, deco: false },
-  { dpr: 1.5, outline: false, rim: 1, deco: true },
+  { dpr: 1, outline: true, rim: 0, deco: false },
+  { dpr: 1.5, outline: true, rim: 0, deco: false },
+  { dpr: 2, outline: true, rim: 1, deco: false },
   { dpr: 2, outline: true, rim: 1, deco: true }
 ];
+const TOP_TIER = TIERS.length - 1;
 const C = {
   tomato: '#D64541', tomatoDark: '#A5322E', basil: '#2E8B57', olive: '#2C2C2C', beige: '#F8E5C2',
   mozz: '#FAF8F5', glow: '#F2C14E', crust: '#D9A15A', cheese: '#FAF0C8', wood: '#8a5a32'
@@ -42,7 +47,7 @@ function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); api.active = false; canvas.style.display = 'none'; });
 
-  let tier = qs.has('fx') ? Math.max(0, Math.min(2, parseInt(qs.get('fx'), 10) || 0)) : 2;
+  let tier = qs.has('fx') ? Math.max(0, Math.min(TOP_TIER, parseInt(qs.get('fx'), 10) || 0)) : TOP_TIER;
   const forcedTier = qs.has('fx');
 
   // ---------- scene, camera, lights ----------
@@ -505,7 +510,7 @@ function init() {
     scene.traverse(o => { if (o.userData.outline) o.visible = T.outline; });
     lastSize = '';
   }
-  let fpsAcc = 0, fpsFrames = 0, lowSecs = 0, lastNow = performance.now(), graceT = 2;
+  let fpsAcc = 0, fpsFrames = 0, lowSecs = 0, highSecs = 0, lastNow = performance.now(), graceT = 2;
   // /play?debug=fps shows a small live readout, for checking real phones.
   let fpsEl = null;
   if (qs.get('debug') === 'fps') {
@@ -653,9 +658,11 @@ function init() {
       api.fps = Math.round(fpsFrames / fpsAcc);
       if (fpsEl) fpsEl.textContent = '3D | ' + api.fps + ' fps | tier ' + tier + ' | dpr ' + renderer.getPixelRatio().toFixed(2) + (api.props.length ? ' | props' : '') + (fxLib ? ' | fx' : '');
       if (v.state === 'playing' && !document.hidden && graceT <= 0 && !forcedTier) {
-        lowSecs = api.fps < 45 ? lowSecs + 1 : 0;
-        if (lowSecs >= 3 && tier > 0) { setTier(tier - 1); lowSecs = 0; graceT = 2; }
-      } else lowSecs = 0;
+        lowSecs = api.fps < (tier > 1 ? 45 : 24) ? lowSecs + 1 : 0;
+        highSecs = api.fps >= 55 ? highSecs + 1 : 0;
+        if (lowSecs >= 3 && tier > 0) { setTier(tier - 1); lowSecs = highSecs = 0; graceT = 2; }
+        else if (highSecs >= 8 && tier < TOP_TIER) { setTier(tier + 1); lowSecs = highSecs = 0; graceT = 2; }
+      } else lowSecs = highSecs = 0;
       graceT = Math.max(0, graceT - fpsAcc);
       fpsAcc = 0; fpsFrames = 0;
     }
