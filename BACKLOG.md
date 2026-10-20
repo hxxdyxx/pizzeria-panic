@@ -1,5 +1,22 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-19): Skins on the 3D Pietro
+
+hoody: worried the coded skins wouldn't transfer to the new (3D) Pietro.
+
+- Checked all 5 Chef skins and 4 pans on the 3D model. Chef skins already
+  carried over (hat, shirt stripes and trousers recolour; shoes, face and skin
+  untouched) and match the 2D palettes.
+- Gap fixed: pan skins only tinted the centre disc; the rim stayed dark grey.
+  Pan entries now have `rim3d` and the whole prop pan takes that colour
+  (Golden, Copper, Record). Classic keeps the original dark steel.
+- The Skins shop showed only a colour dot per item. Cards now show a render of
+  3D Pietro in that outfit (pan hidden so the clothes show) or holding that pan
+  (`assets/skins/*.jpg`, ~17 KB each, lazy-loaded; falls back to the dot).
+- `assets/skins/render-thumbs.mjs` regenerates the previews from the real game;
+  `assets/skins/README.md` explains how skins map onto the model and what to
+  re-check if the Chef model is ever replaced.
+
 ## Done (2026-10-19): Tips out of the way, double-tap to run
 
 hoody: the in-game tip boxes blocked Pietro too much (make them transparent,

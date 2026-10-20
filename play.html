@@ -121,6 +121,9 @@
   .cosCard.active{border-color:#2E8B57;background:rgba(46,139,87,.14);}
   .cosCard.locked{opacity:.55;}
   .cosSwatch{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.3);}
+  .cosThumb{position:relative;width:96px;height:102px;border-radius:9px;overflow:hidden;background:#3a3530;display:flex;align-items:center;justify-content:center;}
+  .cosThumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .cosCard.locked .cosThumb img{filter:grayscale(.35) brightness(.85);}
   .cosName{font-family:'Fredoka',sans-serif;font-size:12.5px;color:var(--mozz);text-align:center;}
   .cosCost{font-family:'Fredoka',sans-serif;font-size:11px;color:var(--glow);}
   .cosBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:12px;color:var(--mozz);background:var(--basil);border:none;border-radius:7px;padding:5px 10px;cursor:pointer;touch-action:manipulation;}
@@ -423,9 +426,9 @@
   ];
   const PAN_CATALOG=[
     {id:'classic',name:'Classic Steel',cost:0,colors:{rim:'#cfd2d6',rimEdge:'#8a8f96',face:'#e7e9ec'}},
-    {id:'gold',name:'Golden Pan',cost:200,colors:{rim:'#F2C14E',rimEdge:'#a3781f',face:'#FFE9A8'}},
-    {id:'copper',name:'Copper Pan',cost:200,colors:{rim:'#C97B4A',rimEdge:'#8a4a26',face:'#E8A876'}},
-    {id:'record',name:'Record Platter',cost:250,colors:{rim:'#1a1a1a',rimEdge:'#000000',face:'#3a3a3a'}}
+    {id:'gold',name:'Golden Pan',cost:200,colors:{rim:'#F2C14E',rimEdge:'#a3781f',face:'#FFE9A8',rim3d:'#D9A22E'}},
+    {id:'copper',name:'Copper Pan',cost:200,colors:{rim:'#C97B4A',rimEdge:'#8a4a26',face:'#E8A876',rim3d:'#B0602F'}},
+    {id:'record',name:'Record Platter',cost:250,colors:{rim:'#1a1a1a',rimEdge:'#000000',face:'#3a3a3a',rim3d:'#161616'}}
   ];
   function loadUnlocked(key){const v=lsGetJSON(key,['classic']);return (Array.isArray(v)&&v.includes('classic'))?v:['classic',...(Array.isArray(v)?v:[])];}
   let unlockedSkins=loadUnlocked('ppp_skins_owned');
@@ -448,13 +451,15 @@
   }
   function selectSkin(id){if(!unlockedSkins.includes(id))return;activeSkin=id;lsSet('ppp_skin_active',id);renderSkinsScreen();}
   function selectPan(id){if(!unlockedPans.includes(id))return;activePan=id;lsSet('ppp_pan_active',id);renderSkinsScreen();}
+  // Shop preview: a render of 3D Pietro (assets/skins/*.jpg, made by assets/skins/README.md's steps) over the color swatch.
+  function cosThumb(file,swatch,name){const box=document.createElement('div');box.className='cosThumb';box.appendChild(swatch);const img=new Image();img.alt=name;img.loading='lazy';img.decoding='async';img.src='/assets/skins/'+file+'.jpg';img.onerror=()=>img.remove();box.appendChild(img);return box;}
   function renderSkinsScreen(){
     renderCoinsBadges();
     skinGrid.innerHTML='';
     SKIN_CATALOG.forEach(s=>{
       const owned=unlockedSkins.includes(s.id),active=activeSkin===s.id;
       const card=document.createElement('div');card.className='cosCard'+(active?' active':'')+(!owned?' locked':'');
-      const swatch=document.createElement('div');swatch.className='cosSwatch';swatch.style.background=s.palette.hatTop;card.appendChild(swatch);
+      const swatch=document.createElement('div');swatch.className='cosSwatch';swatch.style.background=s.palette.hatTop;card.appendChild(cosThumb('skin-'+s.id,swatch,s.name));
       const name=document.createElement('div');name.className='cosName';name.textContent=s.name;card.appendChild(name);
       if(owned){
         const btn=document.createElement('button');btn.className='cosBtn';btn.textContent=active?'Equipped':'Equip';btn.disabled=active;
@@ -470,7 +475,7 @@
     PAN_CATALOG.forEach(p=>{
       const owned=unlockedPans.includes(p.id),active=activePan===p.id;
       const card=document.createElement('div');card.className='cosCard'+(active?' active':'')+(!owned?' locked':'');
-      const swatch=document.createElement('div');swatch.className='cosSwatch';swatch.style.background=p.colors.face;swatch.style.border='3px solid '+p.colors.rim;card.appendChild(swatch);
+      const swatch=document.createElement('div');swatch.className='cosSwatch';swatch.style.background=p.colors.face;swatch.style.border='3px solid '+p.colors.rim;card.appendChild(cosThumb('pan-'+p.id,swatch,p.name));
       const name=document.createElement('div');name.className='cosName';name.textContent=p.name;card.appendChild(name);
       if(owned){
         const btn=document.createElement('button');btn.className='cosBtn';btn.textContent=active?'Equipped':'Equip';btn.disabled=active;
