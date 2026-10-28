@@ -1,5 +1,12 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-28): Leaderboard seasons
+
+hoody: clear the leaderboard every time a big update ships. `SEASON` in
+`api/leaderboard.js` picks the Redis key; bump it in the same PR as any big
+update. Season 2 started with the brick and rolling pin hazards; season 1's
+scores are kept under `ppp_leaderboard`.
+
 ## Done (2026-10-28): Brick and rolling pin hazards
 
 hoody: use the brick and rolling pin as hazards, as recommended.
