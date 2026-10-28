@@ -1,5 +1,19 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-27): Meshy falling items
+
+hoody: use Meshy and Blender to make the game better, any credits needed.
+
+- All six falling items (pizza, burnt pizza, red and green mushroom, chili,
+  pineapple) are now sculpted Meshy models with their colors baked into vertex
+  colors in Blender, about 0.5 MB for all eight files. Brick and rolling pin
+  made too but the game doesn't spawn them yet.
+- Burnt pizza and green mushroom are their own models now (were tinted copies).
+- Procedural props stay as the fallback. Pipeline and Meshy task ids:
+  `assets/props/meshy/README.md`.
+- Checked in headless Chrome on the real game: all items load, no errors,
+  pizza stack on the pan uses the new pizza.
+
 ## Done (2026-10-20): Continue after a run
 
 hoody: add a continue button after each run. Chose: pay with coins, once per

@@ -154,12 +154,20 @@ function init() {
   const FLAT = {};
 
   // ---------- optional prop GLBs from /assets/props (server reports which exist) ----------
-  const PROP_FILES = { pizza: 'pizza-pepperoni.glb', burnt: 'pizza-cheese.glb', mushroom: 'mushroom.glb', greenmushroom: 'mushroom.glb', pepper: 'chili-pepper.glb', brick: 'brick.glb', rollingpin: 'rolling-pin.glb', pan: 'pan.glb' };
+  // First file the server has wins. meshy-*.glb are the sculpted Meshy props with their colors
+  // baked into vertex colors (assets/props/meshy/README.md); the rest are the procedural pack.
+  const PROP_FILES = {
+    pizza: ['meshy-pizza.glb', 'pizza-pepperoni.glb'], burnt: ['meshy-burnt.glb', 'pizza-cheese.glb'],
+    mushroom: ['meshy-mushroom.glb', 'mushroom.glb'], greenmushroom: ['meshy-greenmushroom.glb', 'mushroom.glb'],
+    pepper: ['meshy-pepper.glb', 'chili-pepper.glb'], pineapple: ['meshy-pineapple.glb'],
+    brick: ['meshy-brick.glb', 'brick.glb'], rollingpin: ['meshy-rollingpin.glb', 'rolling-pin.glb'], pan: ['pan.glb']
+  };
   const loader = new GLTFLoader();
   // Flatten a prop into one vertex-colored geometry, normalized to the same unit size as the primitives.
   function propToGeometry(root, type) {
     root.updateMatrixWorld(true);
     const parts = [];
+    let baked = false;
     root.traverse(o => {
       if (!o.isMesh) return;
       let g = o.geometry.clone().applyMatrix4(o.matrixWorld);
@@ -167,11 +175,18 @@ function init() {
       if (!g.attributes.normal) g.computeVertexNormals();
       if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
       let col = o.material && o.material.color ? o.material.color.clone() : new THREE.Color(1, 1, 1);
-      if (type === 'burnt') col.multiplyScalar(0.45);
-      if (type === 'greenmushroom' && col.r > 0.5 && col.g < 0.4) col = new THREE.Color('#4CAF3E');
-      const n = g.attributes.position.count, a = new Float32Array(n * 3);
-      for (let i = 0; i < n; i++) { a[i * 3] = col.r; a[i * 3 + 1] = col.g; a[i * 3 + 2] = col.b; }
+      const n = g.attributes.position.count, a = new Float32Array(n * 3), vc = g.attributes.color;
+      if (vc) {
+        baked = true;
+        // Baked prop: keep its own colors (RGB only, so every part merges the same way).
+        for (let i = 0; i < n; i++) { a[i * 3] = vc.getX(i) * col.r; a[i * 3 + 1] = vc.getY(i) * col.g; a[i * 3 + 2] = vc.getZ(i) * col.b; }
+      } else {
+        if (type === 'burnt') col.multiplyScalar(0.45);
+        if (type === 'greenmushroom' && col.r > 0.5 && col.g < 0.4) col = new THREE.Color('#4CAF3E');
+        for (let i = 0; i < n; i++) { a[i * 3] = col.r; a[i * 3 + 1] = col.g; a[i * 3 + 2] = col.b; }
+      }
       g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+      Object.keys(g.attributes).forEach(k => { if (k !== 'position' && k !== 'normal' && k !== 'uv' && k !== 'color') g.deleteAttribute(k); });
       parts.push(g);
     });
     if (!parts.length) return null;
@@ -182,6 +197,8 @@ function init() {
     // at y=0; the Chef holds it by the rim with both hands.
     if (type === 'pan') { geo.translate(0, -0.14, 0); return geo; }
     geo.translate(-cx, -cy, -cz);
+    // The Meshy pepper is modeled standing up; lay it on its side, stem to the right, like the primitive.
+    if (type === 'pepper' && baked) geo.rotateZ(-Math.PI / 2);
     const half = (type === 'pizza' || type === 'burnt') ? Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 : Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 2;
     geo.scale(1 / half, 1 / half, 1 / half);
     return geo;
@@ -190,13 +207,14 @@ function init() {
     fetch('/api/props', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { files: [] }).catch(() => ({ files: [] })).then(({ files, fx: hasFx }) => {
       if (hasFx) loadFx();
       const have = new Set(files || []);
-      Object.entries(PROP_FILES).forEach(([type, file]) => {
-        if (!have.has(file)) return;
+      Object.entries(PROP_FILES).forEach(([type, list]) => {
+        const file = list.find(f => have.has(f));
+        if (!file) return;
         loader.load('/assets/props/' + file, gltf => {
           const geo = propToGeometry(gltf.scene, type);
           if (!geo) return;
           if (type === 'pan') { panPropGeo = geo; rebuildPan(); }
-          else { GEO[type] = geo; FLAT[type] = true; resetPool(type); if (type === 'pizza') rebuildStack(); }
+          else { GEO[type] = geo; FLAT[type] = !file.startsWith('meshy-'); resetPool(type); if (type === 'pizza') rebuildStack(); }
           api.props.push(type);
         }, undefined, () => {});
       });
