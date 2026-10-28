@@ -146,10 +146,39 @@ function init() {
       paint(new THREE.CylinderGeometry(0.12, 0.12, 0.5, 8).rotateZ(Math.PI / 2).translate(-1.05, 0, 0), '#9a6a3c')
     ]);
   }
+  // Power-up stand-ins until the Meshy models load (meshy-magnet/cutter/timer/tipjar.glb).
+  function magnetGeo() {
+    return merge([
+      paint(new THREE.TorusGeometry(0.62, 0.24, 8, 16, Math.PI).rotateZ(0), C.tomato),
+      paint(new THREE.BoxGeometry(0.48, 0.5, 0.48).translate(0.62, -0.24, 0), '#d8d8d8'),
+      paint(new THREE.BoxGeometry(0.48, 0.5, 0.48).translate(-0.62, -0.24, 0), '#d8d8d8')
+    ]);
+  }
+  function cutterGeo() {
+    return merge([
+      paint(new THREE.CylinderGeometry(0.62, 0.62, 0.08, 20).rotateX(Math.PI / 2).translate(-0.3, -0.3, 0), '#d8d8d8'),
+      paint(new THREE.CylinderGeometry(0.16, 0.2, 1.1, 10).rotateZ(-Math.PI / 4).translate(0.42, 0.42, 0), C.tomato)
+    ]);
+  }
+  function timerGeo() {
+    return merge([
+      paint(new THREE.SphereGeometry(0.85, 16, 12), C.tomato),
+      paint(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 18).rotateX(Math.PI / 2).translate(0, 0, 0.82), '#fafafa'),
+      paint(new THREE.ConeGeometry(0.3, 0.3, 6).translate(0, 0.92, 0), C.basil)
+    ]);
+  }
+  function tipjarGeo() {
+    return merge([
+      paint(new THREE.CylinderGeometry(0.62, 0.62, 1.3, 16), '#cfe8f0'),
+      paint(new THREE.CylinderGeometry(0.56, 0.56, 0.8, 16).translate(0, -0.22, 0), '#f2c14e'),
+      paint(new THREE.TorusGeometry(0.62, 0.08, 6, 16).rotateX(Math.PI / 2).translate(0, 0.4, 0), C.tomato)
+    ]);
+  }
   // Unit geometries: radius about 1 so a faller's game radius (p.r*W pixels) maps straight to scale.
   const GEO = {
     pizza: pizzaGeo(false), burnt: pizzaGeo(true), mushroom: mushroomGeo(C.tomato), greenmushroom: mushroomGeo('#4CAF3E'),
-    pepper: pepperGeo(), pineapple: pineappleGeo(), brick: brickGeo(), rollingpin: rollingPinGeo()
+    pepper: pepperGeo(), pineapple: pineappleGeo(), brick: brickGeo(), rollingpin: rollingPinGeo(),
+    magnet: magnetGeo(), cutter: cutterGeo(), timer: timerGeo(), tipjar: tipjarGeo()
   };
   const FLAT = {};
 
@@ -160,7 +189,8 @@ function init() {
     pizza: ['meshy-pizza.glb', 'pizza-pepperoni.glb'], burnt: ['meshy-burnt.glb', 'pizza-cheese.glb'],
     mushroom: ['meshy-mushroom.glb', 'mushroom.glb'], greenmushroom: ['meshy-greenmushroom.glb', 'mushroom.glb'],
     pepper: ['meshy-pepper.glb', 'chili-pepper.glb'], pineapple: ['meshy-pineapple.glb'],
-    brick: ['meshy-brick.glb', 'brick.glb'], rollingpin: ['meshy-rollingpin.glb', 'rolling-pin.glb'], pan: ['pan.glb']
+    brick: ['meshy-brick.glb', 'brick.glb'], rollingpin: ['meshy-rollingpin.glb', 'rolling-pin.glb'], pan: ['pan.glb'],
+    magnet: ['meshy-magnet.glb'], cutter: ['meshy-cutter.glb'], timer: ['meshy-timer.glb'], tipjar: ['meshy-tipjar.glb']
   };
   const loader = new GLTFLoader();
   // Flatten a prop into one vertex-colored geometry, normalized to the same unit size as the primitives.
@@ -200,6 +230,8 @@ function init() {
     geo.translate(-cx, -cy, -cz);
     // The Meshy pepper is modeled standing up; lay it on its side, stem to the right, like the primitive.
     if (type === 'pepper' && baked) geo.rotateZ(-Math.PI / 2);
+    // The Meshy magnet lies flat; stand it up so the horseshoe reads while it spins.
+    if (type === 'magnet' && baked) geo.rotateX(Math.PI / 2);
     const half = (type === 'pizza' || type === 'burnt') ? Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 : Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 2;
     geo.scale(1 / half, 1 / half, 1 / half);
     return geo;
@@ -379,7 +411,7 @@ function init() {
 
   // ---------- fallers (pooled per type) ----------
   const glowTex = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
-  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541', brick: '#FF8A3C', rollingpin: '#F2C14E' };
+  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541', brick: '#FF8A3C', rollingpin: '#F2C14E', magnet: '#5BC8FF', cutter: '#5BC8FF', timer: '#5BC8FF', tipjar: '#5BC8FF' };
   const pools = {}, used = {};
   function makeFaller(type) {
     const g = new THREE.Group();

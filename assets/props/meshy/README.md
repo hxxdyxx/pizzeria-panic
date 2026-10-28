@@ -15,6 +15,10 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 | meshy-brick.glb | brick (not spawned by the game yet) | 2,200 | 01a1806f-3dee |
 | meshy-rollingpin.glb | rolling pin (not spawned yet) | 2,200 | 01a1806f-4b4a |
 | meshy-oven.glb | background oven (replaces box + dome) | 6,000 | 01a18089-1deb |
+| meshy-magnet.glb | magnet power-up | 2,600 | 01a1830c-bd38 |
+| meshy-cutter.glb | pizza cutter power-up | 2,600 | 01a1830c-cf0c |
+| meshy-timer.glb | slow-mo timer power-up | 2,600 | 01a1830d-4f65 |
+| meshy-tipjar.glb | tip jar power-up | 2,600 | 01a1830d-8c24 |
 
 ## How they were made (2026-10-27)
 
@@ -38,3 +42,6 @@ model space, scaled to the old oven's 2.6 width, the animated fire fitted
 into the model's arched mouth, and the tall chimney pipe moved onto its
 chimney. Those offsets are measured from this model, so re-measure them if
 the oven file changes.
+
+The magnet is modeled lying flat and is stood up at load (like the pepper).
+Power-up GLBs were saved by hand from the Meshy viewer (2026-10-28).

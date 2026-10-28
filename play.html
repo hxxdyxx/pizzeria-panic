@@ -51,6 +51,8 @@
   .hudCol.right{align-items:flex-end;}
   .pill{background:rgba(44,44,44,.78);border:2px solid var(--glow);border-radius:8px;padding:5px 12px;color:var(--mozz);font-weight:600;font-size:14px;letter-spacing:.3px;white-space:nowrap;}
   .pill.shield{border-color:var(--basil);color:var(--basil);font-size:12px;padding:3px 9px;}
+.puHud{position:absolute;top:max(46px,calc(env(safe-area-inset-top) + 40px));left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:6px;pointer-events:none;}
+  .puPill{border-color:#5BC8FF !important;color:#bfeaff !important;font-size:13px;padding:3px 9px;}
   .growPill{border-color:var(--basil) !important;color:var(--basil) !important;animation:growPulse 1s ease-in-out infinite;}
   @keyframes growPulse{0%,100%{box-shadow:0 0 0 rgba(46,139,87,0);}50%{box-shadow:0 0 14px rgba(46,139,87,.7);}}
   .overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,rgba(214,69,65,.28),transparent 60%),rgba(20,18,15,.9);color:var(--mozz);overflow-y:auto;}
@@ -267,6 +269,7 @@
     <div id="growTimerWrap" class="hidden" style="position:absolute;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:6;">
       <div class="pill growPill">GROWTH: <span id="growTimerText">15</span>s</div>
     </div>
+    <div id="puHud" class="puHud"></div>
     <div id="orderTicket" class="orderTicket hidden"><strong>ORDER UP</strong><span id="orderText"></span></div>
     <div id="inspectionHud" class="hidden" style="position:absolute;top:max(48px,calc(env(safe-area-inset-top) + 44px));right:12px;z-index:6;"><div class="pill inspectionPill">HEALTH INSPECTION <span id="inspectionText"></span></div></div>
     <div id="tutorialToast" class="tutorialToast hidden"></div>
@@ -730,7 +733,7 @@
     musicGain.gain.setTargetAtTime(live?0.32:0,now,live?0.08:0.05);
     if(!live){musicNextT=0;return;}
     if(audioCtx.state==='suspended')audioCtx.resume();
-    const want=1+Math.min(0.25,progress*0.0007)+(rushActive?0.12:0);musicTempo+=(want-musicTempo)*0.05;
+    const want=(1+Math.min(0.25,progress*0.0007)+(rushActive?0.12:0))*(0.6+0.4*slowF);musicTempo+=(want-musicTempo)*0.05;
     if(musicNextT<now)musicNextT=now+0.05;
     while(musicNextT<now+0.15){
       const step=0.17/musicTempo,bar=Math.floor(musicStep/6)%16,i=musicStep%6,t=musicNextT;
@@ -863,6 +866,11 @@
   let panX=0.5,bodyX=0.5,facing=1,panVelocity=0;
   const panSpeed=1.6,panHalfW=0.1134;
   let stunT=0,seenHazards={},lastLossBy='none',runLogged=false;
+  // Power-ups (spawned through the same gate as the mushrooms): timed magnet / slow-mo / tip jar,
+  // and a pizza cutter that slices the next hazard you catch.
+  const PU={magnet:{icon:'🧲',name:'MAGNET',secs:8},timer:{icon:'⏱️',name:'SLOW-MO',secs:6},tipjar:{icon:'💰',name:'TIP JAR x2',secs:10},cutter:{icon:'🍕',name:'PIZZA CUTTER',secs:20}};
+  const HAZARDS=new Set(['pineapple','pepper','burnt','brick','rollingpin']);
+  let puT={magnet:0,timer:0,tipjar:0,cutter:0},slowF=1;
   let movingTimer=0,isRunning=false,isSprinting=false,runPhase=0,idlePhase=0,breathAmp=0;
   let blinking=false,blinkPhase=0,blinkTimer=2.5;
   function triggerBlink(){blinking=true;blinkPhase=0;}
@@ -875,6 +883,12 @@
   let score=0,progress=0,gameClock=0,towerHeight=0,lives=5,shield=0,spawnTimer=0;
   const MAX_SHIELD=2,SEG_LIFT_PX=7.5,STACK_VISUAL_CAP=100,CEILING_LINE=0.09,RELEASE_LINE=0.24,RELEASE_COOLDOWN=2.5;
   let lastReleaseT=-999,lastPowerupT=-999,powerupOnScreen=0;
+  const puHud=document.getElementById('puHud');let puHudKey='';
+  function renderPowerupHud(){
+    const parts=Object.keys(PU).filter(k=>puT[k]>0).map(k=>k==='cutter'?'🍕 CUTTER READY':PU[k].icon+' '+Math.ceil(puT[k])+'s');
+    const key=parts.join('|');if(key===puHudKey)return;puHudKey=key;
+    puHud.innerHTML=parts.map(t=>'<div class="pill puPill">'+t+'</div>').join('');
+  }
   function minPowerupInterval(){return Math.min(7,2.6+gameClock*0.02);}
   let combo=0;
   let runCatches=0,runMaxCombo=0,runMushroomsCaught=0,runHazardsDodged=0,runPizzaDrops=0,runStackClears=0;
@@ -968,7 +982,7 @@
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
     score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=streakBonusShield();spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
-    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;
+    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;puT={magnet:0,timer:0,tipjar:0,cutter:0};slowF=1;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
@@ -1038,21 +1052,24 @@
     if(dailySpecial.id==='noMush')mushChance=0;
     const greenAllowed=powerupGateOpen&&!growActive&&!greenOnScreen&&greenHistorySum()<2;
     const greenChance=greenAllowed?0.012:0;
+    const puOpts=powerupGateOpen&&progress>=12?Object.keys(PU).filter(k=>puT[k]<=0):[];
+    const puChance=puOpts.length?0.045:0;
     let type='pizza';
     if(roll<greenChance)type='greenmushroom';
     else if(roll<greenChance+mushChance)type='mushroom';
-    else if(roll<greenChance+mushChance+pepperChance)type='pepper';
-    else if(roll<greenChance+mushChance+pepperChance+pineappleChance)type='pineapple';
-    else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance)type='burnt';
-    else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
-    else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
+    else if(roll<greenChance+mushChance+puChance)type=puOpts[Math.floor(Math.random()*puOpts.length)];
+    else if(roll<greenChance+mushChance+puChance+pepperChance)type='pepper';
+    else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance)type='pineapple';
+    else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance)type='burnt';
+    else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
+    else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
     const r=(type==='pizza'||type==='burnt')?0.032+Math.random()*0.012:0.032;
-    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom')?0.85:1.1));
+    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1));
     const f={type,x:r+Math.random()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
     // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
     if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
     if(type==='greenmushroom'){greenOnScreen=true;recordGreenSpawn();}
-    if(type==='mushroom'||type==='greenmushroom'){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
+    if(type==='mushroom'||type==='greenmushroom'||PU[type]){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
     fallers.push(f);
   }
   function currentFallSpeed(){let base=Math.min(0.68,0.13+progress*0.0032);if(dailySpecial.id==='fastStart')base+=dailySpecial.speedAdd;return rushActive?base*1.12:base;}
@@ -1214,10 +1231,15 @@
     if(shakeTimer>0)shakeTimer=Math.max(0,shakeTimer-dt);else shakeAmt=Math.max(0,shakeAmt-dt*40);
     if(growActive){growTimer-=dt;if(growTimer<=0){growActive=false;growTimer=0;}growTimerWrap.classList.remove('hidden');growTimerText.textContent=Math.max(0,Math.ceil(growTimer));}else{growTimerWrap.classList.add('hidden');}
     updateNeon(dt);updateLightning(dt);updateWeather(dt);updateBigText(dt);updateRush(dt);
-    spawnTimer-=dt;if(spawnTimer<=0){spawnFaller();spawnTimer=currentSpawnInterval()*(rushActive?0.6:1);}
+    for(const k in puT)if(puT[k]>0)puT[k]=Math.max(0,puT[k]-dt);
+    slowF+=((puT.timer>0?0.5:1)-slowF)*Math.min(1,dt*6);
+    renderPowerupHud();
+    spawnTimer-=dt*slowF;if(spawnTimer<=0){spawnFaller();spawnTimer=currentSpawnInterval()*(rushActive?0.6:1);}
     for(let i=fallers.length-1;i>=0;i--){
-      const p=fallers[i];p.y+=p.speed*dt;
-      const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom';
+      const p=fallers[i];p.y+=p.speed*dt*slowF;
+      const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom'||!!PU[p.type];
+      // Magnet: pizzas and power-ups drift toward the pan once they're a quarter of the way down.
+      if(puT.magnet>0&&!HAZARDS.has(p.type)&&p.y>0.25)p.x+=(panX-p.x)*Math.min(1,dt*2.4);
       const isGood=p.type==='pizza'||isPowerupType;
       const stackTopY=panY-(Math.min(towerHeight,STACK_VISUAL_CAP)*SEG_LIFT_PX)/H;
       const goodBandTop=Math.min(panY-0.02,stackTopY-0.05);
@@ -1231,7 +1253,7 @@
           combo++;progress++;runCatches++;runMaxCombo=Math.max(runMaxCombo,combo);
           if(orderActive){orderProgress++;if(orderProgress>=orderTarget)completeOrder();else renderOrder();}
           sfxCatch();
-          const mult=comboMultFor(combo)*(rushActive?2:1);
+          const mult=comboMultFor(combo)*(rushActive?2:1)*(puT.tipjar>0?2:1);
           score+=Math.max(1,Math.round(mult));
           towerHeight++;
           maybeAnnounceCombo();
@@ -1242,6 +1264,17 @@
         }
         else if(p.type==='mushroom'){runMushroomsCaught++;sfxPowerup();if(lives<5){lives++;floatText('Extra life! 🍄',panX,panY-0.1,'#2E8B57');}else if(shield<MAX_SHIELD){shield++;floatText('Shield +1 🍄',panX,panY-0.1,'#2E8B57');flashShield();}else{floatText('Full up! 🍄',panX,panY-0.1,'#FAF8F5');}}
         else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15;spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
+        else if(PU[p.type]){
+          runMushroomsCaught++;sfxPowerup();puT[p.type]=PU[p.type].secs;
+          spawnBurst(panX,panY-0.12,'#5BC8FF',20,true,1.2);
+          floatText(PU[p.type].icon+' '+PU[p.type].name+'!',panX,panY-0.14,'#5BC8FF');
+        }
+        else if(HAZARDS.has(p.type)&&puT.cutter>0&&!growActive){
+          // Pizza cutter: this hazard is sliced, no penalty, and the cutter is used up.
+          puT.cutter=0;runHazardsDodged++;sfxCoin();buzz(25);
+          spawnBurst(panX,panY-0.12,'#FAF8F5',18,false,1.1);
+          floatText('SLICED! 🍕',panX,panY-0.12,'#2E8B57');
+        }
         else if(p.type==='pineapple'){
           runHazardHits++;
           sfxHazard();spawnBurst(panX,panY-0.1,'#E8C24A',10,false);if(!growActive)fx3d('stumble','pineapple');
@@ -1406,6 +1439,10 @@
       for(let d=-2;d<=2;d++){ctx.beginPath();ctx.moveTo(-r*0.6,r*(0.15+d*0.28));ctx.lineTo(r*0.6,r*(0.15+d*0.28+0.3));ctx.stroke();ctx.beginPath();ctx.moveTo(-r*0.6,r*(0.15+d*0.28+0.3));ctx.lineTo(r*0.6,r*(0.15+d*0.28));ctx.stroke();}
       ctx.fillStyle='#2E8B57';
       [[-0.18,-0.85,-0.3],[0,-1.0,0],[0.18,-0.85,0.3]].forEach(([lx,ly,rot])=>{ctx.save();ctx.translate(lx*r,ly*r);ctx.rotate(rot);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-r*0.14,-r*0.5);ctx.lineTo(r*0.14,-r*0.5);ctx.closePath();ctx.fill();ctx.restore();});
+    } else if(PU[p.type]){
+      const gw=ctx.createRadialGradient(0,0,r*0.6,0,0,r*2.4*pulse);gw.addColorStop(0,'rgba(91,200,255,0.65)');gw.addColorStop(1,'rgba(91,200,255,0)');
+      ctx.fillStyle=gw;ctx.beginPath();ctx.arc(0,0,r*2.4*pulse,0,Math.PI*2);ctx.fill();
+      ctx.font=Math.round(r*1.9)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(PU[p.type].icon,0,r*0.08);
     } else if(p.type==='brick'){
       const bw=ctx.createRadialGradient(0,0,r*0.8,0,0,r*2.6*pulse);bw.addColorStop(0,'rgba(255,138,60,0.6)');bw.addColorStop(1,'rgba(255,138,60,0)');
       ctx.fillStyle=bw;ctx.beginPath();ctx.arc(0,0,r*2.6*pulse,0,Math.PI*2);ctx.fill();
@@ -1669,7 +1706,7 @@
     setTimeout(()=>{if(state!=='ending')return;if(canContinue())offerContinue();else finishGameOver();},380);
   }
   async function finishGameOver(){hideGoalsCard();
-    state='gameover';logRun(pendingReason==='ceiling'?'ceiling':'lives');buzz([90,60,140]);finalScore.textContent=score;rankText.textContent=rankFor(score);
+    state='gameover';puHud.innerHTML='';puHudKey='';logRun(pendingReason==='ceiling'?'ceiling':'lives');buzz([90,60,140]);finalScore.textContent=score;rankText.textContent=rankFor(score);
     gameOverHeadline.textContent=pendingReason==='ceiling'?CEILING_REASONS[Math.floor(Math.random()*CEILING_REASONS.length)]:'MAMMA MIA!';
     gameOverScreen.classList.remove('hidden');pauseScreen.classList.add('hidden');
     sfxGameOver();
