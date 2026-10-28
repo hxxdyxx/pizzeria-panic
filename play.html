@@ -798,6 +798,7 @@
   function spawnRunDust(big){const fx=bodyX-runDir*0.04,fy=groundTop-0.005;for(let i=0;i<(big?8:2);i++)particles.push({x:fx+(Math.random()-0.5)*0.03,y:fy,vx:-runDir*(0.12+Math.random()*0.18),vy:-(0.05+Math.random()*0.12),life:0.35+Math.random()*0.25,maxLife:0.6,color:'#E9DCC4',size:2+Math.random()*(big?4:2.5)});}
   let panX=0.5,bodyX=0.5,facing=1,panVelocity=0;
   const panSpeed=1.6,panHalfW=0.1134;
+  let stunT=0,seenHazards={};
   let movingTimer=0,isRunning=false,isSprinting=false,runPhase=0,idlePhase=0,breathAmp=0;
   let blinking=false,blinkPhase=0,blinkTimer=2.5;
   function triggerBlink(){blinking=true;blinkPhase=0;}
@@ -903,7 +904,7 @@
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
     score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=streakBonusShield();spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
-    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;
+    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
@@ -964,6 +965,8 @@
     const mushBaseChance=Math.max(0.05,0.11-progress*0.0005);
     let pineappleChance=progress>=45?Math.min(0.08,0.012+progress*0.0004):0;
     const burntChance=progress>=35?Math.min(0.05,0.008+progress*0.00022):0;
+    const brickChance=progress>=45?Math.min(0.05,0.01+progress*0.0003):0;
+    const pinChance=progress>=60?Math.min(0.04,0.008+progress*0.00025):0;
     if(dailySpecial.id==='pineappleRain')pineappleChance=Math.min(0.3,pineappleChance*dailySpecial.pineappleMult+0.05);
     if(dailySpecial.id==='extraSpicy')pepperChance=Math.min(0.4,pepperChance*dailySpecial.pepperMult);
     const powerupGateOpen=(gameClock-lastPowerupT>=minPowerupInterval())&&powerupOnScreen===0;
@@ -977,9 +980,13 @@
     else if(roll<greenChance+mushChance+pepperChance)type='pepper';
     else if(roll<greenChance+mushChance+pepperChance+pineappleChance)type='pineapple';
     else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance)type='burnt';
+    else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
+    else if(roll<greenChance+mushChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
     const r=(type==='pizza'||type==='burnt')?0.032+Math.random()*0.012:0.032;
-    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:((type==='mushroom'||type==='greenmushroom')?0.85:1.1));
+    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom')?0.85:1.1));
     const f={type,x:r+Math.random()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
+    // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
+    if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
     if(type==='greenmushroom'){greenOnScreen=true;recordGreenSpawn();}
     if(type==='mushroom'||type==='greenmushroom'){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
     fallers.push(f);
@@ -1125,6 +1132,8 @@
     if(runBurstT>0&&!dragSteers&&Math.sign(input)!==runDir)input=runDir;
     if(runHeld&&!dragActive&&!keyLeft&&!keyRight)runHeld=false;
     const sprinting=(runHeld||runBurstT>0)&&Math.abs(input)>0.08&&Math.sign(input)===runDir;
+    // Rolling pin bonk: the pan goes sluggish for a moment.
+    if(stunT>0){stunT=Math.max(0,stunT-dt);input*=0.4;}
     const moving=Math.abs(input)>0.08;
     if(sprinting){runDustT-=dt;if(runDustT<=0){spawnRunDust(false);runDustT=0.06;}}
     if(moving){const edgeZone=0.18,distEdge=Math.min(panX-panHalfW,(1-panHalfW)-panX);const edgeBoost=1+Math.max(0,(edgeZone-Math.max(0,distEdge))/edgeZone)*0.9;panX+=input*panSpeed*edgeBoost*(sprinting?RUN_MUL:1)*dt;facing=input>0?1:-1;movingTimer=0.18;runPhase+=dt*(2.6+Math.min(2,Math.abs(input)*2))*(sprinting?1.6:1);breathAmp=Math.min(1,breathAmp+dt*1.6);}else{movingTimer-=dt;breathAmp=Math.max(0,breathAmp-dt*0.35);}
@@ -1200,6 +1209,23 @@
             else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('TOO SPICY! 🌶️',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
           }
         }
+        else if(p.type==='brick'){
+          runHazardHits++;
+          sfxHazard();triggerShake(12);spawnBurst(panX,panY-0.12,'#A5322E',16,false,1.15);if(!growActive)fx3d('stumble','brick');
+          if(growActive){floatText('Brick? Crumbs! 😤',panX,panY-0.1,'#2E8B57');}
+          else{
+            const wasCombo=combo>=5;breakCombo();
+            if(!wasCombo)towerHeight=Math.max(0,towerHeight-3);
+            if(shield>0){shield--;floatText('Shield cracked! 🧱',panX,panY-0.1,'#D64541');}
+            else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('BRICKED! 🧱',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
+          }
+        }
+        else if(p.type==='rollingpin'){
+          runHazardHits++;
+          sfxHazard();spawnBurst(panX,panY-0.16,'#F2C14E',12,false);
+          if(growActive){floatText('Bonk? Barely felt it! 😤',panX,panY-0.1,'#2E8B57');}
+          else{breakCombo();stunT=1.5;fx3d('stumble','rollingpin');floatText('BONK! 💫',panX,panY-0.1,'#D64541');}
+        }
         updateHud();continue;
       }
       if(p.y>1.05||p.x<-0.05||p.x>1.05){
@@ -1215,6 +1241,7 @@
         else if(p.type==='greenmushroom'){greenOnScreen=false;}
         else if(p.type==='pineapple'){runHazardsDodged++;lifeStats.pineapplesDodged++;saveStats();}
         else if(p.type==='pepper'){runHazardsDodged++;lifeStats.peppersDodged++;saveStats();}
+        else if(p.type==='brick'||p.type==='rollingpin'){runHazardsDodged++;}
       }
     }
     for(let i=debris.length-1;i>=0;i--){const d=debris[i];d.life-=dt;d.y+=dt*0.01;if(d.life<=0)debris.splice(i,1);}
@@ -1315,6 +1342,21 @@
       for(let d=-2;d<=2;d++){ctx.beginPath();ctx.moveTo(-r*0.6,r*(0.15+d*0.28));ctx.lineTo(r*0.6,r*(0.15+d*0.28+0.3));ctx.stroke();ctx.beginPath();ctx.moveTo(-r*0.6,r*(0.15+d*0.28+0.3));ctx.lineTo(r*0.6,r*(0.15+d*0.28));ctx.stroke();}
       ctx.fillStyle='#2E8B57';
       [[-0.18,-0.85,-0.3],[0,-1.0,0],[0.18,-0.85,0.3]].forEach(([lx,ly,rot])=>{ctx.save();ctx.translate(lx*r,ly*r);ctx.rotate(rot);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-r*0.14,-r*0.5);ctx.lineTo(r*0.14,-r*0.5);ctx.closePath();ctx.fill();ctx.restore();});
+    } else if(p.type==='brick'){
+      const bw=ctx.createRadialGradient(0,0,r*0.8,0,0,r*2.6*pulse);bw.addColorStop(0,'rgba(255,138,60,0.6)');bw.addColorStop(1,'rgba(255,138,60,0)');
+      ctx.fillStyle=bw;ctx.beginPath();ctx.arc(0,0,r*2.6*pulse,0,Math.PI*2);ctx.fill();
+      ctx.rotate(Math.sin(glowT*4+p.x*9)*0.5);
+      ctx.fillStyle='#B8432F';ctx.strokeStyle='#5e1f14';ctx.lineWidth=1.6;ctx.beginPath();ctx.roundRect(-r*1.05,-r*0.55,r*2.1,r*1.1,r*0.18);ctx.fill();ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fillRect(-r*0.9,-r*0.45,r*1.8,r*0.18);
+      ctx.fillStyle='rgba(60,20,10,0.35)';[[-0.5,0.1],[0.1,-0.15],[0.55,0.2]].forEach(([ppx,ppy])=>{ctx.beginPath();ctx.arc(ppx*r,ppy*r,r*0.09,0,Math.PI*2);ctx.fill();});
+    } else if(p.type==='rollingpin'){
+      const pw=ctx.createRadialGradient(0,0,r*0.8,0,0,r*2.4*pulse);pw.addColorStop(0,'rgba(242,193,78,0.55)');pw.addColorStop(1,'rgba(242,193,78,0)');
+      ctx.fillStyle=pw;ctx.beginPath();ctx.arc(0,0,r*2.4*pulse,0,Math.PI*2);ctx.fill();
+      ctx.rotate(glowT*5+p.x*7);
+      ctx.fillStyle='#D64541';ctx.strokeStyle='#7a251b';ctx.lineWidth=1.3;
+      [-1,1].forEach(sd=>{ctx.beginPath();ctx.roundRect(sd>0?r*0.78:-r*1.28,-r*0.17,r*0.5,r*0.34,r*0.15);ctx.fill();ctx.stroke();});
+      ctx.fillStyle='#E3B57A';ctx.strokeStyle='#8f5322';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(-r*0.8,-r*0.36,r*1.6,r*0.72,r*0.3);ctx.fill();ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(-r*0.7,-r*0.26,r*1.4,r*0.12);
     } else if(p.type==='burnt'){
       ctx.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const ppx=Math.cos(a)*r,ppy=Math.sin(a)*r;i===0?ctx.moveTo(ppx,ppy):ctx.lineTo(ppx,ppy);}ctx.closePath();
       ctx.fillStyle='#7a5230';ctx.fill();ctx.lineWidth=Math.max(1.5,r*0.12);ctx.strokeStyle='#3a2410';ctx.stroke();
