@@ -30,9 +30,9 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 | meshy-arcade.glb | Neon Arcade world | 4,500 | 01a18332-1453 |
 | meshy-jukebox.glb | Neon Arcade world | 4,500 | 01a18332-67cd |
 | meshy-claw.glb | Neon Arcade world | 4,500 | 01a18334-0ade |
-| meshy-pan-pepperoni.glb | Giant Pepperoni pan (textured, bake_tex.py) | 3,000 | 01a1835x |
-| meshy-pan-hubcap.glb | Chrome Hubcap pan (textured, bake_tex.py) | 3,000 | 01a1835x |
-| meshy-pan-frisbee.glb | Rainbow Frisbee pan (textured, bake_tex.py) | 3,000 | 01a1835x |
+| meshy-pan-pepperoni.glb | Giant Pepperoni pan (textured, bake_tex.py) | 3,000 | 01a18395-02bd |
+| meshy-pan-hubcap.glb | Chrome Hubcap pan (textured, bake_tex.py) | 3,000 | 01a18394-ef5c |
+| meshy-pan-frisbee.glb | Rainbow Frisbee pan (textured, bake_tex.py) | 3,000 | 01a18395-0ced |
 
 ## How they were made (2026-10-27)
 
