@@ -4,7 +4,7 @@ const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 // Bump SEASON with every big gameplay update: the board starts fresh and the old
 // season's scores stay in Redis under their own key (season 1 was 'ppp_leaderboard').
-const SEASON = 3;
+const SEASON = 4;
 const KEY = SEASON === 1 ? 'ppp_leaderboard' : `ppp_leaderboard:s${SEASON}`;
 const MAX_SCORE = 100000;
 const KEEP = 50;

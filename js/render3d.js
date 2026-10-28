@@ -239,7 +239,7 @@ function init() {
   function loadProps() {
     fetch('/api/props', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { files: [] }).catch(() => ({ files: [] })).then(({ files, fx: hasFx }) => {
       if (hasFx) loadFx();
-      const have = new Set(files || []);
+      const have = new Set(files || []); propFiles = have; loadWorld(worldNow); const nx = WORLD_ORDER[WORLD_ORDER.indexOf(worldNow) + 1]; if (nx) loadWorld(nx);
       if (have.has('meshy-oven.glb')) loader.load('/assets/props/meshy-oven.glb', gltf => useMeshyOven(gltf.scene), undefined, () => {});
       Object.entries(PROP_FILES).forEach(([type, list]) => {
         const file = list.find(f => have.has(f));
@@ -336,7 +336,7 @@ function init() {
   // Window showing the level sky
   const skyCanvas = document.createElement('canvas'); skyCanvas.width = 8; skyCanvas.height = 64;
   const skyTex = new THREE.CanvasTexture(skyCanvas); skyTex.colorSpace = THREE.SRGBColorSpace;
-  function paintSky(a, b) { const g = skyCanvas.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, 8, 64); skyTex.needsUpdate = true; }
+  function paintSky(a, b, sea) { const g = skyCanvas.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, a); gr.addColorStop(1, b); g.fillStyle = gr; g.fillRect(0, 0, 8, 64); if (sea) { g.fillStyle = '#2a6f9a'; g.fillRect(0, 40, 8, 24); g.fillStyle = '#ffd9a0'; g.fillRect(0, 40, 8, 2); } skyTex.needsUpdate = true; }
   const windowGroup = new THREE.Group(); backdrop.add(windowGroup);
   windowGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.1), new THREE.MeshBasicMaterial({ map: skyTex })));
   const frameMat = toon({ color: C.olive });
@@ -371,6 +371,116 @@ function init() {
   const stringLights = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), STRING_N);
   stringLights.instanceMatrix.setUsage(THREE.DynamicDrawUsage); decoGroup.add(stringLights);
   const STRING_COLORS = [C.glow, C.tomato, C.basil, '#FF3D7F', '#579bfc'].map(c => new THREE.Color(c));
+
+  // ---------- worlds: each shift group is its own place (LEVELS[].world in play.html) ----------
+  // A world swaps the wall, floor and counter look and shows its own Meshy props
+  // (assets/props/meshy-*.glb, loaded the first time the world comes up, next world preloaded).
+  // The oven and the HOT SLICE sign stay in every world.
+  const plankTex = canvasTex(256, 256, (g, w, h) => {
+    const cols = ['#5fa3a6', '#e9e1cc', '#4f8f95', '#e2d8c0'];
+    for (let i = 0; i < 8; i++) { g.fillStyle = cols[i % 4]; g.fillRect(i * 32, 0, 32, h); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(i * 32, 0, 3, h); }
+    g.fillStyle = 'rgba(255,255,255,0.12)'; for (let i = 0; i < 40; i++) g.fillRect((i * 53) % w, (i * 97) % h, 2, 18);
+  }, [5, 3]);
+  const boardTex = canvasTex(256, 128, (g, w, h) => {
+    for (let r = 0; r < 8; r++) { const v = 0.85 + (r % 3) * 0.07; g.fillStyle = `rgb(${Math.round(205 * v)},${Math.round(165 * v)},${Math.round(112 * v)})`; g.fillRect(0, r * 16, w, 15); g.fillStyle = '#6b4a2a'; g.fillRect(0, r * 16 + 15, w, 1); }
+  }, [6, 5]);
+  const skylineTex = canvasTex(512, 256, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0d0b22'); gr.addColorStop(1, '#3a2652'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fff6d0'; g.beginPath(); g.arc(420, 50, 22, 0, Math.PI * 2); g.fill();
+    let x = 0, k = 0;
+    while (x < w) {
+      const bw = 34 + (k * 37) % 50, bh = 70 + (k * 53) % 120; k++;
+      g.fillStyle = k % 2 ? '#1b1733' : '#231d3f'; g.fillRect(x, h - bh, bw - 2, bh);
+      for (let yy = h - bh + 8; yy < h - 6; yy += 12) for (let xx = x + 5; xx < x + bw - 8; xx += 9) if ((xx * 7 + yy * 3 + k) % 5 < 2) { g.fillStyle = (xx + yy) % 3 ? '#ffd56b' : '#ffb347'; g.fillRect(xx, yy, 4, 5); }
+      x += bw;
+    }
+  }, [2, 1]);
+  const tarTex = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#4a4a52'; g.fillRect(0, 0, w, h); for (let i = 0; i < 400; i++) { g.fillStyle = i % 2 ? '#5a5a63' : '#3c3c44'; g.fillRect((i * 37) % w, (i * 61) % h, 2, 2); } }, [8, 6]);
+  const festivalTex = canvasTex(512, 256, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#1c1033'); gr.addColorStop(1, '#4a1f4f'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    const aw = [['#D64541', '#FAF8F5'], ['#2E8B57', '#F2C14E'], ['#579bfc', '#FAF8F5'], ['#F2C14E', '#D64541']];
+    for (let i = 0; i < 6; i++) {
+      const x0 = i * 86 + 6, [a, b] = aw[i % 4];
+      g.fillStyle = '#2a1830'; g.fillRect(x0, 130, 76, 126);
+      g.fillStyle = 'rgba(255,190,90,0.55)'; g.fillRect(x0 + 8, 150, 60, 40);
+      for (let j = 0; j < 6; j++) { g.fillStyle = j % 2 ? a : b; g.beginPath(); g.moveTo(x0 + j * 12.7, 110); g.lineTo(x0 + (j + 1) * 12.7, 110); g.lineTo(x0 + (j + 1) * 12.7, 132); g.lineTo(x0 + j * 12.7 + 6, 142); g.lineTo(x0 + j * 12.7, 132); g.fill(); }
+    }
+  }, [2, 1]);
+  const cobbleTex = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#2e2a33'; g.fillRect(0, 0, w, h); for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { g.fillStyle = (r * 3 + c * 5) % 4 ? '#6a6370' : '#7b7480'; g.beginPath(); g.roundRect ? g.roundRect(c * 16 + (r % 2) * 8 + 1, r * 16 + 1, 14, 14, 4) : g.rect(c * 16 + 1, r * 16 + 1, 14, 14); g.fill(); } }, [8, 6]);
+  const neonTex = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#140a24'; g.fillRect(0, 0, w, h);
+    g.lineWidth = 3; [['#FF3D7F', 0], ['#3df2ff', 64], ['#b44dff', 128], ['#3df2ff', 192]].forEach(([c, y]) => { g.strokeStyle = c; g.shadowColor = c; g.shadowBlur = 10; g.beginPath(); g.moveTo(0, y + 32); g.lineTo(w, y + 32); g.stroke(); });
+    g.shadowBlur = 0; g.strokeStyle = 'rgba(180,77,255,0.35)'; g.lineWidth = 2; for (let x = 0; x < w; x += 64) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  }, [5, 3]);
+  const carpetTex = canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#0d0a2a'; g.fillRect(0, 0, w, h); g.lineWidth = 3;
+    for (let i = 0; i < 14; i++) { g.strokeStyle = ['#FF3D7F', '#3df2ff', '#F2C14E', '#7CFF6B'][i % 4]; const x = (i * 41) % w, y = (i * 67) % h; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 8, y - 10, x + 16, y); g.quadraticCurveTo(x + 24, y + 10, x + 32, y); g.stroke(); }
+  }, [7, 5]);
+  // Prop placement: f = file, h = height in world units, xf = x as a fraction of the visible
+  // half-width at the wall (positive = right of center), y = base height above the floor,
+  // z = depth (the counter front is about -3.75, the wall -5.5), ry = turn toward the camera.
+  const WORLDS = {
+    kitchen: { wall: brickTex, floor: floorTex, counter: '#5a3520', top: '#e8dcc4', window: true, lamps: true, lights: false, night: 1, props: [] },
+    boardwalk: { wall: plankTex, floor: boardTex, counter: '#2f6f73', top: '#f3e6c8', window: true, sea: true, lamps: true, lights: false, night: 0.45, props: [
+      { f: 'meshy-umbrella.glb', h: 2.4, xf: 0.1, y: 1.36, z: -4.95, ry: 0.3 },
+      { f: 'meshy-surfboard.glb', h: 2.2, xf: 0.76, y: 1.36, z: -4.7, ry: -0.3 },
+      { f: 'meshy-lifering.glb', h: 0.8, xf: 0.2, y: 4.2, z: -5.3, ry: 0 }] },
+    rooftop: { wall: skylineTex, floor: tarTex, counter: '#6d7078', top: '#9a9ea6', window: false, lamps: false, lights: true, night: 0, props: [
+      { f: 'meshy-watertower.glb', h: 4.4, xf: 0.78, y: 0.9, z: -5.2, ry: -0.3 },
+      { f: 'meshy-acunit.glb', h: 1.15, xf: 0.12, y: 1.36, z: -4.75, ry: 0.35 },
+      { f: 'meshy-pigeon.glb', h: 0.6, xf: 0.38, y: 1.36, z: -4.3, ry: -0.6 }] },
+    festival: { wall: festivalTex, floor: cobbleTex, counter: '#6b2d5c', top: '#f2c14e', window: false, lamps: false, lights: true, night: 0, props: [
+      { f: 'meshy-foodtruck.glb', h: 2.5, xf: 0.45, y: 1.36, z: -4.95, ry: -0.35 },
+      { f: 'meshy-lantern.glb', h: 0.8, xf: -0.7, y: 5.0, z: -4.6, ry: 0 },
+      { f: 'meshy-lantern.glb', h: 0.65, xf: 0.32, y: 5.4, z: -4.8, ry: 0.5 }] },
+    arcade: { wall: neonTex, floor: carpetTex, counter: '#241a3a', top: '#ff3d7f', window: false, lamps: false, lights: true, night: 0, props: [
+      { f: 'meshy-jukebox.glb', h: 1.9, xf: 0.02, y: 1.36, z: -4.95, ry: 0.15 },
+      { f: 'meshy-arcade.glb', h: 2.2, xf: 0.32, y: 1.36, z: -4.9, ry: -0.15 },
+      { f: 'meshy-claw.glb', h: 2.2, xf: 0.62, y: 1.36, z: -4.9, ry: -0.35 }] }
+  };
+  const WORLD_ORDER = ['kitchen', 'boardwalk', 'rooftop', 'festival', 'arcade'];
+  const worldGroups = {}, worldGeo = {}, worldLoading = {};
+  let worldNow = 'kitchen', worldDims = null, propFiles = new Set();
+  function loadWorld(name) {
+    const W_ = WORLDS[name]; if (!W_ || worldLoading[name] || !propFiles.size) return; worldLoading[name] = true;
+    const grp = worldGroups[name] || (worldGroups[name] = new THREE.Group()); grp.visible = name === worldNow; backdrop.add(grp);
+    W_.props.forEach(pr => {
+      if (!propFiles.has(pr.f)) return;
+      const ready = geo => { const m = new THREE.Mesh(geo, propMat); m.userData.pr = pr; grp.add(m); placeWorld(); };
+      if (worldGeo[pr.f]) { worldGeo[pr.f].then(ready); return; }
+      worldGeo[pr.f] = new Promise(res => loader.load('/assets/props/' + pr.f, gltf => {
+        const geo = propToGeometry(gltf.scene, 'oven-raw'); if (!geo) return;
+        geo.computeBoundingBox(); const b = geo.boundingBox, c = new THREE.Vector3(); b.getCenter(c);
+        geo.translate(-c.x, -b.min.y, -c.z); geo.scale(1 / (b.max.y - b.min.y), 1 / (b.max.y - b.min.y), 1 / (b.max.y - b.min.y));
+        res(geo);
+      }, undefined, () => {}));
+      worldGeo[pr.f].then(ready);
+    });
+  }
+  function placeWorld() {
+    if (!worldDims) return;
+    const { left } = worldDims;
+    Object.values(worldGroups).forEach(grp => grp.children.forEach(m => {
+      const pr = m.userData.pr; m.scale.setScalar(pr.h); m.rotation.y = pr.ry;
+      m.position.set(-left * pr.xf, floorY + pr.y, pr.z);
+    }));
+  }
+  function setWorld(name, n) {
+    const W_ = WORLDS[name] || WORLDS.kitchen;
+    if (!WORLDS[name]) name = 'kitchen';
+    worldNow = name;
+    wallMat.map = W_.wall; wallMat.needsUpdate = true;
+    floorMat.map = W_.floor; floorMat.needsUpdate = true;
+    counterMat.color.set(W_.counter); counterTop.color.set(W_.top);
+    windowGroup.visible = W_.window;
+    lamps.forEach(l => { l.visible = W_.lamps; });
+    stringLights.visible = W_.lights;
+    wallMat.color.copy(wallDay).lerp(wallNight, n * 0.7 * W_.night);
+    floorMat.color.copy(wallDay).lerp(wallNight, n * 0.6 * (W_.night ? 1 : 0.4));
+    Object.entries(worldGroups).forEach(([k, g]) => { g.visible = k === name; });
+    loadWorld(name);
+    const next = WORLD_ORDER[WORLD_ORDER.indexOf(name) + 1]; if (next) loadWorld(next);
+  }
 
   // ---------- pan + stack ----------
   const panGroup = new THREE.Group(); scene.add(panGroup);
@@ -628,6 +738,7 @@ function init() {
       stringLights.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, y, wallZ + 0.2));
     }
     stringLights.instanceMatrix.needsUpdate = true;
+    worldDims = { left, top }; placeWorld();
   }
 
   // ---------- level look ----------
@@ -639,12 +750,12 @@ function init() {
     if (name === lastLevel) return;
     lastLevel = name;
     const idx = Math.max(0, v.levelIdx), n = NIGHT[Math.min(idx, NIGHT.length - 1)];
-    if (v.level) paintSky(v.level.sky[0], v.level.sky[1]);
-    wallMat.color.copy(wallDay).lerp(wallNight, n * 0.7);
-    floorMat.color.copy(wallDay).lerp(wallNight, n * 0.6);
+    const world = (v.level && v.level.world) || 'kitchen';
+    if (v.level) paintSky(v.level.sky[0], v.level.sky[1], WORLDS[world] && WORLDS[world].sea);
+    if (world !== worldNow) { fx.flash = 0.5; fx.flashColor.set('#ffffff'); }
+    setWorld(world, n);
     hemi.intensity = 1.25 - n * 0.55; key.intensity = 2.1 - n * 0.9;
     hemi.color.set(0xfff1dc).lerp(tmpC.set('#9fa8ff'), n * 0.5);
-    stringLights.visible = idx >= 4;
   }
 
   // ---------- per-frame chef update ----------

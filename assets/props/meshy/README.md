@@ -19,6 +19,17 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 | meshy-cutter.glb | pizza cutter power-up | 2,600 | 01a1830c-cf0c |
 | meshy-timer.glb | slow-mo timer power-up | 2,600 | 01a1830d-4f65 |
 | meshy-tipjar.glb | tip jar power-up | 2,600 | 01a1830d-8c24 |
+| meshy-surfboard.glb | Boardwalk world | 2,600 | 01a18330-afe0 |
+| meshy-lifering.glb | Boardwalk world | 2,600 | 01a18331-0431 |
+| meshy-umbrella.glb | Boardwalk world | 2,600 | 01a18331-4abd |
+| meshy-watertower.glb | Rooftop world | 4,500 | 01a18331-4996 |
+| meshy-acunit.glb | Rooftop world | 12,900 (dense scan, won't decimate further) | 01a18332-3c0d |
+| meshy-pigeon.glb | Rooftop world | 2,600 | 01a18331-9e1b |
+| meshy-foodtruck.glb | Street Festival world | 4,500 | 01a18332-13b9 |
+| meshy-lantern.glb | Street Festival world | 1,800 | 01a18331-de42 |
+| meshy-arcade.glb | Neon Arcade world | 4,500 | 01a18332-1453 |
+| meshy-jukebox.glb | Neon Arcade world | 4,500 | 01a18332-67cd |
+| meshy-claw.glb | Neon Arcade world | 4,500 | 01a18334-0ade |
 
 ## How they were made (2026-10-27)
 
@@ -45,3 +56,9 @@ the oven file changes.
 
 The magnet is modeled lying flat and is stood up at load (like the pepper).
 Power-up GLBs were saved by hand from the Meshy viewer (2026-10-28).
+
+World props are placed by the WORLDS table in js/render3d.js (height, x as a fraction of
+the visible half-width, base height, depth, turn). Portrait phones only show about
+xf -0.85..0.85 and the oven covers the left, so keep props between xf 0 and 0.8.
+The first claw machine images both came out with a doll resembling a known animated
+character; the prompt now says "plush pizza slice toys, no dolls, no people".
