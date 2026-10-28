@@ -11,6 +11,8 @@ hoody: use Meshy and Blender to make the game better, any credits needed.
 - Burnt pizza and green mushroom are their own models now (were tinted copies).
 - Procedural props stay as the fallback. Pipeline and Meshy task ids:
   `assets/props/meshy/README.md`.
+- Background oven is a Meshy brick oven now; the animated fire sits in its
+  mouth and the chimney pipe meets its chimney.
 - Checked in headless Chrome on the real game: all items load, no errors,
   pizza stack on the pan uses the new pizza.
 

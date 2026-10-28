@@ -196,6 +196,7 @@ function init() {
     // Pan prop: a round, handle-free saucer centered on x=0/z=0. Put the cooking surface
     // at y=0; the Chef holds it by the rim with both hands.
     if (type === 'pan') { geo.translate(0, -0.14, 0); return geo; }
+    if (type === 'oven-raw') return geo;
     geo.translate(-cx, -cy, -cz);
     // The Meshy pepper is modeled standing up; lay it on its side, stem to the right, like the primitive.
     if (type === 'pepper' && baked) geo.rotateZ(-Math.PI / 2);
@@ -207,6 +208,7 @@ function init() {
     fetch('/api/props', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { files: [] }).catch(() => ({ files: [] })).then(({ files, fx: hasFx }) => {
       if (hasFx) loadFx();
       const have = new Set(files || []);
+      if (have.has('meshy-oven.glb')) loader.load('/assets/props/meshy-oven.glb', gltf => useMeshyOven(gltf.scene), undefined, () => {});
       Object.entries(PROP_FILES).forEach(([type, list]) => {
         const file = list.find(f => have.has(f));
         if (!file) return;
@@ -264,7 +266,7 @@ function init() {
   // Brick oven with glowing mouth
   const oven = new THREE.Group(); backdrop.add(oven);
   const ovenBrick = toon({ map: brickTex.clone(), color: 0xd7b8a0 }); ovenBrick.map.repeat.set(2, 1);
-  oven.add(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.3, 1.4), ovenBrick));
+  const ovenBase = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.3, 1.4), ovenBrick); oven.add(ovenBase);
   const dome = new THREE.Mesh(new THREE.SphereGeometry(1.3, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), ovenBrick); dome.position.y = 0.65; oven.add(dome);
   const mouthMat = new THREE.MeshBasicMaterial({ color: 0xff8a3c });
   const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24, 0, Math.PI), mouthMat); mouth.position.set(0, 0.62, 1.12); oven.add(mouth);
@@ -286,6 +288,19 @@ function init() {
     flames.push({ m, h, seed: i * 1.7 + layer * 0.9, base: x }); fire.add(m);
   });
   const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 3, 10), toon({ color: '#3a2a22' })); chimney.position.set(0, 3, -0.2); oven.add(chimney);
+  // Meshy oven (assets/props/meshy-oven.glb): replaces the box + dome and keeps the animated fire,
+  // fitted into the model's own arched mouth. Model space: 1.64 wide, y -0.95..0.9, mouth centered
+  // at x 0, y -0.45..0.03, about 0.67 wide, facing +Z.
+  function useMeshyOven(root) {
+    const geo = propToGeometry(root, 'oven-raw');
+    if (!geo) return;
+    const s = 2.6 / 1.64, lift = -0.65 + 0.95 * s;
+    const m = new THREE.Mesh(geo, propMat); m.scale.setScalar(s); m.position.y = lift; oven.add(m);
+    ovenBase.visible = dome.visible = mouth.visible = archRim.visible = false;
+    fire.position.set(0, -0.45 * s + lift, 0.66 * s); fire.scale.set(0.67 * s / 1.1, 0.5 * s / 0.87, 1);
+    chimney.position.set(0.27 * s, 0.7 * s + lift + 1.5, -0.1 * s); chimney.scale.set(0.8, 1, 0.8);
+    api.props.push('oven');
+  }
   // Window showing the level sky
   const skyCanvas = document.createElement('canvas'); skyCanvas.width = 8; skyCanvas.height = 64;
   const skyTex = new THREE.CanvasTexture(skyCanvas); skyTex.colorSpace = THREE.SRGBColorSpace;

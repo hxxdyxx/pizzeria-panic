@@ -14,6 +14,7 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 | meshy-pineapple.glb | pineapple | 3,200 | 01a1806f-3412 |
 | meshy-brick.glb | brick (not spawned by the game yet) | 2,200 | 01a1806f-3dee |
 | meshy-rollingpin.glb | rolling pin (not spawned yet) | 2,200 | 01a1806f-4b4a |
+| meshy-oven.glb | background oven (replaces box + dome) | 6,000 | 01a18089-1deb |
 
 ## How they were made (2026-10-27)
 
@@ -31,3 +32,9 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 The renderer keeps COLOR_0 when a prop has it and smooth-shades `meshy-*`
 props; procedural props still get their flat per-material colors. The Meshy
 pepper is modeled upright and is turned on its side at load.
+
+The oven is loaded separately (`useMeshyOven` in `js/render3d.js`): kept in
+model space, scaled to the old oven's 2.6 width, the animated fire fitted
+into the model's arched mouth, and the tall chimney pipe moved onto its
+chimney. Those offsets are measured from this model, so re-measure them if
+the oven file changes.
