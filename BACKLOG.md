@@ -1,5 +1,16 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-28): Brick and rolling pin hazards
+
+hoody: use the brick and rolling pin as hazards, as recommended.
+
+- Brick (from progress 45, up to 5% of spawns): falls 1.3x, costs a life (shield
+  absorbs it), breaks the combo, knocks 3 pizzas off the stack.
+- Rolling pin (from progress 60, up to 4%): no life lost, breaks the combo, and
+  bonks the Chef: steering is cut to 40% for 1.5s (`stunT`), 3D wobble matches.
+- Big Pietro ignores both. Dodges count toward "Dodge 8 hazards". The first of
+  each per run gets a big-text warning. Both have warning glows and 2D drawings.
+
 ## Done (2026-10-27): Meshy falling items
 
 hoody: use Meshy and Blender to make the game better, any credits needed.
@@ -7,7 +18,7 @@ hoody: use Meshy and Blender to make the game better, any credits needed.
 - All six falling items (pizza, burnt pizza, red and green mushroom, chili,
   pineapple) are now sculpted Meshy models with their colors baked into vertex
   colors in Blender, about 0.5 MB for all eight files. Brick and rolling pin
-  made too but the game doesn't spawn them yet.
+  made too (now spawned, see 2026-10-28).
 - Burnt pizza and green mushroom are their own models now (were tinted copies).
 - Procedural props stay as the fallback. Pipeline and Meshy task ids:
   `assets/props/meshy/README.md`.

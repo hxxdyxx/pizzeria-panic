@@ -379,7 +379,7 @@ function init() {
 
   // ---------- fallers (pooled per type) ----------
   const glowTex = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
-  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541' };
+  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541', brick: '#FF8A3C', rollingpin: '#F2C14E' };
   const pools = {}, used = {};
   function makeFaller(type) {
     const g = new THREE.Group();
@@ -420,7 +420,8 @@ function init() {
   const ringAt = () => [lastChefFeet.x, floorY + 0.02, lastChefFeet.z + 0.35];
   api.event = (name, arg) => {
     if (name === 'stumble') {
-      fx.stumble = 0.7; fx.stumbleDir = Math.random() < 0.5 ? -1 : 1; fx.flash = 0.45; fx.flashColor.set('#ff3b2f');
+      // the rolling pin bonk lasts as long as the pan slowdown in play.html
+      fx.stumble = arg === 'rollingpin' ? 1.5 : 0.7; fx.stumbleDir = Math.random() < 0.5 ? -1 : 1; fx.flash = 0.45; fx.flashColor.set('#ff3b2f');
       if (fxLib && arg === 'pepper') fxLib.powerUp(ringAt(), 'pepper', { radius: lastChefHeight * 0.45 });
     }
     else if (name === 'miss') {
@@ -645,7 +646,7 @@ function init() {
     const sq = v.squash || 0;
     let hop = 0, roll = 0;
     if (fx.celebrate > 0) { const t = 1.3 - fx.celebrate; hop = t < 0.45 ? Math.sin(t / 0.45 * Math.PI) * height * 0.22 : 0; fx.celebrate -= dt; }
-    if (fx.stumble > 0) { roll += Math.sin(fx.stumble * 26) * 0.28 * (fx.stumble / 0.7) * fx.stumbleDir; fx.stumble -= dt; }
+    if (fx.stumble > 0) { roll += Math.sin(fx.stumble * 26) * 0.28 * Math.min(1, fx.stumble / 0.7) * fx.stumbleDir; fx.stumble -= dt; }
     if (fx.miss > 0) { roll += Math.sin(fx.miss * 30) * 0.08 * (fx.miss / 0.5); fx.miss -= dt; }
     chef.position.set(_out.x, floorY + hop, chefZ);
     lastChefFeet.set(_out.x, floorY, chefZ); lastChefHeight = height; lastGroundTop = v.groundTop;
@@ -762,7 +763,8 @@ function init() {
       screenToPlane(p.x * W, p.y * H, 0, g.position);
       const r = p.r * W * k;
       const m = g.userData.mesh;
-      m.scale.setScalar(r);
+      // long thin props read tiny at the shared unit size, so draw them bigger than their catch radius
+      m.scale.setScalar(r * (type === 'rollingpin' ? 1.7 : type === 'brick' ? 1.15 : 1));
       if (type === 'pizza' || type === 'burnt') m.rotation.set(1.05 + Math.sin(t * 2 + seed) * 0.25, seed, Math.sin(t * 1.5 + seed) * 0.3);
       else if (type === 'pepper') m.rotation.set(0.2, t * 1.5 + seed, -0.42);
       else if (type === 'brick' || type === 'rollingpin') m.rotation.set(t * 2 + seed, seed, t * 1.3);
