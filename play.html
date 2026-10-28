@@ -384,7 +384,7 @@
             <button class="modeBtn" data-mode="tilt">📱 Tilt</button>
           </div>
         </div>
-        <div class="pauseLinks"><button class="textLink" id="muteBtnHud" aria-label="Sound">🔊 Sound</button><button class="textLink" id="donateBtnPause">💵 Tip the kitchen crew</button></div>
+        <div class="pauseLinks"><button class="textLink" id="muteBtnHud" aria-label="Sound">🔊 Sound</button><button class="textLink" id="musicBtnHud" aria-label="Music">🎵 Music</button><button class="textLink" id="hapticBtnHud" aria-label="Vibration">📳 Vibration</button><button class="textLink" id="donateBtnPause">💵 Tip the kitchen crew</button></div>
       </div>
     </div>
     <div class="footer-credit">A Hot Slice Creative Game</div>
@@ -702,20 +702,74 @@
     gain.gain.setValueAtTime(0,t0);gain.gain.linearRampToValueAtTime(vol||0.12,t0+0.012);gain.gain.exponentialRampToValueAtTime(0.001,t0+dur);
     osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t0);osc.stop(t0+dur+0.02);
   }
+  // Music: a looping 6/8 tarantella in A minor, built from oscillators like the sfx. It plays only
+  // while a run is live and speeds up with progress (up to +25%) and during rush.
+  let musicOn=lsGet('ppp_music','1')==='1',musicGain=null,musicStep=0,musicNextT=0,musicTempo=1;
+  const N=n=>440*Math.pow(2,(n-69)/12);
+  const A3=57,B3=59,C4=60,D4=62,E4=64,F4=65,G4=67,GS4=68,A4=69,B4=71,C5=72,D5=74,E5=76,F5=77,GS5=80,A5=81,B5=83,C6=84,E6=88;
+  const MEL=[[A4,C5,E5,A5,E5,C5],[B4,E5,GS5,B5,GS5,E5],[C5,E5,A5,C6,A5,E5],[GS5,B5,E6,B5,GS5,E5],
+             [D5,F5,A5,D5,F5,A5],[C5,E5,A5,E5,C5,A4],[B4,D5,E5,GS5,B5,GS5],[A5,E5,C5,A4,0,0],
+             [E5,0,E5,F5,E5,D5],[C5,0,C5,D5,C5,B4],[A4,C5,E5,A5,GS5,A5],[B5,GS5,E5,B4,0,0],
+             [D5,F5,A5,F5,D5,A4],[C5,E5,A5,E5,C5,A4],[B4,E5,GS5,B5,GS5,E5],[A4,0,A4,0,0,0]];
+  const BASS=[A3,E4,A3,E4,D4,A3,E4,A3,A3,A3,A3,E4,D4,A3,E4,A3];
+  function mNote(freq,t,dur,type,vol){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g);g.connect(musicGain);o.start(t);o.stop(t+dur+0.02);
+  }
+  function mDrum(t,kick){
+    if(kick){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(45,t+0.12);g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.14);o.connect(g);g.connect(musicGain);o.start(t);o.stop(t+0.16);return;}
+    if(!mDrum.buf){const b=audioCtx.createBuffer(1,2205,44100),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);mDrum.buf=b;}
+    const s=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();s.buffer=mDrum.buf;f.type='highpass';f.frequency.value=6000;g.gain.value=0.12;s.connect(f);f.connect(g);g.connect(musicGain);s.start(t);
+  }
+  function musicTick(){
+    if(!audioCtx)return;
+    if(!musicGain){musicGain=audioCtx.createGain();musicGain.gain.value=0;musicGain.connect(audioCtx.destination);}
+    const live=musicOn&&!isMuted&&state==='playing'&&!document.hidden;
+    const now=audioCtx.currentTime;
+    musicGain.gain.setTargetAtTime(live?0.32:0,now,live?0.08:0.05);
+    if(!live){musicNextT=0;return;}
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const want=1+Math.min(0.25,progress*0.0007)+(rushActive?0.12:0);musicTempo+=(want-musicTempo)*0.05;
+    if(musicNextT<now)musicNextT=now+0.05;
+    while(musicNextT<now+0.15){
+      const step=0.17/musicTempo,bar=Math.floor(musicStep/6)%16,i=musicStep%6,t=musicNextT;
+      const m=MEL[bar][i];if(m)mNote(N(m),t,step*0.9,'square',0.045);
+      if(i===0||i===3){mNote(N(BASS[bar]-12+(i===3?7:0)),t,step*2.6,'triangle',0.2);mDrum(t,true);}
+      else mDrum(t,false);
+      if(i===0&&bar%4===0)mNote(N(BASS[bar]),t,step*5.5,'sine',0.05);
+      musicStep++;musicNextT+=step;
+    }
+  }
+  setInterval(musicTick,40);
   function sfxCatch(){ensureAudio();tone(680+Math.random()*80,0.09,'triangle',0.1);}
-  function sfxComboTier(mult){ensureAudio();const base=440+mult*70;tone(base,0.12,'square',0.09,base*1.6);}
-  function sfxPowerup(){ensureAudio();tone(500,0.22,'sine',0.11,1100);}
-  function sfxHazard(){ensureAudio();tone(140,0.18,'sawtooth',0.12,70);}
-  function sfxLifeLost(){ensureAudio();tone(220,0.28,'sawtooth',0.13,90);}
+  function sfxComboTier(mult){ensureAudio();buzz(15);const base=440+mult*70;tone(base,0.12,'square',0.09,base*1.6);}
+  function sfxPowerup(){ensureAudio();buzz(20);tone(500,0.22,'sine',0.11,1100);}
+  function sfxHazard(){ensureAudio();buzz(35);tone(140,0.18,'sawtooth',0.12,70);}
+  function sfxLifeLost(){ensureAudio();buzz([60,40,60]);tone(220,0.28,'sawtooth',0.13,90);}
   function sfxRun(){ensureAudio();tone(260,0.14,'sawtooth',0.035,780);}
   function sfxCoin(){ensureAudio();tone(880,0.08,'square',0.08,1400);setTimeout(()=>tone(1180,0.09,'square',0.08),60);}
   function sfxAchievement(){ensureAudio();tone(660,0.1,'triangle',0.1,990);setTimeout(()=>tone(990,0.16,'triangle',0.1,1320),90);}
   function sfxGameOver(){ensureAudio();tone(300,0.22,'sawtooth',0.12,150);setTimeout(()=>tone(180,0.32,'sawtooth',0.12,90),160);}
   function sfxUIClick(){ensureAudio();tone(900,0.05,'square',0.06);}
-  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon+' Sound';}
+  // Haptics: navigator.vibrate where it exists (Android). iOS Safari has no vibrate, but tapping a
+  // switch-style checkbox gives a system tick (iOS 18+), so a hidden one stands in for single buzzes.
+  let hapticsOn=lsGet('ppp_haptics','1')==='1';
+  const iosHaptic=(()=>{if(navigator.vibrate||!/iP(hone|ad|od)/.test(navigator.userAgent))return null;
+    const l=document.createElement('label');l.setAttribute('aria-hidden','true');l.style.cssText='position:fixed;left:-99px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none';
+    const i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;l.appendChild(i);document.body.appendChild(l);return l;})();
+  let lastBuzzT=0;
+  function buzz(pattern){
+    if(!hapticsOn)return;const now=performance.now();if(now-lastBuzzT<60)return;lastBuzzT=now;
+    try{if(navigator.vibrate){navigator.vibrate(pattern);return;}if(iosHaptic)iosHaptic.click();}catch(e){}
+  }
+  function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon+' Sound';if(musicBtnHud)musicBtnHud.textContent=(musicOn?'🎵':'🔕')+' Music';if(hapticBtnHud)hapticBtnHud.textContent=(hapticsOn?'📳':'📴')+' Vibration';}
   function toggleMute(){isMuted=!isMuted;lsSet('ppp_muted',isMuted?'1':'0');renderMuteButtons();}
   muteBtnStart.addEventListener('click',()=>{ensureAudio();toggleMute();});
   muteBtnHud.addEventListener('click',()=>{ensureAudio();toggleMute();});
+  const musicBtnHud=document.getElementById('musicBtnHud'),hapticBtnHud=document.getElementById('hapticBtnHud');
+  musicBtnHud.addEventListener('click',()=>{ensureAudio();musicOn=!musicOn;lsSet('ppp_music',musicOn?'1':'0');renderMuteButtons();});
+  hapticBtnHud.addEventListener('click',()=>{hapticsOn=!hapticsOn;lsSet('ppp_haptics',hapticsOn?'1':'0');renderMuteButtons();buzz(30);});
   renderMuteButtons();
 
   function updateDangerMeter(){
@@ -779,6 +833,16 @@
       sessionTs=d.ts;sessionSig=d.sig;
     }catch(e){}
   }
+  // Anonymous run stats (api/run.js): how long runs last and what ends them, for difficulty tuning.
+  // n is this device's run count, so first runs can be told apart from regulars. No initials, no ids.
+  function logRun(cause){
+    if(runLogged||!sessionTs)return;runLogged=true;
+    const n=(parseInt(lsGet('ppp_plays','0'),10)||0)+1;lsSet('ppp_plays',String(n));
+    const d=JSON.stringify({ts:sessionTs,sig:sessionSig,score,secs:Math.round(gameClock),cause,killer:lastLossBy,progress,level:LEVELS.indexOf(currentLevel()),maxCombo:runMaxCombo,hits:runHazardHits,drops:runPizzaDrops,cont:continueUsed?1:0,ctl:controlMode,r3d:window.PPP3D&&PPP3D.active?1:0,n});
+    try{if(navigator.sendBeacon&&navigator.sendBeacon('/api/run',d))return;}catch(e){}
+    fetch('/api/run',{method:'POST',body:d,keepalive:true}).catch(()=>{});
+  }
+  window.addEventListener('pagehide',()=>{if((state==='playing'||state==='paused'||state==='ending')&&gameClock>3)logRun('quit');});
 
   let W=0,H=0;
   function resize(){const r=frame.getBoundingClientRect();W=canvas.width=r.width;H=canvas.height=r.height;panY=computePanY();}
@@ -798,7 +862,7 @@
   function spawnRunDust(big){const fx=bodyX-runDir*0.04,fy=groundTop-0.005;for(let i=0;i<(big?8:2);i++)particles.push({x:fx+(Math.random()-0.5)*0.03,y:fy,vx:-runDir*(0.12+Math.random()*0.18),vy:-(0.05+Math.random()*0.12),life:0.35+Math.random()*0.25,maxLife:0.6,color:'#E9DCC4',size:2+Math.random()*(big?4:2.5)});}
   let panX=0.5,bodyX=0.5,facing=1,panVelocity=0;
   const panSpeed=1.6,panHalfW=0.1134;
-  let stunT=0,seenHazards={};
+  let stunT=0,seenHazards={},lastLossBy='none',runLogged=false;
   let movingTimer=0,isRunning=false,isSprinting=false,runPhase=0,idlePhase=0,breathAmp=0;
   let blinking=false,blinkPhase=0,blinkTimer=2.5;
   function triggerBlink(){blinking=true;blinkPhase=0;}
@@ -904,7 +968,7 @@
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
     score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=streakBonusShield();spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
-    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};
+    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
@@ -1185,7 +1249,7 @@
           else{
             const wasCombo=combo>=5;breakCombo();
             if(shield>0){shield--;floatText('Shield blocked! 🥖',panX,panY-0.1,'#2E8B57');}
-            else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('Pineapple?! 😵',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
+            else{lives--;lastLossBy='pineapple';sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('Pineapple?! 😵',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
           }
         }
         else if(p.type==='burnt'){
@@ -1206,7 +1270,7 @@
             const wasCombo=combo>=5;breakCombo();
             if(!wasCombo)towerHeight=Math.max(0,towerHeight-2);
             if(shield>0){shield--;floatText('Shield burned! 🌶️',panX,panY-0.1,'#D64541');}
-            else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('TOO SPICY! 🌶️',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
+            else{lives--;lastLossBy='pepper';sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('TOO SPICY! 🌶️',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
           }
         }
         else if(p.type==='brick'){
@@ -1217,7 +1281,7 @@
             const wasCombo=combo>=5;breakCombo();
             if(!wasCombo)towerHeight=Math.max(0,towerHeight-3);
             if(shield>0){shield--;floatText('Shield cracked! 🧱',panX,panY-0.1,'#D64541');}
-            else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('BRICKED! 🧱',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
+            else{lives--;lastLossBy='brick';sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText('BRICKED! 🧱',panX,panY-0.1,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
           }
         }
         else if(p.type==='rollingpin'){
@@ -1235,7 +1299,7 @@
           comboSilentReset();runPizzaDrops++;fx3d('miss',p.x);
           debris.push({x:clamp(p.x,0,1),y:groundTop+0.008+Math.random()*0.014,r:p.r,life:2.6,maxLife:2.6});
           if(shield>0){shield--;floatText('Saved! 🛡️',clamp(p.x,0.05,0.95),0.78,'#2E8B57');}
-          else{lives--;sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText(missLines[Math.floor(Math.random()*missLines.length)],clamp(p.x,0.05,0.95),0.75,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
+          else{lives--;lastLossBy='drop';sfxLifeLost();if(lives===1){lifeStats.fourDropsSurvived=1;saveStats();}floatText(missLines[Math.floor(Math.random()*missLines.length)],clamp(p.x,0.05,0.95),0.75,'#D64541');if(lives<=0){updateHud();endGame('lives');return;}}
           updateHud();
         }
         else if(p.type==='greenmushroom'){greenOnScreen=false;}
@@ -1605,7 +1669,7 @@
     setTimeout(()=>{if(state!=='ending')return;if(canContinue())offerContinue();else finishGameOver();},380);
   }
   async function finishGameOver(){hideGoalsCard();
-    state='gameover';finalScore.textContent=score;rankText.textContent=rankFor(score);
+    state='gameover';logRun(pendingReason==='ceiling'?'ceiling':'lives');buzz([90,60,140]);finalScore.textContent=score;rankText.textContent=rankFor(score);
     gameOverHeadline.textContent=pendingReason==='ceiling'?CEILING_REASONS[Math.floor(Math.random()*CEILING_REASONS.length)]:'MAMMA MIA!';
     gameOverScreen.classList.remove('hidden');pauseScreen.classList.add('hidden');
     sfxGameOver();
