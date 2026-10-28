@@ -147,6 +147,14 @@
   .orderTicket span{font-size:12px;}
   .orderTicket.success{border-color:var(--basil);}
   .inspectionPill{border-color:#F2C14E !important;color:#F2C14E !important;animation:comboPulse .7s ease-in-out infinite;}
+  .missionList{display:flex;flex-direction:column;gap:6px;width:min(94%,410px);margin:8px auto 0;text-align:left;}
+  .mission{background:rgba(255,255,255,.06);border:1.5px solid rgba(242,193,78,.3);border-radius:9px;padding:7px 10px;font-family:'Fredoka',sans-serif;font-size:13px;color:var(--mozz);}
+  .mission.done{border-color:var(--basil);background:rgba(46,139,87,.18);}
+  .mission .mTop{display:flex;justify-content:space-between;gap:8px;}
+  .mission .mReward{color:var(--glow);white-space:nowrap;}
+  .mission .mBar{height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin-top:5px;overflow:hidden;}
+  .mission .mBar i{display:block;height:100%;background:var(--glow);}
+  .missionList.compact .mission{padding:5px 9px;font-size:12px;}
   .recapBox{width:min(94%,410px);display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:10px auto 2px;}
   .recapCell{background:rgba(255,255,255,.05);border:1px solid rgba(242,193,78,.25);border-radius:8px;padding:7px 8px;}
   .recapK{font-family:'Fredoka',sans-serif;font-size:9.5px;color:rgba(248,229,194,.65);text-transform:uppercase;letter-spacing:.5px;}
@@ -337,7 +345,11 @@
     </div>
     <div id="bookScreen" class="overlay hidden">
       <div class="leaderboardTitle">📖 PIZZA BOOK 📖</div>
-      <div class="rankBadge" style="font-size:14px;" id="achProgressText">0 / 0 unlocked</div>
+      <div class="rankBadge" style="font-size:14px;" id="chefLevelText">Chef Level 1</div>
+      <div class="subtitle" style="font-size:14px;margin:14px 0 0;">Missions</div>
+      <div class="missionList" id="missionListBook"></div>
+      <div class="subtitle" style="font-size:14px;margin:18px 0 0;">Achievements</div>
+      <div class="rankBadge" style="font-size:14px;margin-top:6px;" id="achProgressText">0 / 0 unlocked</div>
       <div class="achList" id="achList"></div>
       <button class="btn" id="closeBookBtn" style="margin-top:18px;">Back</button>
     </div>
@@ -352,6 +364,7 @@
         <div class="recapCell"><div class="recapK">Coins Earned</div><div class="recapV" id="recapCoins">0</div></div>
       </div>
       <div class="hint" id="nearMissText" style="margin-top:4px;font-size:15px;"></div>
+      <div class="missionList compact" id="missionListEnd"></div>
       <div id="scoreSubmitWrap" class="hidden" style="margin-top:14px;">
         <div class="subtitle" style="font-size:13px;margin:0 0 6px 0;">NEW HIGH SCORE! Enter initials:</div>
         <input id="initialsInput" class="initialsInput" maxlength="3" placeholder="AAA">
@@ -469,7 +482,11 @@
     {id:'classic',name:'Classic Steel',cost:0,colors:{rim:'#cfd2d6',rimEdge:'#8a8f96',face:'#e7e9ec'}},
     {id:'gold',name:'Golden Pan',cost:200,colors:{rim:'#F2C14E',rimEdge:'#a3781f',face:'#FFE9A8',rim3d:'#D9A22E'}},
     {id:'copper',name:'Copper Pan',cost:200,colors:{rim:'#C97B4A',rimEdge:'#8a4a26',face:'#E8A876',rim3d:'#B0602F'}},
-    {id:'record',name:'Record Platter',cost:250,colors:{rim:'#1a1a1a',rimEdge:'#000000',face:'#3a3a3a',rim3d:'#161616'}}
+    {id:'record',name:'Record Platter',cost:250,colors:{rim:'#1a1a1a',rimEdge:'#000000',face:'#3a3a3a',rim3d:'#161616'}},
+    // Meshy model pans: the 3D pan is the model; colors are for the 2D renderer and the shop dot.
+    {id:'pepperoni',name:'Giant Pepperoni',cost:300,model:'meshy-pan-pepperoni.glb',colors:{rim:'#B33A2E',rimEdge:'#7a1f17',face:'#D64541'}},
+    {id:'hubcap',name:'Chrome Hubcap',cost:350,model:'meshy-pan-hubcap.glb',colors:{rim:'#d8dde3',rimEdge:'#8a9099',face:'#f0f3f6'}},
+    {id:'frisbee',name:'Rainbow Frisbee',cost:300,model:'meshy-pan-frisbee.glb',colors:{rim:'#579bfc',rimEdge:'#2e5fa8',face:'#F2C14E'}}
   ];
   function loadUnlocked(key){const v=lsGetJSON(key,['classic']);return (Array.isArray(v)&&v.includes('classic'))?v:['classic',...(Array.isArray(v)?v:[])];}
   let unlockedSkins=loadUnlocked('ppp_skins_owned');
@@ -561,7 +578,62 @@
     });
     if(changed)lsSetJSON('ppp_achievements',unlockedAch);
   }
+  // Missions: three active at a time, progress carries across runs. Each pays coins and the
+  // next mission of that kind gets harder; every 3 completed raises the Chef Level (bonus coins).
+  const MISSIONS={
+    catch:{t:n=>'Catch '+n+' pizzas',n:[100,250,500,1000,2000],run:r=>r.catches},
+    dodge:{t:n=>'Dodge '+n+' hazards',n:[25,60,120,250],run:r=>r.dodged},
+    power:{t:n=>'Grab '+n+' power-ups',n:[5,15,30,60],run:r=>r.powerups},
+    slice:{t:n=>'Slice '+n+' hazards with the pizza cutter',n:[3,10,25],run:r=>r.slices},
+    orders:{t:n=>'Fill '+n+' orders',n:[5,15,30,60],run:r=>r.orders},
+    daily:{t:n=>'Play '+n+' Daily Challenge'+(n>1?'s':''),n:[1,3,7,15],run:r=>r.daily},
+    score:{t:n=>'Score '+n+' in one run',n:[150,300,600,1000,1500],best:true,run:r=>r.score},
+    combo:{t:n=>'Hit a '+n+' combo',n:[10,20,30,45],best:true,run:r=>r.combo},
+    world:{t:(n,i)=>'Reach '+['the Boardwalk','the Rooftop','the Street Festival','the Neon Arcade'][i],n:[1,1,1,1],best:true,run:(r,i)=>r.worldIdx>=i+1?1:0}
+  };
+  const missionReward=tier=>50+tier*40;
+  let mstate=lsGetJSON('ppp_missions',null);
+  function pickMission(exclude){
+    const ids=Object.keys(MISSIONS).filter(id=>!exclude.includes(id)&&(mstate.tiers[id]||0)<MISSIONS[id].n.length);
+    const id=ids[Math.floor(Math.random()*ids.length)];return id?{id,prog:0}:null;
+  }
+  if(!mstate||!Array.isArray(mstate.active)){mstate={active:[],tiers:{},done:0};}
+  while(mstate.active.length<3){const m=pickMission(mstate.active.map(a=>a.id));if(!m)break;mstate.active.push(m);}
+  const saveMissions=()=>lsSet('ppp_missions',JSON.stringify(mstate));saveMissions();
+  const chefLevel=()=>1+Math.floor(mstate.done/3);
+  function missionText(m){const M=MISSIONS[m.id],tier=mstate.tiers[m.id]||0;return M.t(M.n[tier],tier);}
+  function missionTarget(m){return MISSIONS[m.id].n[mstate.tiers[m.id]||0];}
+  // Called once per finished run; returns the missions completed this run.
+  function updateMissions(r){
+    const done=[];
+    mstate.active.forEach(m=>{
+      const M=MISSIONS[m.id],tier=mstate.tiers[m.id]||0,v=M.run(r,tier);
+      m.prog=M.best?Math.max(m.prog,v):m.prog+v;
+      if(m.prog>=M.n[tier])done.push(m);
+    });
+    done.forEach(m=>{
+      const tier=mstate.tiers[m.id]||0,lvlBefore=chefLevel();
+      m.text=missionText(m);m.reward=missionReward(tier);addCoins(m.reward);
+      mstate.tiers[m.id]=tier+1;mstate.done++;
+      if(chefLevel()>lvlBefore){m.levelUp=chefLevel();addCoins(100*chefLevel());}
+      const i=mstate.active.indexOf(m),next=pickMission(mstate.active.map(a=>a.id));
+      if(next)mstate.active[i]=next;else mstate.active.splice(i,1);
+    });
+    saveMissions();return done;
+  }
+  function renderMissions(el,justDone){
+    el.innerHTML='';
+    (justDone||[]).forEach(m=>{const d=document.createElement('div');d.className='mission done';d.innerHTML='<div class="mTop"><span>✅ '+escapeHtml(m.text)+'</span><span class="mReward">+'+m.reward+' 🍕</span></div>'+(m.levelUp?'<div class="mReward">CHEF LEVEL '+m.levelUp+'! +'+(100*m.levelUp)+' 🍕</div>':'');el.appendChild(d);});
+    mstate.active.forEach(m=>{
+      const t=missionTarget(m),pct=Math.min(100,Math.round(m.prog/t*100));
+      const d=document.createElement('div');d.className='mission';
+      d.innerHTML='<div class="mTop"><span>'+escapeHtml(missionText(m))+'</span><span class="mReward">'+Math.min(m.prog,t)+' / '+t+'</span></div><div class="mBar"><i style="width:'+pct+'%"></i></div>';
+      el.appendChild(d);
+    });
+  }
   function renderBookScreen(){
+    document.getElementById('chefLevelText').textContent='👨‍🍳 Chef Level '+chefLevel()+' · '+(3-mstate.done%3)+' mission'+(3-mstate.done%3===1?'':'s')+' to next level';
+    renderMissions(document.getElementById('missionListBook'));
     achList.innerHTML='';
     let count=0;
     ACHIEVEMENTS.forEach(a=>{
@@ -907,7 +979,7 @@
   function spawnRunDust(big){const fx=bodyX-runDir*0.04,fy=groundTop-0.005;for(let i=0;i<(big?8:2);i++)particles.push({x:fx+(Math.random()-0.5)*0.03,y:fy,vx:-runDir*(0.12+Math.random()*0.18),vy:-(0.05+Math.random()*0.12),life:0.35+Math.random()*0.25,maxLife:0.6,color:'#E9DCC4',size:2+Math.random()*(big?4:2.5)});}
   let panX=0.5,bodyX=0.5,facing=1,panVelocity=0;
   const panSpeed=1.6,panHalfW=0.1134;
-  let stunT=0,seenHazards={},lastLossBy='none',runLogged=false;
+  let stunT=0,seenHazards={},lastLossBy='none',runLogged=false,runSlices=0;
   // Power-ups (spawned through the same gate as the mushrooms): timed magnet / slow-mo / tip jar,
   // and a pizza cutter that slices the next hazard you catch.
   const PU={magnet:{icon:'🧲',name:'MAGNET',secs:8},timer:{icon:'⏱️',name:'SLOW-MO',secs:6},tipjar:{icon:'💰',name:'TIP JAR x2',secs:10},cutter:{icon:'🍕',name:'PIZZA CUTTER',secs:20}};
@@ -1024,7 +1096,7 @@
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
     score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=Math.min(MAX_SHIELD,streakBonusShield()+(upg.shield||0));spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
-    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;puT={magnet:0,timer:0,tipjar:0,cutter:0};slowF=1;
+    growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;runSlices=0;puT={magnet:0,timer:0,tipjar:0,cutter:0};slowF=1;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
     windActive=false;windTimer=0;windNextT=10+rng()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
@@ -1313,7 +1385,7 @@
         }
         else if(HAZARDS.has(p.type)&&puT.cutter>0&&!growActive){
           // Pizza cutter: this hazard is sliced, no penalty, and the cutter is used up.
-          puT.cutter=0;runHazardsDodged++;sfxCoin();buzz(25);
+          puT.cutter=0;runHazardsDodged++;runSlices++;sfxCoin();buzz(25);
           spawnBurst(panX,panY-0.12,'#FAF8F5',18,false,1.1);
           floatText('SLICED! 🍕',panX,panY-0.12,'#2E8B57');
         }
@@ -1669,7 +1741,7 @@
   // Without WebGL (or before the model loads) the original 2D renderer below is used.
   function fx3d(name,arg){const r=window.PPP3D;if(r&&r.active)r.event(name,arg);}
   const view3d={};
-  function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.isSprinting=isSprinting;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.rush=rushActive;return v;}
+  function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.isSprinting=isSprinting;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.panModel=(PAN_CATALOG.find(p=>p.id===activePan)||{}).model||null;v.rush=rushActive;return v;}
   function drawStackLabel(){const h=Math.min(towerHeight,STACK_VISUAL_CAP);if(h<=0)return;const lastSway=segSway[h-1]||0;ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;ctx.fillText('x'+towerHeight,panX*W+lastSway*30,panY*H+2-(h+1)*SEG_LIFT_PX);ctx.restore();}
   function draw3d(r3){
     const lvl=currentLevel();let sx=0,sy=0;
@@ -1763,6 +1835,9 @@
     if(recapGoals)recapGoals.textContent=activeGoals.filter(g=>g.done).length+' / '+activeGoals.length;
     if(recapCoins)recapCoins.textContent=totalCoinsThisRun;
     if(totalCoinsThisRun>0){addCoins(totalCoinsThisRun);lifeStats.coinsEarned+=totalCoinsThisRun;}
+    const missionsDone=updateMissions({catches:runCatches,dodged:runHazardsDodged,powerups:runMushroomsCaught,slices:runSlices,orders:ordersFilled,daily:dailyMode?1:0,score,combo:runMaxCombo,worldIdx:['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)});
+    renderMissions(document.getElementById('missionListEnd'),missionsDone);
+    if(missionsDone.length){sfxAchievement();buzz([30,40,30]);}
     lifeStats.bestScoreEver=Math.max(lifeStats.bestScoreEver,score);
     lifeStats.bestComboEver=Math.max(lifeStats.bestComboEver,runMaxCombo);
     if(runMaxCombo>=30&&lives>0)lifeStats.combo30Survived=1;

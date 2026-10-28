@@ -491,9 +491,31 @@ function init() {
   const panPropMat = toon({ vertexColors: true, flatShading: true }), panSkinMat = toon({ color: '#46545b', flatShading: true });
   let panPropGeo = null, panMeshes = [], panPropMesh = null;
   const panOutlineMat = outlineMaterial(0.05);
+  // Model pans (PAN_CATALOG[].model, Meshy discs baked with bake_tex.py): the whole pan is the
+  // model with its own texture, top surface at y=0 and radius 0.8 before the shared 1/0.8 scale.
+  let panModel = null, panModelGeo = null, panModelMat = null;
+  const panModelCache = {};
+  function setPanModel(file) {
+    if (file === panModel) return; panModel = file; panModelGeo = null;
+    if (!file) { rebuildPan(); return; }
+    const p = panModelCache[file] || (panModelCache[file] = new Promise(res => loader.load('/assets/props/' + file, gltf => {
+      let mesh = null; gltf.scene.updateMatrixWorld(true); gltf.scene.traverse(o => { if (o.isMesh && !mesh) mesh = o; });
+      if (!mesh) return res(null);
+      const geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+      geo.computeBoundingBox(); const b = geo.boundingBox;
+      geo.translate(-(b.min.x + b.max.x) / 2, -b.max.y, -(b.min.z + b.max.z) / 2);
+      const r = Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2, k = 0.8 / r, h = (b.max.y - b.min.y) * k;
+      geo.scale(k, Math.min(k, k * 0.22 / Math.max(h, 1e-3)), k);
+      res({ geo, mat: toon({ map: mesh.material.map || null, color: 0xffffff }) });
+    }, undefined, () => res(null))));
+    p.then(r => { if (panModel === file && r) { panModelGeo = r.geo; panModelMat = r.mat; rebuildPan(); } });
+  }
   function rebuildPan() {
     panMeshes.forEach(m => panInner.remove(m)); panMeshes = [];
-    if (panPropGeo) {
+    if (panModelGeo) {
+      const m = new THREE.Mesh(panModelGeo, panModelMat); m.scale.setScalar(1 / 0.8); panPropMesh = null;
+      panMeshes.push(m);
+    } else if (panPropGeo) {
       const m = panPropMesh = new THREE.Mesh(panPropGeo, panPropMat); m.scale.setScalar(1 / 0.8);
       const tint = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.02, 28), panFaceMat); tint.position.y = 0.0;
       panMeshes.push(m, tint);
@@ -503,8 +525,11 @@ function init() {
       panMeshes.push(face, rim);
     }
     panMeshes.forEach(m => panInner.add(m));
-    const ol = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.9, 0.2, 28), panOutlineMat); ol.position.y = -0.06; ol.userData.outline = true;
-    ol.visible = TIERS[tier].outline; panInner.add(ol); panMeshes.push(ol);
+    // model pans get an outline shell of their own shape (the cylinder pokes through thin discs)
+    const ol = panModelGeo ? new THREE.Mesh(panModelGeo, panOutlineMat) : new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.9, 0.2, 28), panOutlineMat);
+    if (panModelGeo) ol.scale.setScalar(1 / 0.8); else ol.position.y = -0.06;
+    ol.userData.outline = true; ol.userData.noOutline = !!panModelGeo;
+    ol.visible = TIERS[tier].outline && !panModelGeo; panInner.add(ol); panMeshes.push(ol);
   }
   rebuildPan();
   const STACK_MAX = 100;
@@ -686,7 +711,7 @@ function init() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, T.dpr));
     RIM.strength.value = 0.45 * T.rim; CHEF_RIM.strength.value = 0.55 * T.rim;
     decoGroup.visible = T.deco; rimLight.visible = T.rim > 0; ovenLight.visible = T.deco;
-    scene.traverse(o => { if (o.userData.outline) o.visible = T.outline; });
+    scene.traverse(o => { if (o.userData.outline) o.visible = T.outline && !o.userData.noOutline; });
     lastSize = '';
   }
   let fpsAcc = 0, fpsFrames = 0, lowSecs = 0, highSecs = 0, lastNow = performance.now(), graceT = 2;
@@ -872,6 +897,7 @@ function init() {
     panGroup.position.copy(_pan);
     panGroup.scale.setScalar(panR);
     panGroup.rotation.set(TILT, 0, 0);
+    setPanModel(v.panModel || null);
     if (v.pan) {
       panFaceMat.color.set(v.pan.face); panRimMat.color.set(v.pan.rim);
       if (panPropMesh) { const r3 = v.pan.rim3d; panPropMesh.material = r3 ? panSkinMat : panPropMat; if (r3) panSkinMat.color.set(r3); }

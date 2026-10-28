@@ -30,6 +30,9 @@ so deleting a `meshy-*.glb` falls back to the procedural one).
 | meshy-arcade.glb | Neon Arcade world | 4,500 | 01a18332-1453 |
 | meshy-jukebox.glb | Neon Arcade world | 4,500 | 01a18332-67cd |
 | meshy-claw.glb | Neon Arcade world | 4,500 | 01a18334-0ade |
+| meshy-pan-pepperoni.glb | Giant Pepperoni pan (textured, bake_tex.py) | 3,000 | 01a1835x |
+| meshy-pan-hubcap.glb | Chrome Hubcap pan (textured, bake_tex.py) | 3,000 | 01a1835x |
+| meshy-pan-frisbee.glb | Rainbow Frisbee pan (textured, bake_tex.py) | 3,000 | 01a1835x |
 
 ## How they were made (2026-10-27)
 
@@ -62,3 +65,7 @@ the visible half-width, base height, depth, turn). Portrait phones only show abo
 xf -0.85..0.85 and the oven covers the left, so keep props between xf 0 and 0.8.
 The first claw machine images both came out with a doll resembling a known animated
 character; the prompt now says "plush pizza slice toys, no dolls, no people".
+
+Flat props with a printed pattern (the model pans) lose it as vertex colors, because big flat
+faces have too few vertices. `bake_tex.py` keeps the UVs and one 512px JPEG base-color texture
+instead (about 170 KB each). Model pans skip the outline shell, which pokes through thin discs.
