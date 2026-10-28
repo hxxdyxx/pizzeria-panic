@@ -171,6 +171,15 @@
   .overlay.menu .hubBtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;font-size:12px;min-height:58px;}
   .hubIcon{font-size:20px;line-height:1;}
   .controlPicker{gap:6px;}
+  .btn.dailyBtn{font-size:15px;padding:9px 0;width:min(78%,280px);margin-top:10px;border-radius:12px;background:rgba(242,193,78,.14);color:var(--glow);border:2px solid rgba(242,193,78,.6);box-shadow:none;}
+  .boardTabs{display:flex;gap:6px;justify-content:center;margin:4px 0 12px;}
+  .boardTab{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;color:var(--beige);background:rgba(255,255,255,.06);border:2px solid rgba(242,193,78,.35);border-radius:999px;padding:6px 14px;cursor:pointer;touch-action:manipulation;}
+  .boardTab.active{background:var(--basil);border-color:var(--basil);color:var(--mozz);}
+  .upgIcon{font-size:28px;line-height:1;}
+  .upgPips{font-size:12px;color:var(--glow);letter-spacing:2px;}
+  .upgDesc{font-size:11.5px;color:var(--beige);opacity:.8;min-height:28px;}
+  /* long scrolling screens: top-aligned so content taller than the phone can scroll to its top */
+  #skinsScreen,#bookScreen{justify-content:flex-start;}
   .seg{gap:0;background:rgba(255,255,255,.06);border:1.5px solid rgba(242,193,78,.35);border-radius:999px;padding:3px;flex-wrap:nowrap;}
   .seg .modeBtn{border:none;border-radius:999px;background:none;padding:6px 14px;min-height:32px;}
   .seg .modeBtn.active{background:var(--basil);}
@@ -288,9 +297,10 @@
         <span class="statChip" id="coinsBadge">🍕 <span id="coinsText">0</span></span>
       </div>
       <button class="btn playBtn" id="startBtn">Play</button>
+      <button class="btn dailyBtn" id="dailyBtn">📅 Daily Challenge</button>
       <div class="dailyBadge hidden" id="dailyBadge"></div>
       <div class="hubRow">
-        <button class="hubBtn" id="openSkinsBtn"><span class="hubIcon">🎨</span>Skins</button>
+        <button class="hubBtn" id="openSkinsBtn"><span class="hubIcon">🛒</span>Shop</button>
         <button class="hubBtn" id="openBookBtn"><span class="hubIcon">📖</span>Book</button>
         <button class="hubBtn" id="viewBoardBtn"><span class="hubIcon">🏆</span>Scores</button>
         <button class="hubBtn" id="muteBtnStart" aria-label="Sound">🔊 Sound</button>
@@ -309,14 +319,17 @@
     </div>
     <div id="leaderboardScreen" class="overlay hidden">
       <div class="leaderboardTitle">🏆 LEADERBOARD 🏆</div>
-      <div class="boardWrap"><div class="boardHeader">🍕 TOP CHEFS 🍕</div><ol class="boardList" id="boardListMain"><li class="boardEmpty">Loading…</li></ol></div>
+      <div class="boardTabs"><button class="boardTab active" data-board="all">All-time</button><button class="boardTab" data-board="daily">Today's Daily</button></div>
+      <div class="boardWrap"><div class="boardHeader" id="boardHeaderMain">🍕 TOP CHEFS 🍕</div><ol class="boardList" id="boardListMain"><li class="boardEmpty">Loading…</li></ol></div>
       <button class="btn" id="closeBoardBtn" style="margin-top:18px;">Back</button>
       <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="skinsScreen" class="overlay hidden">
-      <div class="leaderboardTitle">🎨 SKINS &amp; PANS 🎨</div>
+      <div class="leaderboardTitle">🛒 SHOP 🛒</div>
       <div class="rankBadge" style="font-size:14px;">🍕 <span id="coinsTextSkins">0</span> Coins</div>
-      <div class="subtitle" style="font-size:14px;margin:14px 0 4px;">Chef Skins</div>
+      <div class="subtitle" style="font-size:14px;margin:14px 0 4px;">Upgrades</div>
+      <div class="grid" id="upgGrid"></div>
+      <div class="subtitle" style="font-size:14px;margin:18px 0 4px;">Chef Skins</div>
       <div class="grid" id="skinGrid"></div>
       <div class="subtitle" style="font-size:14px;margin:18px 0 4px;">Pan Skins</div>
       <div class="grid" id="panGrid"></div>
@@ -345,7 +358,7 @@
         <button class="btn secondary" id="submitScoreBtn" style="display:block;margin:10px auto 0;padding:9px 24px;font-size:15px;">Submit</button>
       </div>
       <div class="boardWrap" id="boardWrapEnd">
-        <div class="boardHeader">🍕 TOP CHEFS 🍕</div>
+        <div class="boardHeader" id="boardHeaderEnd">🍕 TOP CHEFS 🍕</div>
         <ol class="boardList" id="boardListEnd"><li class="boardEmpty">Loading…</li></ol>
       </div>
       <button class="btn" id="retryBtn" style="margin-top:20px;">Stack Again</button>
@@ -482,7 +495,7 @@
   // Shop preview: a render of 3D Pietro (assets/skins/*.jpg, made by assets/skins/README.md's steps) over the color swatch.
   function cosThumb(file,swatch,name){const box=document.createElement('div');box.className='cosThumb';box.appendChild(swatch);const img=new Image();img.alt=name;img.loading='lazy';img.decoding='async';img.src='/assets/skins/'+file+'.jpg';img.onerror=()=>img.remove();box.appendChild(img);return box;}
   function renderSkinsScreen(){
-    renderCoinsBadges();
+    renderCoinsBadges();renderUpgrades();
     skinGrid.innerHTML='';
     SKIN_CATALOG.forEach(s=>{
       const owned=unlockedSkins.includes(s.id),active=activeSkin===s.id;
@@ -689,8 +702,37 @@
   function loadDailyBest(){return parseInt(lsGet('ppp_daily_'+todaySeed+'_best','0'),10)||0;}
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
   let dailyBest=loadDailyBest();
+  // Daily Challenge: everyone gets the same item sequence (seeded by the UTC day) and today's special,
+  // on its own leaderboard (api/leaderboard.js ?board=daily). Normal runs keep Math.random.
+  const utcDay=new Date().toISOString().slice(0,10);
+  let dailyMode=false,rng=Math.random;
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  // Upgrades bought with coins (Shop). Levels persist in ppp_upgrades.
+  const UPGRADES=[
+    {id:'shield',icon:'🛡️',name:'Head Start',desc:'Start every run with an extra shield.',cost:[200,600]},
+    {id:'pu',icon:'⏳',name:'Long Power-ups',desc:'Power-ups and Big Pietro last 20% longer per level.',cost:[150,400,900]},
+    {id:'luck',icon:'🍀',name:'Lucky Kitchen',desc:'Power-ups show up more often.',cost:[150,400,900]},
+    {id:'tips',icon:'💰',name:'Big Tipper',desc:'10% more coins per level.',cost:[200,500,1000]}
+  ];
+  let upg=Object.assign({shield:0,pu:0,luck:0,tips:0},lsGetJSON('ppp_upgrades',{}));
+  function buyUpgrade(id){
+    const u=UPGRADES.find(x=>x.id===id),lvl=upg[id]||0;if(!u||lvl>=u.cost.length)return;
+    const c=u.cost[lvl];if(coins<c)return;
+    addCoins(-c);upg[id]=lvl+1;lsSet('ppp_upgrades',JSON.stringify(upg));sfxCoin();buzz(25);renderSkinsScreen();
+  }
+  function renderUpgrades(){
+    const g=document.getElementById('upgGrid');g.innerHTML='';
+    UPGRADES.forEach(u=>{
+      const lvl=upg[u.id]||0,max=u.cost.length,card=document.createElement('div');card.className='cosCard'+(lvl>=max?' active':'');
+      card.innerHTML='<div class="upgIcon">'+u.icon+'</div><div class="cosName">'+u.name+'</div><div class="upgPips">'+'●'.repeat(lvl)+'○'.repeat(max-lvl)+'</div><div class="upgDesc">'+u.desc+'</div>';
+      if(lvl>=max){const d=document.createElement('div');d.className='cosCost';d.textContent='MAXED';card.appendChild(d);}
+      else{const cost=document.createElement('div');cost.className='cosCost';cost.textContent='🍕 '+u.cost[lvl];card.appendChild(cost);
+        const b=document.createElement('button');b.className='cosBtn';b.textContent=lvl?'Upgrade':'Buy';b.disabled=coins<u.cost[lvl];b.addEventListener('click',()=>buyUpgrade(u.id));card.appendChild(b);}
+      g.appendChild(card);
+    });
+  }
   function renderDailyBadge(){
-    dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Best '+dailyBest:'');
+    dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Your daily best '+dailyBest:'');
     dailyBadge.classList.remove('hidden');
   }
 
@@ -889,7 +931,7 @@
     const key=parts.join('|');if(key===puHudKey)return;puHudKey=key;
     puHud.innerHTML=parts.map(t=>'<div class="pill puPill">'+t+'</div>').join('');
   }
-  function minPowerupInterval(){return Math.min(7,2.6+gameClock*0.02);}
+  function minPowerupInterval(){return Math.min(7,2.6+gameClock*0.02)/(1+0.15*(upg.luck||0));}
   let combo=0;
   let runCatches=0,runMaxCombo=0,runMushroomsCaught=0,runHazardsDodged=0,runPizzaDrops=0,runStackClears=0;
   // Lightweight customer-order loop: timed pizza tickets that reward clean catching.
@@ -903,7 +945,7 @@
 
   function startOrder(){
     if(orderActive||inspectionActive||progress<8)return;
-    orderTarget=2+Math.floor(Math.random()*4);orderProgress=0;orderTimer=10+orderTarget*1.5;orderActive=true;
+    orderTarget=2+Math.floor(rng()*4);orderProgress=0;orderTimer=10+orderTarget*1.5;orderActive=true;
     orderTicket.classList.remove('hidden','success');renderOrder();
   }
   function renderOrder(){
@@ -913,11 +955,11 @@
   function completeOrder(){
     if(!orderActive)return;fx3d('celebrate');ordersFilled++;addCoins(5);score+=5;orderTicket.classList.add('success');orderText.textContent='ORDER SERVED! +5';sfxCoin();
     setTimeout(()=>{orderActive=false;orderTicket.classList.add('hidden');orderTicket.classList.remove('success');},650);
-    orderNextT=22+Math.random()*16;
+    orderNextT=22+rng()*16;
   }
   function updateOrders(dt){
     if(!orderActive){orderNextT-=dt;if(orderNextT<=0)startOrder();return;}
-    orderTimer-=dt;if(orderTimer<=0){orderActive=false;orderTicket.classList.add('hidden');orderNextT=18+Math.random()*14;return;}renderOrder();
+    orderTimer-=dt;if(orderTimer<=0){orderActive=false;orderTicket.classList.add('hidden');orderNextT=18+rng()*14;return;}renderOrder();
   }
   function startInspection(){
     inspectionActive=true;inspectionTriggered=true;inspectionFailed=false;inspectionTimer=12;inspectionStartDrops=runPizzaDrops;inspectionStartHazards=runHazardHits;
@@ -980,13 +1022,13 @@
   function computePanY(){const scale=(W*0.16)/BUF_W;const offsetPx=44*scale;return clamp(BODY_Y-offsetPx/Math.max(1,H),0.5,BODY_Y-0.02);}
   function reset(){
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
-    score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=streakBonusShield();spawnTimer=0;
+    score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=Math.min(MAX_SHIELD,streakBonusShield()+(upg.shield||0));spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
     growActive=false;growTimer=0;greenOnScreen=false;lastLevelName=null;stunT=0;seenHazards={};lastLossBy='none';runLogged=false;puT={magnet:0,timer:0,tipjar:0,cutter:0};slowF=1;
     combo=0;lastReleaseT=-999;lastPowerupT=-999;powerupOnScreen=0;
-    windActive=false;windTimer=0;windNextT=10+Math.random()*8;windForce=0;windDur=0;
+    windActive=false;windTimer=0;windNextT=10+rng()*8;windForce=0;windDur=0;
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
-    rushActive=false;rushTimer=0;rushNextT=32+Math.random()*10;rushPill.classList.add('hidden');
+    rushActive=false;rushTimer=0;rushNextT=32+rng()*10;rushPill.classList.add('hidden');
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
     orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
@@ -1038,7 +1080,7 @@
   document.querySelectorAll('.modeBtn').forEach(btn=>{btn.addEventListener('click',()=>setControlMode(btn.dataset.mode));});
   renderControlButtons();
   function spawnFaller(){
-    const roll=Math.random();
+    const roll=rng();
     let pepperChance=Math.min(0.22,0.05+progress*0.00105);
     const mushBaseChance=Math.max(0.05,0.11-progress*0.0005);
     let pineappleChance=progress>=45?Math.min(0.08,0.012+progress*0.0004):0;
@@ -1053,19 +1095,19 @@
     const greenAllowed=powerupGateOpen&&!growActive&&!greenOnScreen&&greenHistorySum()<2;
     const greenChance=greenAllowed?0.012:0;
     const puOpts=powerupGateOpen&&progress>=12?Object.keys(PU).filter(k=>puT[k]<=0):[];
-    const puChance=puOpts.length?0.045:0;
+    const puChance=puOpts.length?0.045*(1+0.25*(upg.luck||0)):0;
     let type='pizza';
     if(roll<greenChance)type='greenmushroom';
     else if(roll<greenChance+mushChance)type='mushroom';
-    else if(roll<greenChance+mushChance+puChance)type=puOpts[Math.floor(Math.random()*puOpts.length)];
+    else if(roll<greenChance+mushChance+puChance)type=puOpts[Math.floor(rng()*puOpts.length)];
     else if(roll<greenChance+mushChance+puChance+pepperChance)type='pepper';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance)type='pineapple';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance)type='burnt';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
-    const r=(type==='pizza'||type==='burnt')?0.032+Math.random()*0.012:0.032;
+    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:0.032;
     const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1));
-    const f={type,x:r+Math.random()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
+    const f={type,x:r+rng()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
     // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
     if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
     if(type==='greenmushroom'){greenOnScreen=true;recordGreenSpawn();}
@@ -1146,11 +1188,11 @@
     if(!windActive){
       windTimer+=dt;
       if(windTimer>=windNextT){
-        windActive=true;windAgeT=0;windDur=1.4+Math.random()*1.0;windDir=Math.random()<0.5?-1:1;
+        windActive=true;windAgeT=0;windDur=1.4+rng()*1.0;windDir=rng()<0.5?-1:1;
         let strength=Math.min(0.85,0.35+progress*0.0022);
         if(dailySpecial.id==='doubleWind')strength=Math.min(0.98,strength*dailySpecial.windMult);
         windForce=windDir*strength;windTimer=0;
-        const gap=Math.max(5,14-progress*0.02);windNextT=gap+Math.random()*gap*0.6;
+        const gap=Math.max(5,14-progress*0.02);windNextT=gap+rng()*gap*0.6;
       }
     }else{
       windAgeT+=dt;
@@ -1169,7 +1211,7 @@
       }
     }else{
       rushTimer+=dt;
-      if(rushTimer>=rushDur){rushActive=false;rushTimer=0;rushNextT=38+Math.random()*14;}
+      if(rushTimer>=rushDur){rushActive=false;rushTimer=0;rushNextT=38+rng()*14;}
     }
     rushPill.classList.toggle('hidden',!rushActive);
   }
@@ -1263,9 +1305,9 @@
           else{floatText(catchLines[Math.floor(Math.random()*catchLines.length)]+(mult>1?' x'+mult:''),panX,panY-0.1,'#2E8B57');}
         }
         else if(p.type==='mushroom'){runMushroomsCaught++;sfxPowerup();if(lives<5){lives++;floatText('Extra life! 🍄',panX,panY-0.1,'#2E8B57');}else if(shield<MAX_SHIELD){shield++;floatText('Shield +1 🍄',panX,panY-0.1,'#2E8B57');flashShield();}else{floatText('Full up! 🍄',panX,panY-0.1,'#FAF8F5');}}
-        else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15;spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
+        else if(p.type==='greenmushroom'){runMushroomsCaught++;sfxPowerup();greenOnScreen=false;growActive=true;growTimer=15*(1+0.2*(upg.pu||0));spawnBurst(panX,panY-0.12,'#2E8B57',26,true,1.4);floatText('BIG PIETRO! 🍄',panX,panY-0.14,'#2E8B57');}
         else if(PU[p.type]){
-          runMushroomsCaught++;sfxPowerup();puT[p.type]=PU[p.type].secs;
+          runMushroomsCaught++;sfxPowerup();puT[p.type]=PU[p.type].secs*(1+0.2*(upg.pu||0));
           spawnBurst(panX,panY-0.12,'#5BC8FF',20,true,1.2);
           floatText(PU[p.type].icon+' '+PU[p.type].name+'!',panX,panY-0.14,'#5BC8FF');
         }
@@ -1661,14 +1703,15 @@
     if(state==='playing'||state==='start'||state==='paused'||state==='ending')draw();
     requestAnimationFrame(loop);
   }
-  function beginPlay(){
+  function beginPlay(daily){
     ensureAudio();sfxUIClick();
+    dailyMode=!!daily;rng=dailyMode?mulberry32(hashStr('ppp-daily-'+utcDay)):Math.random;
     if(controlMode==='tilt'){
       requestMotion(()=>{motionEnabled=true;},()=>{motionEnabled=false;controlMode='touch';localStorage.setItem('ppp_controlMode','touch');renderControlButtons();});
     }
     startGame();
   }
-  function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');showGoalsCard('SHIFT GOALS');if(shield>0)flashShield();}
+  function startGame(){streakDays=updateStreakOnPlay();fetchPlaySession();reset();state='playing';startScreen.classList.add('hidden');gameOverScreen.classList.add('hidden');pauseBtn.classList.remove('hidden');showGoalsCard('SHIFT GOALS');if(shield>0)flashShield();if(dailyMode)showBigText('DAILY CHALLENGE','#F2C14E',2.2,'level',dailySpecial.name.toUpperCase());}
   // Continue: once per run, for coins, offered when the run ends and before the results (so score,
   // coins and the leaderboard only count the final total). Back in with CONTINUE_LIVES and a short breather.
   const CONTINUE_COST=50,CONTINUE_LIVES=3,CONTINUE_SECS=6;
@@ -1714,7 +1757,7 @@
     sfxGameOver();
     const goalCoins=goalsCoinPayout();
     const baseCoins=Math.floor(score/10);
-    const totalCoinsThisRun=baseCoins+goalCoins;
+    const totalCoinsThisRun=Math.round((baseCoins+goalCoins)*(1+0.1*(upg.tips||0)));
     if(recapCombo)recapCombo.textContent=runMaxCombo;
     if(recapShift)recapShift.textContent=currentLevel().name;
     if(recapGoals)recapGoals.textContent=activeGoals.filter(g=>g.done).length+' / '+activeGoals.length;
@@ -1725,7 +1768,7 @@
     if(runMaxCombo>=30&&lives>0)lifeStats.combo30Survived=1;
     if(runPizzaDrops===0&&score>=50)lifeStats.perfectRuns=1;
     if(currentLevel().name==='Midnight Rush')lifeStats.reachedMidnight=1;
-    if(score>dailyBest){dailyBest=score;saveDailyBest(dailyBest);}
+    if(dailyMode&&score>dailyBest){dailyBest=score;saveDailyBest(dailyBest);}
     saveStats();
     checkAchievements();
     renderDailyBadge();
@@ -1733,7 +1776,8 @@
     const isNewBest=score>personalBest;
     if(isNewBest){personalBest=score;saveBest(personalBest);}
     renderBestBadge();renderStreakBadge();
-    const entries=await fetchLeaderboard();
+    document.getElementById('boardHeaderEnd').textContent=dailyMode?'📅 TODAY\'S DAILY 📅':'🍕 TOP CHEFS 🍕';
+    const entries=await fetchLeaderboard(dailyMode);
     renderBoard(boardListEnd,entries);
     const qualifies=score>0&&entries&&(entries.length<10||score>entries[entries.length-1].score);
     if(challengeTarget&&score>challengeTarget)nearMissText.textContent='🎉 Challenge beaten! '+challengeTarget+' → '+score;
@@ -1754,8 +1798,9 @@
   }
   function resumeGame(){if(state!=='paused')return;state='playing';pauseScreen.classList.add('hidden');}
   function togglePause(){if(state==='playing')pauseGame();else if(state==='paused')resumeGame();}
-  startBtn.addEventListener('click',beginPlay);
-  retryBtn.addEventListener('click',beginPlay);
+  startBtn.addEventListener('click',()=>beginPlay(false));
+  document.getElementById('dailyBtn').addEventListener('click',()=>beginPlay(true));
+  retryBtn.addEventListener('click',()=>beginPlay(dailyMode));
   pauseBtn.addEventListener('click',pauseGame);
   resumeBtn.addEventListener('click',resumeGame);
   shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with the Chef in Pizzeria Panic! 🍕 Beat my score: '+challengeUrl(score)+' #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
@@ -1800,8 +1845,8 @@
     shareImgBtn.disabled=false;shareImgBtn.textContent=prevText;
   });
   function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  async function fetchLeaderboard(){
-    try{const r=await fetch('/api/leaderboard');if(!r.ok)return null;return await r.json();}catch(e){return null;}
+  async function fetchLeaderboard(daily){
+    try{const r=await fetch('/api/leaderboard'+(daily?'?board=daily':''));if(!r.ok)return null;return await r.json();}catch(e){return null;}
   }
   function renderBoard(el,entries){
     el.innerHTML='';
@@ -1814,16 +1859,20 @@
       el.appendChild(li);
     });
   }
-  viewBoardBtn.addEventListener('click',async()=>{
-    startScreen.classList.add('hidden');leaderboardScreen.classList.remove('hidden');
-    const entries=await fetchLeaderboard();renderBoard(boardListMain,entries);
-  });
+  async function showBoard(daily){
+    document.querySelectorAll('.boardTab').forEach(b=>b.classList.toggle('active',(b.dataset.board==='daily')===daily));
+    document.getElementById('boardHeaderMain').textContent=daily?'📅 TODAY\'S DAILY 📅':'🍕 TOP CHEFS 🍕';
+    boardListMain.innerHTML='<li class="boardEmpty">Loading…</li>';
+    renderBoard(boardListMain,await fetchLeaderboard(daily));
+  }
+  document.querySelectorAll('.boardTab').forEach(b=>b.addEventListener('click',()=>showBoard(b.dataset.board==='daily')));
+  viewBoardBtn.addEventListener('click',()=>{startScreen.classList.add('hidden');leaderboardScreen.classList.remove('hidden');showBoard(false);});
   closeBoardBtn.addEventListener('click',()=>{leaderboardScreen.classList.add('hidden');startScreen.classList.remove('hidden');rotateTipLine();});
   submitScoreBtn.addEventListener('click',async()=>{
     const initials=(initialsInput.value||'AAA').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3)||'AAA';
     submitScoreBtn.disabled=true;submitScoreBtn.textContent='Saving...';
     try{
-      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initials,score,ts:sessionTs,sig:sessionSig})});
+      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initials,score,ts:sessionTs,sig:sessionSig,board:dailyMode?'daily':'all'})});
       if(r.ok){const entries=await r.json();renderBoard(boardListEnd,entries);}
     }catch(e){}
     scoreSubmitWrap.classList.add('hidden');

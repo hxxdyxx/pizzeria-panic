@@ -4,7 +4,7 @@ const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 // Bump SEASON with every big gameplay update: the board starts fresh and the old
 // season's scores stay in Redis under their own key (season 1 was 'ppp_leaderboard').
-const SEASON = 4;
+const SEASON = 5;
 const KEY = SEASON === 1 ? 'ppp_leaderboard' : `ppp_leaderboard:s${SEASON}`;
 const MAX_SCORE = 100000;
 const KEEP = 50;
@@ -43,8 +43,12 @@ function parseEntries(raw) {
   return entries;
 }
 
-async function topTen() {
-  const raw = await redis('zrange', KEY, '0', '9', 'REV', 'WITHSCORES');
+// Daily Challenge board: one key per UTC day (the server's date, so clients can't pick a day),
+// kept for 3 days. ?board=daily on GET, board: 'daily' on POST.
+const dailyKey = () => `ppp_daily:${new Date().toISOString().slice(0, 10)}`;
+
+async function topTen(key) {
+  const raw = await redis('zrange', key, '0', '9', 'REV', 'WITHSCORES');
   return parseEntries(raw || []);
 }
 
@@ -55,8 +59,9 @@ module.exports = async (req, res) => {
   }
   try {
     if (req.method === 'GET') {
+      const daily = req.query && req.query.board === 'daily';
       res.setHeader('Cache-Control', 'public, s-maxage=5, stale-while-revalidate=30');
-      res.status(200).json(await topTen());
+      res.status(200).json(await topTen(daily ? dailyKey() : KEY));
       return;
     }
     if (req.method === 'POST') {
@@ -72,9 +77,11 @@ module.exports = async (req, res) => {
       }
       const initials = String(body.initials || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'AAA';
       const member = `${initials}|${Date.now()}|${Math.random().toString(36).slice(2, 8)}`;
-      await redis('zadd', KEY, String(score), member);
-      await redis('zremrangebyrank', KEY, '0', String(-(KEEP + 1)));
-      res.status(200).json(await topTen());
+      const key = body.board === 'daily' ? dailyKey() : KEY;
+      await redis('zadd', key, String(score), member);
+      await redis('zremrangebyrank', key, '0', String(-(KEEP + 1)));
+      if (key !== KEY) await redis('expire', key, String(3 * 86400));
+      res.status(200).json(await topTen(key));
       return;
     }
     if (req.method === 'DELETE') {
