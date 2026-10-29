@@ -1,5 +1,29 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Done (2026-10-28): Game controllers and landscape
+
+hoody: make the game work with game controllers (Bluetooth or plugged in) and optimize for landscape.
+
+- Controllers use the Gamepad API (standard mapping), so Bluetooth and USB pads work the same:
+  Xbox, PlayStation, Switch Pro, MFi. Play: left stick (analog) or D-pad steers; A, LB, RB or RT
+  held sprints; Start or Select pauses. Menus: D-pad or stick moves a gold highlight, A presses,
+  B goes back (Back buttons, "No thanks" on continue, resume when paused), Start resumes.
+  Rumble mirrors phone haptics when the pad supports it. Unplugging mid-run pauses. Touching the
+  screen hides the highlight. Tutorial copy switches to "Hold A or RT to run" with a pad.
+- Polling is once per frame (`pollGamepad()` in `loop`), so a tap shorter than one frame can be
+  missed. Fine at real frame rates; headless swiftshader runs about 7 fps, so tests hold buttons 400ms+.
+- Landscape (short screens, `orientation:landscape and max-height:520px`): everything scales with
+  playfield width, so the frame is capped at the screen height instead of stretched. Side bands
+  become hold-to-move thumb zones on touch devices (double-tap sprints, hidden in Tilt mode).
+  The start menu goes full screen in two columns; other menus go full screen and scroll.
+- Tilt now reads the right axis when the phone is held sideways (beta, signed by screen angle).
+  Not verified on a real device yet.
+- manifest.json orientation is now "any" so the installed app can rotate.
+- Tutorial tip no longer covers the pause card.
+- Not a scoring change, so no leaderboard SEASON bump.
+- Open: tablets and TVs in landscape still get the 520px column. Using the full width needs sizes
+  in both renderers to come from height instead of width.
+
 ## Done (2026-10-28): Leaderboard seasons
 
 hoody: clear the leaderboard every time a big update ships. `SEASON` in

@@ -216,6 +216,33 @@
   .pauseCard .btn.playBtn{margin-top:0;width:100%;}
   .pauseCard .controlPicker{margin-top:0;}
   #frame:has(#startScreen:not(.hidden)) .footer-credit,#frame:has(#pauseScreen:not(.hidden)) .footer-credit{display:none;}
+  /* Game controllers: highlight ring on the selected button, connect toast */
+  #frame:has(#pauseScreen:not(.hidden)) .tutorialToast{display:none;}
+  .gpFocus{outline:3px solid var(--glow) !important;outline-offset:3px;box-shadow:0 0 0 6px rgba(242,193,78,.25),0 0 18px rgba(242,193,78,.55) !important;}
+  body:not(.gp) .gpFocus{outline:none !important;box-shadow:none !important;}
+  .gpToast{position:absolute;left:50%;bottom:max(44px,calc(env(safe-area-inset-bottom) + 34px));transform:translateX(-50%);z-index:30;width:max-content;max-width:90%;padding:8px 14px;border:2px solid var(--glow);border-radius:10px;background:rgba(36,27,18,.94);color:var(--mozz);font:600 14px 'Fredoka',sans-serif;pointer-events:none;}
+  /* Landscape on short screens (phones held sideways). Everything in the game scales with playfield width,
+     so cap the width near the height instead of stretching; the side bands become thumb zones and menus use the full screen. */
+  .thumbPad{display:none;}
+  @media (orientation:landscape) and (max-height:520px){
+    #frame{flex:none;max-width:min(520px,100vh);max-width:min(520px,100dvh);}
+    #frame .overlay{position:fixed;}
+    #pauseScreen{overflow-y:auto;}
+    .pauseCard,.overlay .pauseCard{margin:max(12px,env(safe-area-inset-top)) auto 12px;}
+    #startScreen.overlay.menu{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-flow:row dense;align-content:center;align-items:center;justify-items:center;column-gap:28px;row-gap:4px;padding:max(12px,env(safe-area-inset-top)) max(28px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left));}
+    #startScreen > h1.title,#startScreen > .subtitle,#startScreen > #challengeBadge,#startScreen > .statRow,#startScreen > .menuFoot{grid-column:1;}
+    #startScreen > #startBtn,#startScreen > #dailyBtn,#startScreen > #dailyBadge,#startScreen > .hubRow,#startScreen > .controlPicker{grid-column:2;}
+    .overlay.menu h1.title{margin:0;font-size:clamp(30px,11vh,50px);}
+    .overlay.menu .subtitle{margin:2px 0 6px;}
+    #startScreen .btn.playBtn{margin-top:0;padding:10px 0;}
+    #startScreen .hubRow,#startScreen .controlPicker{margin-top:8px;}
+    #startScreen .menuFoot{margin-top:6px;padding-top:4px;}
+  }
+  @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
+    #app.playing.touchCtl .thumbPad{display:flex;flex:1 1 0;align-self:stretch;align-items:flex-end;justify-content:center;padding-bottom:max(28px,env(safe-area-inset-bottom));touch-action:none;user-select:none;-webkit-user-select:none;}
+    .thumbPad span{display:flex;align-items:center;justify-content:center;width:min(96px,80%);aspect-ratio:1;border-radius:50%;border:2px solid rgba(242,193,78,.45);background:rgba(250,248,245,.06);color:rgba(250,248,245,.7);font-size:30px;transition:transform .08s,background .08s;}
+    .thumbPad.down span{transform:scale(.92);background:rgba(242,193,78,.22);color:var(--mozz);}
+  }
 
   /* ===== Play screen cleanup (2026-10-19): icon-only lives/shield, goals off the HUD, celebrations ===== */
   #livesText{letter-spacing:1px;}
@@ -264,6 +291,7 @@
 </head>
 <body>
 <div id="app">
+  <div class="thumbPad" id="padL" aria-hidden="true"><span>◀</span></div>
   <div id="frame">
     <canvas id="game3d"></canvas>
     <canvas id="game"></canvas>
@@ -417,7 +445,9 @@
       </div>
     </div>
     <div class="footer-credit">A Hot Slice Creative Game</div>
+    <div class="gpToast hidden" id="gpToast" role="status"></div>
   </div>
+  <div class="thumbPad" id="padR" aria-hidden="true"><span>▶</span></div>
 </div>
 <script>
 (function(){
@@ -878,7 +908,7 @@
   let lastBuzzT=0;
   function buzz(pattern){
     if(!hapticsOn)return;const now=performance.now();if(now-lastBuzzT<60)return;lastBuzzT=now;
-    try{if(navigator.vibrate){navigator.vibrate(pattern);return;}if(iosHaptic)iosHaptic.click();}catch(e){}
+    try{gpRumble(pattern);if(navigator.vibrate){navigator.vibrate(pattern);return;}if(iosHaptic)iosHaptic.click();}catch(e){}
   }
   function renderMuteButtons(){const icon=isMuted?'🔇':'🔊';muteBtnStart.innerHTML='<span class="hubIcon">'+icon+'</span>Sound';muteBtnHud.textContent=icon+' Sound';if(musicBtnHud)musicBtnHud.textContent=(musicOn?'🎵':'🔕')+' Music';if(hapticBtnHud)hapticBtnHud.textContent=(hapticsOn?'📳':'📴')+' Vibration';}
   function toggleMute(){isMuted=!isMuted;lsSet('ppp_muted',isMuted?'1':'0');renderMuteButtons();}
@@ -1055,7 +1085,7 @@
     if(tutorialSeen)return;
     if(tutorialTimer>0){tutorialTimer-=dt;if(tutorialTimer<=0)tutorialToast.classList.add('hidden');return;}
     if(!goalsCard.classList.contains('hidden'))return;
-    if(tutorialStep===0&&gameClock>.6){showTutorial('<b>MOVE THE PAN.</b> Catch pizzas. Double-tap a side to run.',2.6);tutorialStep=1;}
+    if(tutorialStep===0&&gameClock>.6){showTutorial(gpActive?'<b>MOVE THE PAN.</b> Catch pizzas. Hold A or RT to run.':'<b>MOVE THE PAN.</b> Catch pizzas. Double-tap a side to run.',2.6);tutorialStep=1;}
     else if(tutorialStep===1&&runCatches>=3){showTutorial('<b>BUILD THE STACK.</b> Higher scores, higher risk.',2.4);tutorialStep=2;}
     else if(tutorialStep===2&&progress>=8){showTutorial('<b>WATCH THE DANGER METER.</b> Hit the top and the shop closes.',2.6);tutorialStep=3;lsSet('ppp_tutorial_seen','1');}
   }
@@ -1128,14 +1158,29 @@
       if(onGrant)onGrant();
     }else{if(onDeny)onDeny();}
   }
-  function onOrient(e){if(e.gamma!=null)targetTilt=clamp(e.gamma,-30,30);}
-  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const dir=(k==='arrowleft'||k==='a')?-1:(k==='arrowright'||k==='d')?1:0;if(dir<0)keyLeft=true;if(dir>0)keyRight=true;if(dir&&!e.repeat){const now=performance.now();if(dir===lastKeyDir&&now-lastKeyT<DOUBLE_TAP_MS)startRun(dir,true);lastKeyT=now;lastKeyDir=dir;}if(e.key==='Escape')togglePause();});
-  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a'){keyLeft=false;if(runDir<0)runHeld=false;}if(k==='arrowright'||k==='d'){keyRight=false;if(runDir>0)runHeld=false;}});
+  function onOrient(e){
+    if(e.gamma==null)return;
+    // gamma is left/right tilt only in portrait; held sideways, beta is.
+    const a=(screen.orientation&&typeof screen.orientation.angle==='number')?screen.orientation.angle:(window.orientation||0);
+    const t=a===90?e.beta:(a===270||a===-90)?-e.beta:a===180?-e.gamma:e.gamma;
+    targetTilt=clamp(t,-30,30);
+  }
+  function pressDir(dir,repeat){if(dir<0)keyLeft=true;else keyRight=true;if(!repeat){const now=performance.now();if(dir===lastKeyDir&&now-lastKeyT<DOUBLE_TAP_MS)startRun(dir,true);lastKeyT=now;lastKeyDir=dir;}}
+  function releaseDir(dir){if(dir<0){keyLeft=false;if(runDir<0)runHeld=false;}else{keyRight=false;if(runDir>0)runHeld=false;}}
+  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const dir=(k==='arrowleft'||k==='a')?-1:(k==='arrowright'||k==='d')?1:0;if(dir)pressDir(dir,e.repeat);if(e.key==='Escape')togglePause();});
+  window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')releaseDir(-1);if(k==='arrowright'||k==='d')releaseDir(1);});
+  // Landscape thumb zones: the bands beside the playfield act as hold-to-move buttons (double-tap sprints).
+  function padBind(el,dir){
+    el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}el.classList.add('down');pressDir(dir,false);});
+    const up=()=>{el.classList.remove('down');releaseDir(dir);};
+    el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+  }
+  padBind(document.getElementById('padL'),-1);padBind(document.getElementById('padR'),1);
   canvas.addEventListener('pointerdown',e=>{dragActive=true;dragX=getPointerX(e);const now=performance.now(),dir=Math.abs(dragX-panX)<0.02?0:Math.sign(dragX-panX);if(dir&&dir===lastTapDir&&now-lastTapT<DOUBLE_TAP_MS){startRun(dir,true);lastTapT=-1e9;}else{lastTapT=now;lastTapDir=dir;}});
   canvas.addEventListener('pointermove',e=>{if(dragActive)dragX=getPointerX(e);});
   window.addEventListener('pointerup',()=>{dragActive=false;runHeld=false;});
   function getPointerX(e){const r=canvas.getBoundingClientRect();return(e.clientX-r.left)/r.width;}
-  function getControlInput(){if(controlMode==='tilt'&&motionEnabled)return targetTilt/30;if(dragActive&&dragX!==null)return clamp((dragX-panX)*10,-1,1);let k=0;if(keyLeft)k-=1;if(keyRight)k+=1;return k;}
+  function getControlInput(){if(controlMode==='tilt'&&motionEnabled)return targetTilt/30;if(dragActive&&dragX!==null)return clamp((dragX-panX)*10,-1,1);if(gpX)return gpX;let k=0;if(keyLeft)k-=1;if(keyRight)k+=1;return k;}
   function renderControlButtons(){
     document.querySelectorAll('.modeBtn').forEach(btn=>{btn.classList.toggle('active',btn.dataset.mode===controlMode);});
   }
@@ -1325,7 +1370,7 @@
     // With the finger down, the finger stays the target (no overshoot); otherwise the burst pushes him along.
     const dragSteers=dragActive&&!(controlMode==='tilt'&&motionEnabled);
     if(runBurstT>0&&!dragSteers&&Math.sign(input)!==runDir)input=runDir;
-    if(runHeld&&!dragActive&&!keyLeft&&!keyRight)runHeld=false;
+    if(runHeld&&!dragActive&&!keyLeft&&!keyRight&&!gpRun)runHeld=false;
     const sprinting=(runHeld||runBurstT>0)&&Math.abs(input)>0.08&&Math.sign(input)===runDir;
     // Rolling pin bonk: the pan goes sluggish for a moment.
     if(stunT>0){stunT=Math.max(0,stunT-dt);input*=0.4;}
@@ -1767,8 +1812,80 @@
     drawBigText();
     ctx.restore();
   }
+  // Game controllers (Bluetooth or USB) through the Gamepad API, standard mapping.
+  // Play: left stick or D-pad steers (analog), A / LB / RB / RT held sprints, Start or Select pauses.
+  // Menus: D-pad or stick moves a highlight over the open screen's buttons, A presses, B goes back, Start resumes.
+  const appEl=document.getElementById('app'),gpToast=document.getElementById('gpToast');
+  let lastAppCls=null,gpX=0,gpRun=false,gpPrev=[],gpActive=false,gpFocusEl=null,gpStickDir=null,gpNavT=0,gpToastT=0;
+  const GP_DEAD=0.22,GP_DEFAULTS=['continueBtn','resumeBtn','retryBtn','startBtn'];
+  function gpPad(){const l=navigator.getGamepads?navigator.getGamepads():[];for(const g of l)if(g&&g.connected)return g;return null;}
+  function gpRumble(pattern){
+    if(!gpActive)return;const g=gpPad(),va=g&&g.vibrationActuator;if(!va||!va.playEffect)return;
+    const ms=Array.isArray(pattern)?pattern.reduce((a,b)=>a+b,0):(+pattern||40);
+    va.playEffect('dual-rumble',{duration:Math.min(400,ms),strongMagnitude:0.6,weakMagnitude:0.4}).catch(()=>{});
+  }
+  function gpShowToast(msg){gpToast.textContent=msg;gpToast.classList.remove('hidden');clearTimeout(gpToastT);gpToastT=setTimeout(()=>gpToast.classList.add('hidden'),2600);}
+  window.addEventListener('gamepadconnected',e=>gpShowToast('🎮 '+(e.gamepad.id.split('(')[0].trim()||'Controller')+' connected'));
+  window.addEventListener('gamepaddisconnected',()=>{gpShowToast('🎮 Controller disconnected');if(state==='playing')pauseGame();});
+  // Touching the screen hands control back to touch: hide the highlight.
+  window.addEventListener('pointerdown',()=>{if(gpActive){gpActive=false;document.body.classList.remove('gp');gpSetFocus(null);}},true);
+  function gpLayer(){
+    const ls=[...document.querySelectorAll('#frame .overlay:not(.hidden), #pauseScreen:not(.hidden)')];
+    let best=null,bz=-1;for(const el of ls){const z=parseInt(getComputedStyle(el).zIndex,10)||0;if(z>=bz){bz=z;best=el;}}
+    return best;
+  }
+  function gpItems(layer){return [...layer.querySelectorAll('button, a[href], input, select, [tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');}
+  function gpSetFocus(el){
+    if(gpFocusEl)gpFocusEl.classList.remove('gpFocus');gpFocusEl=el;
+    if(el){el.classList.add('gpFocus');try{el.focus({preventScroll:true});}catch(_){}el.scrollIntoView({block:'nearest',inline:'nearest'});}
+  }
+  function gpMove(items,dir){
+    const r0=gpFocusEl.getBoundingClientRect(),cx=r0.left+r0.width/2,cy=r0.top+r0.height/2;let best=null,bs=1e9;
+    for(const el of items){if(el===gpFocusEl)continue;const r=el.getBoundingClientRect(),x=r.left+r.width/2-cx,y=r.top+r.height/2-cy;
+      const main=dir==='l'?-x:dir==='r'?x:dir==='u'?-y:y,side=dir==='l'||dir==='r'?Math.abs(y):Math.abs(x);
+      if(main<4)continue;const sc=main+side*2.2;if(sc<bs){bs=sc;best=el;}}
+    if(best){gpSetFocus(best);sfxUIClick();}
+  }
+  function gpMenu(now,hit,ax,ay){
+    const layer=gpLayer();if(!layer){gpSetFocus(null);return;}
+    const items=gpItems(layer);if(!items.length)return;
+    if(!gpFocusEl||!items.includes(gpFocusEl)){gpSetFocus(items.find(el=>GP_DEFAULTS.includes(el.id))||items[0]);}
+    let dir=hit(12)?'u':hit(13)?'d':hit(14)?'l':hit(15)?'r':null;
+    const sd=Math.abs(ax)>0.6?(ax<0?'l':'r'):Math.abs(ay)>0.6?(ay<0?'u':'d'):null,t=performance.now();
+    if(!dir&&sd&&(sd!==gpStickDir||t>gpNavT)){dir=sd;gpNavT=t+(sd!==gpStickDir?380:170);}
+    gpStickDir=sd;
+    if(dir)gpMove(items,dir);
+    if(hit(0)){const el=gpFocusEl;if(el.tagName==='INPUT')el.focus();else el.click();}
+    else if(hit(1)){if(state==='paused')resumeGame();else{const back=items.find(el=>/^close|continueNoBtn/.test(el.id));if(back)back.click();}}
+    else if(hit(9)){if(state==='paused')resumeGame();else gpFocusEl.click();}
+  }
+  function pollGamepad(){
+    const g=gpPad();
+    if(!g){gpX=0;if(gpRun){gpRun=false;runHeld=false;}return;}
+    const now=[];for(let i=0;i<17;i++){const b=g.buttons[i];now[i]=!!(b&&(b.pressed||b.value>0.5));}
+    const prev=gpPrev,hit=i=>now[i]&&!prev[i];gpPrev=now;
+    const ax=g.axes[0]||0,ay=g.axes[1]||0;
+    let x=Math.abs(ax)>GP_DEAD?Math.sign(ax)*(Math.abs(ax)-GP_DEAD)/(1-GP_DEAD):0;
+    if(now[14])x=-1;else if(now[15])x=1;
+    if(!gpActive&&(x||now.some(Boolean))){gpActive=true;document.body.classList.add('gp');}
+    if(!gpActive)return;
+    if(state==='playing'){
+      if(gpFocusEl)gpSetFocus(null);
+      gpX=x;
+      const sprint=now[0]||now[4]||now[5]||now[7];
+      if(sprint&&x){const d=Math.sign(x);if(!runHeld||runDir!==d)startRun(d,true);gpRun=true;}
+      else if(gpRun&&!sprint){gpRun=false;runHeld=false;}
+      if(hit(9)||hit(8))pauseGame();
+    }else{
+      gpX=0;if(gpRun){gpRun=false;runHeld=false;}
+      if(state!=='ending')gpMenu(now,hit,ax,ay);
+    }
+  }
   function loop(t){
     const dt=Math.min(0.05,(t-lastT)/1000);lastT=t;
+    pollGamepad();
+    const appCls=(state==='playing'?'playing ':'')+(controlMode==='tilt'&&motionEnabled?'':'touchCtl');
+    if(appCls!==lastAppCls){lastAppCls=appCls;appEl.className=appCls;}
     if(state==='playing')update(dt);
     else if(state==='paused'||state==='start')updatePietroIdle(dt);
     else if(state==='ending')updateEnding(dt);
