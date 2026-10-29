@@ -1006,6 +1006,14 @@
   function resize(){const r=frame.getBoundingClientRect();canvas.width=r.width;H=canvas.height=r.height;W=laneWidth(r.width,r.height);OX=(r.width-W)/2;
     padL.style.width=padR.style.width=OX+'px';panY=computePanY();}
   window.addEventListener('resize',resize);
+  // iOS reports the new size late after a rotation (worst in the home screen app), so the resize event
+  // can see half portrait, half landscape numbers. Re-measure after rotation and check every frame.
+  let lastFW=0,lastFH=0;
+  function checkSize(){const fw=frame.clientWidth,fh=frame.clientHeight;if(fw!==lastFW||fh!==lastFH){lastFW=fw;lastFH=fh;resize();}}
+  const settle=()=>{[60,250,600].forEach(ms=>setTimeout(checkSize,ms));};
+  window.addEventListener('orientationchange',settle);
+  if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',settle);
+  if(window.visualViewport)visualViewport.addEventListener('resize',settle);
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   let shakeAmt=0,shakeTimer=0;
   function triggerShake(intensity){shakeAmt=intensity;shakeTimer=0.35;}
@@ -1922,7 +1930,7 @@
   }
   function loop(t){
     const dt=Math.min(0.05,(t-lastT)/1000);lastT=t;
-    pollGamepad();
+    checkSize();pollGamepad();
     const appCls=(state==='playing'?'playing ':'')+(controlMode==='tilt'&&motionEnabled?'':'touchCtl');
     if(appCls!==lastAppCls){lastAppCls=appCls;appEl.className=appCls;}
     if(state==='playing')update(dt);
