@@ -1,5 +1,22 @@
 # Backlog: Pietro's Pizzeria Panic
 
+## Fix (2026-10-28): Landscape is full screen, vibration diagnostics
+
+hoody, on an iPhone after #25: "Awful. Not formatted full screen. Vibrate doesn't work." (both phone and controller)
+
+- Phones held sideways now draw the scene edge to edge. The play lane stays centred at the old size
+  (`W` = lane, `OX` = its offset in px), because every size scales with `W`; a wider lane would
+  enlarge the Chef and change scoring. render3d maps game x through `OX` over the full canvas width;
+  wall, floor and counter are extended to cover wide screens. HUD sits in the true screen corners.
+  Thumb zones overlay the side scenery. Game over and other menus keep a 560px max width and scroll from the top.
+- iPhone Safari keeps its toolbar strip; pages cannot go full screen there. The start menu shows
+  "Full screen: tap Share, then Add to Home Screen" in landscape (manifest orientation is "any"
+  since #25). Android and iPad request real fullscreen on Play.
+- Vibration: iPhone Safari has no vibrate API; the hidden switch tick only fires on a real tap, so
+  catches and hits cannot buzz the phone. Controller rumble now runs whenever a pad is connected and
+  falls back to `hapticActuators[0].pulse`. `/play?debug=pad` shows what the device reports and has
+  tap-to-test buttons. Waiting on hoody's readout from his controller.
+
 ## Done (2026-10-28): Game controllers and landscape
 
 hoody: make the game work with game controllers (Bluetooth or plugged in) and optimize for landscape.

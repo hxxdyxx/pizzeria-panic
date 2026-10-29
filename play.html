@@ -224,23 +224,28 @@
   /* Landscape on short screens (phones held sideways). Everything in the game scales with playfield width,
      so cap the width near the height instead of stretching; the side bands become thumb zones and menus use the full screen. */
   .thumbPad{display:none;}
+  .fsTip{display:none;}
   @media (orientation:landscape) and (max-height:520px){
-    #frame{flex:none;max-width:min(520px,100vh);max-width:min(520px,100dvh);}
+    #frame{max-width:none;box-shadow:none;}
+    #frame .overlay:not(#startScreen) > *{max-width:min(100%,560px);}
+    #frame .overlay:not(#startScreen){justify-content:flex-start;justify-content:safe center;}
     #frame .overlay{position:fixed;}
     #pauseScreen{overflow-y:auto;}
     .pauseCard,.overlay .pauseCard{margin:max(12px,env(safe-area-inset-top)) auto 12px;}
     #startScreen.overlay.menu{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-flow:row dense;align-content:center;align-items:center;justify-items:center;column-gap:28px;row-gap:4px;padding:max(12px,env(safe-area-inset-top)) max(28px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left));}
-    #startScreen > h1.title,#startScreen > .subtitle,#startScreen > #challengeBadge,#startScreen > .statRow,#startScreen > .menuFoot{grid-column:1;}
+    #startScreen > h1.title,#startScreen > .subtitle,#startScreen > #fsTip,#startScreen > #challengeBadge,#startScreen > .statRow,#startScreen > .menuFoot{grid-column:1;}
     #startScreen > #startBtn,#startScreen > #dailyBtn,#startScreen > #dailyBadge,#startScreen > .hubRow,#startScreen > .controlPicker{grid-column:2;}
     .overlay.menu h1.title{margin:0;font-size:clamp(30px,11vh,50px);}
     .overlay.menu .subtitle{margin:2px 0 6px;}
+    .fsTip{display:block;font:600 12px 'Fredoka',sans-serif;color:var(--glow);border:1px dashed rgba(242,193,78,.5);border-radius:8px;padding:4px 10px;margin-bottom:4px;}
     #startScreen .btn.playBtn{margin-top:0;padding:10px 0;}
     #startScreen .hubRow,#startScreen .controlPicker{margin-top:8px;}
     #startScreen .menuFoot{margin-top:6px;padding-top:4px;}
   }
   @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
-    #app.playing.touchCtl .thumbPad{display:flex;flex:1 1 0;align-self:stretch;align-items:flex-end;justify-content:center;padding-bottom:max(28px,env(safe-area-inset-bottom));touch-action:none;user-select:none;-webkit-user-select:none;}
-    .thumbPad span{display:flex;align-items:center;justify-content:center;width:min(96px,80%);aspect-ratio:1;border-radius:50%;border:2px solid rgba(242,193,78,.45);background:rgba(250,248,245,.06);color:rgba(250,248,245,.7);font-size:30px;transition:transform .08s,background .08s;}
+    #app.playing.touchCtl .thumbPad{display:flex;position:fixed;top:0;bottom:0;z-index:5;align-items:flex-end;justify-content:center;padding-bottom:max(28px,env(safe-area-inset-bottom));touch-action:none;user-select:none;-webkit-user-select:none;}
+    #padL{left:0;}#padR{right:0;}
+    .thumbPad span{display:flex;align-items:center;justify-content:center;width:min(96px,80%);aspect-ratio:1;border-radius:50%;border:2px solid rgba(242,193,78,.45);background:rgba(20,18,15,.35);color:rgba(250,248,245,.8);font-size:30px;transition:transform .08s,background .08s;}
     .thumbPad.down span{transform:scale(.92);background:rgba(242,193,78,.22);color:var(--mozz);}
   }
 
@@ -326,6 +331,7 @@
         <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
       </h1>
       <div class="subtitle">Catch. Stack. Survive the rush.</div>
+      <div class="fsTip hidden" id="fsTip">Full screen: tap Share, then Add to Home Screen</div>
       <div class="rankBadge challenge hidden" id="challengeBadge"></div>
       <div class="statRow">
         <span class="statChip hidden" id="bestBadge"></span>
@@ -451,7 +457,7 @@
 </div>
 <script>
 (function(){
-  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),frame=document.getElementById('frame');
+  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),frame=document.getElementById('frame'),padL=document.getElementById('padL'),padR=document.getElementById('padR');
   const startScreen=document.getElementById('startScreen'),gameOverScreen=document.getElementById('gameOverScreen');
   const leaderboardScreen=document.getElementById('leaderboardScreen'),pauseScreen=document.getElementById('pauseScreen');
   const startBtn=document.getElementById('startBtn'),retryBtn=document.getElementById('retryBtn'),shareBtn=document.getElementById('shareBtn'),shareImgBtn=document.getElementById('shareImgBtn');
@@ -992,7 +998,13 @@
   window.addEventListener('pagehide',()=>{if((state==='playing'||state==='paused'||state==='ending')&&gameClock>3)logRun('quit');});
 
   let W=0,H=0;
-  function resize(){const r=frame.getBoundingClientRect();W=canvas.width=r.width;H=canvas.height=r.height;panY=computePanY();}
+  // W is the play lane. Phones held sideways get a full-screen canvas with the lane centred (OX px in),
+  // because every size in the game scales with W; widening the lane would blow up the Chef and change scoring.
+  let OX=0;
+  const LANDSCAPE_SHORT=matchMedia('(orientation:landscape) and (max-height:520px)');
+  function laneWidth(w,h){return(w>h&&h<=520)?Math.min(w,520,h):w;}
+  function resize(){const r=frame.getBoundingClientRect();canvas.width=r.width;H=canvas.height=r.height;W=laneWidth(r.width,r.height);OX=(r.width-W)/2;
+    padL.style.width=padR.style.width=OX+'px';panY=computePanY();}
   window.addEventListener('resize',resize);
   function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
   let shakeAmt=0,shakeTimer=0;
@@ -1175,11 +1187,12 @@
     const up=()=>{el.classList.remove('down');releaseDir(dir);};
     el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
   }
-  padBind(document.getElementById('padL'),-1);padBind(document.getElementById('padR'),1);
+  padBind(padL,-1);padBind(padR,1);
+  if(/iPhone|iPod/.test(navigator.userAgent)&&!navigator.standalone)document.getElementById('fsTip').classList.remove('hidden');
   canvas.addEventListener('pointerdown',e=>{dragActive=true;dragX=getPointerX(e);const now=performance.now(),dir=Math.abs(dragX-panX)<0.02?0:Math.sign(dragX-panX);if(dir&&dir===lastTapDir&&now-lastTapT<DOUBLE_TAP_MS){startRun(dir,true);lastTapT=-1e9;}else{lastTapT=now;lastTapDir=dir;}});
   canvas.addEventListener('pointermove',e=>{if(dragActive)dragX=getPointerX(e);});
   window.addEventListener('pointerup',()=>{dragActive=false;runHeld=false;});
-  function getPointerX(e){const r=canvas.getBoundingClientRect();return(e.clientX-r.left)/r.width;}
+  function getPointerX(e){const r=canvas.getBoundingClientRect();return(e.clientX-r.left-OX)/W;}
   function getControlInput(){if(controlMode==='tilt'&&motionEnabled)return targetTilt/30;if(dragActive&&dragX!==null)return clamp((dragX-panX)*10,-1,1);if(gpX)return gpX;let k=0;if(keyLeft)k-=1;if(keyRight)k+=1;return k;}
   function renderControlButtons(){
     document.querySelectorAll('.modeBtn').forEach(btn=>{btn.classList.toggle('active',btn.dataset.mode===controlMode);});
@@ -1235,7 +1248,7 @@
   function currentSpawnInterval(){return Math.max(0.46,1.42-progress*0.0062);}
   const catchLines=['Bellissimo!','Perfecto!','Mamma mia, sì!','Ay, che bello!','Bravissimo!','Molto bene!'];
   const missLines=['Mamma mia...','Oh no, il pavimento!','Cursed pan!','Whoopsie, Chef!'];
-  function floatText(text,x,y,color){const el=document.createElement('div');el.className='floater';el.textContent=text;el.style.left=(x*100)+'%';el.style.top=(y*100)+'%';if(color)el.style.color=color;floatersEl.appendChild(el);setTimeout(()=>el.remove(),1350);}
+  function floatText(text,x,y,color){const el=document.createElement('div');el.className='floater';el.textContent=text;el.style.left=(OX+x*W)+'px';el.style.top=(y*100)+'%';if(color)el.style.color=color;floatersEl.appendChild(el);setTimeout(()=>el.remove(),1350);}
   function spawnBurst(x,y,color,count,big,mult){mult=mult||1;for(let i=0;i<count;i++){const ang=Math.random()*Math.PI*2,sp=((big?0.45:0.25)+Math.random()*(big?0.7:0.5))*mult;particles.push({x,y,vx:Math.cos(ang)*sp,vy:(Math.sin(ang)*sp-(big?0.25:0.15))*mult,life:(big?0.8:0.6)+Math.random()*0.4,maxLife:big?1.2:0.9,color,size:((big?4:2)+Math.random()*(big?5:3))*mult});}}
   function explodeStack(reason){
     const amt=Math.min(towerHeight,STACK_VISUAL_CAP);
@@ -1791,11 +1804,11 @@
   function draw3d(r3){
     const lvl=currentLevel();let sx=0,sy=0;
     if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
-    ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     r3.render(snapshot3d(sx,sy,lvl));
-    ctx.save();ctx.translate(sx,sy);
+    ctx.save();ctx.translate(sx+OX,sy);
     drawWeather();drawStackLabel();drawParticles();drawWindFx();
-    if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
+    if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(-OX,0,canvas.width,H);ctx.restore();}
     drawBigText();
     ctx.restore();
   }
@@ -1803,12 +1816,12 @@
     const r3=window.PPP3D;if(r3&&r3.active){draw3d(r3);return;}
     const lvl=currentLevel();let sx=0,sy=0;
     if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
-    ctx.save();ctx.translate(sx,sy);
+    ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(sx+OX,sy);
     drawBackground(lvl);drawShopInterior(lvl);drawLevelDeco(lvl);drawHotSliceSign();drawOpenSign(lvl);drawWeather();drawGround();
     debris.forEach(drawDebris);fallers.forEach(drawFaller);drawArm();
     if(growActive)drawGrowGlow();
     drawPietro();drawPanAndTower();drawParticles();drawWindFx();
-    if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
+    if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(-OX,0,canvas.width,H);ctx.restore();}
     drawBigText();
     ctx.restore();
   }
@@ -1820,9 +1833,11 @@
   const GP_DEAD=0.22,GP_DEFAULTS=['continueBtn','resumeBtn','retryBtn','startBtn'];
   function gpPad(){const l=navigator.getGamepads?navigator.getGamepads():[];for(const g of l)if(g&&g.connected)return g;return null;}
   function gpRumble(pattern){
-    if(!gpActive)return;const g=gpPad(),va=g&&g.vibrationActuator;if(!va||!va.playEffect)return;
-    const ms=Array.isArray(pattern)?pattern.reduce((a,b)=>a+b,0):(+pattern||40);
-    va.playEffect('dual-rumble',{duration:Math.min(400,ms),strongMagnitude:0.6,weakMagnitude:0.4}).catch(()=>{});
+    const g=gpPad();if(!g)return;
+    const ms=Math.min(400,Array.isArray(pattern)?pattern.reduce((a,b)=>a+b,0):(+pattern||40));
+    try{const va=g.vibrationActuator;
+      if(va&&va.playEffect){va.playEffect('dual-rumble',{duration:ms,strongMagnitude:0.6,weakMagnitude:0.4}).catch(()=>{});return;}
+      const ha=g.hapticActuators&&g.hapticActuators[0];if(ha&&ha.pulse)ha.pulse(0.6,ms).catch(()=>{});}catch(_){}
   }
   function gpShowToast(msg){gpToast.textContent=msg;gpToast.classList.remove('hidden');clearTimeout(gpToastT);gpToastT=setTimeout(()=>gpToast.classList.add('hidden'),2600);}
   window.addEventListener('gamepadconnected',e=>gpShowToast('🎮 '+(e.gamepad.id.split('(')[0].trim()||'Controller')+' connected'));
@@ -1859,6 +1874,30 @@
     else if(hit(1)){if(state==='paused')resumeGame();else{const back=items.find(el=>/^close|continueNoBtn/.test(el.id));if(back)back.click();}}
     else if(hit(9)){if(state==='paused')resumeGame();else gpFocusEl.click();}
   }
+  // /play?debug=pad: what this phone and controller actually support, with tap-to-test buttons.
+  if(/[?&]debug=pad\b/.test(location.search)){
+    const box=document.createElement('div');box.id='padDebug';
+    box.style.cssText='position:fixed;left:8px;top:8px;z-index:50;max-width:min(92vw,420px);padding:10px 12px;border:2px solid #F2C14E;border-radius:10px;background:rgba(20,18,15,.95);color:#FAF8F5;font:12px/1.45 Menlo,monospace;white-space:pre-wrap;pointer-events:auto';
+    const out=document.createElement('div'),res=document.createElement('div');res.style.color='#F2C14E';
+    const mk=(label,fn)=>{const b=document.createElement('button');b.textContent=label;b.style.cssText='margin:8px 6px 0 0;padding:8px 10px;font:600 13px Fredoka,sans-serif;border-radius:8px;border:0;background:#D64541;color:#fff';b.addEventListener('click',e=>{e.stopPropagation();fn();});return b;};
+    box.append(out,
+      mk('Rumble controller',()=>{const g=gpPad();if(!g){res.textContent='No controller seen. Press a button on it first.';return;}
+        const va=g.vibrationActuator;
+        if(va&&va.playEffect){va.playEffect('dual-rumble',{duration:600,strongMagnitude:1,weakMagnitude:1}).then(r=>res.textContent='playEffect result: '+r).catch(e=>res.textContent='playEffect error: '+e);}
+        else if(g.hapticActuators&&g.hapticActuators[0]){g.hapticActuators[0].pulse(1,600).then(r=>res.textContent='pulse result: '+r).catch(e=>res.textContent='pulse error: '+e);}
+        else res.textContent='This browser gives the page no vibration control for this controller.';}),
+      mk('Buzz phone',()=>{if(navigator.vibrate){res.textContent='navigator.vibrate: '+navigator.vibrate(300);}else if(iosHaptic){iosHaptic.click();res.textContent='iOS switch tick sent (feel it?)';}else res.textContent='No phone vibration available here.';}),
+      res);
+    document.body.appendChild(box);
+    setInterval(()=>{const g=gpPad(),va=g&&g.vibrationActuator;
+      out.textContent='PAD DEBUG\n'+(g?('id: '+g.id+'\nmapping: '+(g.mapping||'(none)')+'\nbuttons: '+g.buttons.length+' axes: '+g.axes.length+
+        '\npressed: '+g.buttons.map((b,i)=>b.pressed?i:null).filter(i=>i!==null).join(',')+
+        '\nvibrationActuator: '+(va?('yes, type '+(va.type||'?')+', effects '+JSON.stringify(va.effects||null)):'no')+
+        '\nhapticActuators: '+((g.hapticActuators&&g.hapticActuators.length)||0)):'no controller seen yet (press a button)')+
+        '\nphone vibrate API: '+(navigator.vibrate?'yes':'no')+'  iOS switch: '+(iosHaptic?'yes':'no')+
+        '\nhome screen app: '+(navigator.standalone||matchMedia('(display-mode: standalone)').matches?'yes':'no')+'  haptics setting: '+(hapticsOn?'on':'off')+
+        '\nscreen: '+innerWidth+'x'+innerHeight+' lane '+Math.round(W)+' offset '+Math.round(OX);},250);
+  }
   function pollGamepad(){
     const g=gpPad();
     if(!g){gpX=0;if(gpRun){gpRun=false;runHeld=false;}return;}
@@ -1893,6 +1932,9 @@
     requestAnimationFrame(loop);
   }
   function beginPlay(daily){
+    // Phones held sideways: real full screen where the browser allows it (Android, iPad). iPhone Safari
+    // has no page fullscreen, so the start menu shows an Add to Home Screen tip instead.
+    if(LANDSCAPE_SHORT.matches&&document.fullscreenEnabled&&!document.fullscreenElement){try{document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});}catch(_){}}
     ensureAudio();sfxUIClick();
     dailyMode=!!daily;rng=dailyMode?mulberry32(hashStr('ppp-daily-'+utcDay)):Math.random;
     if(controlMode==='tilt'){

@@ -289,12 +289,15 @@ function init() {
   }, [8, 6]);
   const wallMat = toon({ map: brickTex, color: 0xffffff });
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(26, 16), wallMat); wall.position.set(0, 3, -5.5); backdrop.add(wall);
+  // Side copies so full-screen landscape stays covered edge to edge.
+  for (const sx of [-26, 26]) { const m = wall.clone(); m.position.x = sx; backdrop.add(m); }
   const floorMat = toon({ map: floorTex });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(26, 14), floorMat); floor.rotation.x = -Math.PI / 2; backdrop.add(floor);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(78, 14), floorMat); floor.rotation.x = -Math.PI / 2; backdrop.add(floor);
+  { const uv = floor.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * 3); }
   // Counter along the back
   const counterMat = toon({ color: '#5a3520' }), counterTop = toon({ color: '#e8dcc4' });
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(26, 1.25, 1.2), counterMat); backdrop.add(counter);
-  const ctop = new THREE.Mesh(new THREE.BoxGeometry(26, 0.12, 1.35), counterTop); backdrop.add(ctop);
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(78, 1.25, 1.2), counterMat); backdrop.add(counter);
+  const ctop = new THREE.Mesh(new THREE.BoxGeometry(78, 0.12, 1.35), counterTop); backdrop.add(ctop);
   // Brick oven with glowing mouth
   const oven = new THREE.Group(); backdrop.add(oven);
   const ovenBrick = toon({ map: brickTex.clone(), color: 0xd7b8a0 }); ovenBrick.map.repeat.set(2, 1);
@@ -725,14 +728,14 @@ function init() {
 
   // ---------- screen to world mapping ----------
   const _ray = new THREE.Vector3(), _out = new THREE.Vector3();
-  let W = 1, H = 1, lastSize = '', k = 0.01, floorY = -3;
+  let W = 1, H = 1, FW = 1, FH = 1, OX = 0, lastSize = '', k = 0.01, floorY = -3;
   function screenToPlane(px, py, z, out) {
-    _ray.set(px / W * 2 - 1, -(py / H) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+    _ray.set((px + OX) / FW * 2 - 1, -(py / FH) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
     const t = (z - camera.position.z) / _ray.z;
     return out.copy(camera.position).addScaledVector(_ray, t);
   }
   function screenToFloor(px, py, out) {
-    _ray.set(px / W * 2 - 1, -(py / H) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
+    _ray.set((px + OX) / FW * 2 - 1, -(py / FH) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
     const t = (floorY - camera.position.y) / _ray.y;
     return out.copy(camera.position).addScaledVector(_ray, t > 0 ? t : 100);
   }
@@ -741,7 +744,7 @@ function init() {
     const sizeKey = fw + 'x' + fh + ':' + v.W + 'x' + v.H + ':' + tier;
     if (sizeKey === lastSize) return;
     lastSize = sizeKey;
-    W = v.W || fw; H = v.H || fh;
+    W = v.W || fw; H = v.H || fh; FW = fw; FH = fh; OX = (fw - W) / 2;
     renderer.setSize(fw, fh, false);
     camera.aspect = fw / fh; camera.clearViewOffset(); camera.updateProjectionMatrix();
     const p1 = screenToPlane(0, H / 2, 0, new THREE.Vector3()), p2 = screenToPlane(W, H / 2, 0, new THREE.Vector3());
@@ -751,7 +754,7 @@ function init() {
     // Backdrop placement relative to floor and visible width
     const wallZ = -5.5;
     const top = screenToPlane(W / 2, 0, wallZ, new THREE.Vector3()).y;
-    const left = screenToPlane(0, H / 2, wallZ, new THREE.Vector3()).x;
+    const left = screenToPlane(-OX, H / 2, wallZ, new THREE.Vector3()).x;
     counter.position.set(0, floorY + 0.62, -4.4); ctop.position.set(0, floorY + 1.3, -4.35);
     oven.position.set(left * 0.38, floorY + 1.36 + 0.65, -4.6); oven.scale.setScalar(0.85);
     windowGroup.position.set(-left * 0.5, floorY + 3.6, wallZ + 0.02);
@@ -958,7 +961,7 @@ function init() {
     for (let i = db.length; i < debrisPool.length; i++) debrisPool[i].visible = false;
 
     // Screen shake: exact pixel offset that matches the 2D overlay
-    if (v.shakeX || v.shakeY) camera.setViewOffset(W, H, -v.shakeX, -v.shakeY, W, H);
+    if (v.shakeX || v.shakeY) camera.setViewOffset(FW, FH, -v.shakeX, -v.shakeY, FW, FH);
     else if (camera.view && camera.view.enabled) camera.clearViewOffset();
     renderer.render(scene, camera);
   };
