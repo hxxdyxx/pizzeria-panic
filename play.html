@@ -101,7 +101,8 @@
   .pauseCard{position:relative;margin:12% auto 0;width:min(84%,340px);background:rgba(44,34,24,.94);border:2px solid var(--glow);border-radius:14px;padding:22px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;}
   .pauseCard .subtitle{margin:0;}
   .brandCredit{font-family:'Fredoka',sans-serif;font-size:10.5px;color:var(--beige);opacity:.65;margin-top:12px;letter-spacing:.3px;line-height:1.6;}
-  .brandCredit a{color:var(--glow);text-decoration:underline;}
+  .brandCredit a{color:var(--glow);text-decoration:underline;letter-spacing:1px;}
+  .footer-credit a{color:inherit;letter-spacing:1px;}
   @keyframes chefIdleBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
   .chefTalk{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;}
   .chefTalk a{color:rgba(248,229,194,.75);text-decoration:underline;font-size:12px;}
@@ -359,7 +360,7 @@
       </div>
       <div class="menuFoot">
         <button class="textLink" id="donateBtnStart">💵 Tip the kitchen crew</button>
-        <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HotSlice.com</a></div>
+        <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HOTSLICE.COM</a></div>
       </div>
     </div>
     <div id="leaderboardScreen" class="overlay hidden">
@@ -367,7 +368,7 @@
       <div class="boardTabs"><button class="boardTab active" data-board="all">All-time</button><button class="boardTab" data-board="daily">Today's Daily</button></div>
       <div class="boardWrap"><div class="boardHeader" id="boardHeaderMain">🍕 TOP CHEFS 🍕</div><ol class="boardList" id="boardListMain"><li class="boardEmpty">Loading…</li></ol></div>
       <button class="btn" id="closeBoardBtn" style="margin-top:18px;">Back</button>
-      <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+      <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HOTSLICE.COM</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="skinsScreen" class="overlay hidden">
       <div class="leaderboardTitle">🛒 SHOP 🛒</div>
@@ -425,7 +426,7 @@
         </div>
       </div>
       <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" camera-orbit="0deg 78deg auto" shadow-intensity="0.7" tone-mapping="neutral" environment-image="neutral" exposure="1.15" loading="eager"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef about this run</a></div>
-      <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+      <div class="brandCredit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HOTSLICE.COM</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
     </div>
     <div id="continueScreen" class="overlay continueOverlay hidden" role="dialog" aria-labelledby="continueTitle">
       <div class="continueCard">
@@ -453,7 +454,7 @@
         <div class="pauseLinks"><button class="textLink" id="muteBtnHud" aria-label="Sound">🔊 Sound</button><button class="textLink" id="musicBtnHud" aria-label="Music">🎵 Music</button><button class="textLink" id="hapticBtnHud" aria-label="Vibration">📳 Vibration</button><button class="textLink" id="donateBtnPause">💵 Tip the kitchen crew</button></div>
       </div>
     </div>
-    <div class="footer-credit">A Hot Slice Creative Game</div>
+    <div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HOTSLICE.COM</a></div>
     <div class="gpToast hidden" id="gpToast" role="status"></div>
   </div>
   <div class="thumbPad" id="padR" aria-hidden="true"><span>▶</span></div>
@@ -2069,7 +2070,7 @@
     cx2.font="600 30px 'Fredoka',sans-serif";cx2.fillStyle='#F8E5C2';
     cx2.fillText('I stacked '+score+' pizzas with the Chef!',cw/2,600);
     cx2.font="600 24px 'Fredoka',sans-serif";cx2.fillStyle='rgba(248,229,194,.7)';
-    cx2.fillText('A Hot Slice Creative Game · www.1HotSlice.com · @1hotslice',cw/2,chh-60);
+    cx2.fillText('A Hot Slice Creative Game · 1HOTSLICE.COM · @1hotslice',cw/2,chh-60);
     return new Promise(resolve=>c.toBlob(resolve,'image/png'));
   }
   shareImgBtn.addEventListener('click',async()=>{
