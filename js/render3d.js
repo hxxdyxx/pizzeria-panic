@@ -114,6 +114,14 @@ function init() {
     if (burnt) [[-0.2, -0.45], [0.28, 0.1], [-0.1, 0.4]].forEach(([x, z]) => parts.push(paint(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 10).translate(x, 0.215, z), '#2a1a0c')));
     return merge(parts);
   }
+  function ticketGeo() {
+    return merge([
+      paint(new THREE.BoxGeometry(1.35, 0.82, 0.12), '#F2C14E'),
+      paint(new THREE.BoxGeometry(1.12, 0.58, 0.035).translate(0, 0, 0.078), '#FFE9A8'),
+      paint(new THREE.CylinderGeometry(0.24, 0.24, 0.045, 12).rotateX(Math.PI / 2).translate(0, 0, 0.11), '#D64541'),
+      paint(new THREE.ConeGeometry(0.12, 0.22, 5).rotateX(Math.PI / 2).translate(0, 0, 0.15), '#F2C14E')
+    ]);
+  }
   function mushroomGeo(capColor) {
     const parts = [
       paint(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, -0.1, 0), capColor),
@@ -178,7 +186,7 @@ function init() {
   const GEO = {
     pizza: pizzaGeo(false), burnt: pizzaGeo(true), mushroom: mushroomGeo(C.tomato), greenmushroom: mushroomGeo('#4CAF3E'),
     pepper: pepperGeo(), pineapple: pineappleGeo(), brick: brickGeo(), rollingpin: rollingPinGeo(),
-    magnet: magnetGeo(), cutter: cutterGeo(), timer: timerGeo(), tipjar: tipjarGeo()
+    magnet: magnetGeo(), cutter: cutterGeo(), timer: timerGeo(), tipjar: tipjarGeo(), ticket: ticketGeo()
   };
   const FLAT = {};
 
@@ -190,7 +198,7 @@ function init() {
     mushroom: ['meshy-mushroom.glb', 'mushroom.glb'], greenmushroom: ['meshy-greenmushroom.glb', 'mushroom.glb'],
     pepper: ['meshy-pepper.glb', 'chili-pepper.glb'], pineapple: ['meshy-pineapple.glb'],
     brick: ['meshy-brick.glb', 'brick.glb'], rollingpin: ['meshy-rollingpin.glb', 'rolling-pin.glb'], pan: ['pan.glb'],
-    magnet: ['meshy-magnet.glb'], cutter: ['meshy-cutter.glb'], timer: ['meshy-timer.glb'], tipjar: ['meshy-tipjar.glb']
+    magnet: ['meshy-magnet.glb'], cutter: ['meshy-cutter.glb'], timer: ['meshy-timer.glb'], tipjar: ['meshy-tipjar.glb'], ticket: ['meshy-golden-ticket.glb']
   };
   const loader = new GLTFLoader();
   // Flatten a prop into one vertex-colored geometry, normalized to the same unit size as the primitives.
@@ -549,7 +557,7 @@ function init() {
 
   // ---------- fallers (pooled per type) ----------
   const glowTex = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
-  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541', brick: '#FF8A3C', rollingpin: '#F2C14E', magnet: '#5BC8FF', cutter: '#5BC8FF', timer: '#5BC8FF', tipjar: '#5BC8FF' };
+  const GLOW = { mushroom: '#2E8B57', greenmushroom: '#7ED957', pepper: '#D64541', brick: '#FF8A3C', rollingpin: '#F2C14E', magnet: '#5BC8FF', cutter: '#5BC8FF', timer: '#5BC8FF', tipjar: '#5BC8FF', ticket: '#F2C14E' };
   const pools = {}, used = {};
   function makeFaller(type) {
     const g = new THREE.Group();
@@ -936,9 +944,10 @@ function init() {
       const r = p.r * W * k;
       const m = g.userData.mesh;
       // long thin props read tiny at the shared unit size, so draw them bigger than their catch radius
-      m.scale.setScalar(r * (type === 'rollingpin' ? 1.7 : type === 'brick' ? 1.15 : 1));
+      m.scale.setScalar(r * (type === 'rollingpin' ? 1.7 : type === 'brick' ? 1.15 : type === 'ticket' ? 1.55 : 1));
       if (type === 'pizza' || type === 'burnt') m.rotation.set(1.05 + Math.sin(t * 2 + seed) * 0.25, seed, Math.sin(t * 1.5 + seed) * 0.3);
       else if (type === 'pepper') m.rotation.set(0.2, t * 1.5 + seed, -0.42);
+      else if (type === 'ticket') m.rotation.set(0.18 + Math.sin(t * 2.8 + seed) * 0.12, seed + t * 0.7, Math.sin(t * 2.1 + seed) * 0.18);
       else if (type === 'brick' || type === 'rollingpin') m.rotation.set(t * 2 + seed, seed, t * 1.3);
       else m.rotation.set(0.25, t * 1.2 + seed, Math.sin(t * 3 + seed) * 0.15);
       const glow = g.userData.glow;
