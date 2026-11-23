@@ -9,6 +9,7 @@ Status: implementation branch, not production release.
 - Five rotating world challenges, one per day. Kitchen catches, Boardwalk orders, and Rooftop dodges accumulate across runs. Festival combo and Neon score use the best single-run result. Each completed challenge pays 75 coins once per UTC day.
 - World visit mastery across the five named worlds. Bronze at 1 visit, Gold at 3 visits, Master at 5 visits. One-time rewards total 150 coins per world, with tier claims persisted separately from visit counts.
 - Five unique signature collectibles, one themed to each world: Golden Ladle, Boardwalk Conch, Rooftop Star, Festival Lantern, and Neon Pixel. First collection pays 25 coins and 50 score; repeats pay 10 coins and 15 score. Collection progress persists and is visible in the World Collection counter.
+- Five world-specific hazard encounters, one per world: Grease Spill (burnt-pizza behavior), Boardwalk Gull (pineapple behavior), Rooftop Antenna (brick behavior), Festival Spark (pepper behavior), and Neon Glitch (rolling-pin behavior). Each is introduced with a named warning and uses the established collision and dodge rules.
 - Distinct arrival stingers for each world, using the existing synthesizer and audio settings.
 - Share action creates a score-target challenge using the existing `?beat=` URL contract. Existing challenge links remain compatible.
 - Golden Ticket collection and Golden Pan unlock from the recovered prototype. Five tickets unlock the Golden Pan; existing coin milestones remain intact.
@@ -32,7 +33,7 @@ Full browser QA is not yet complete.
 
 ## Remaining work before calling this a complete 3.0 release
 
-- Five signature collectibles and their collection book are now implemented. Dedicated world-specific hazard encounters are still outstanding. The rotating world challenges are progression objectives, not substitutes for those hazards.
+- Signature collectibles, collection tracking, and five themed hazard encounters are implemented. The rotating world challenges are separate progression objectives.
 - World-specific music, stingers, transitions, and the broader sensory pass.
 - Daily challenge share payloads that preserve the exact deterministic daily seed, plus a proper friend result card.
 - Optional community milestone only if supported by real aggregate data. Do not display a fabricated live counter.
