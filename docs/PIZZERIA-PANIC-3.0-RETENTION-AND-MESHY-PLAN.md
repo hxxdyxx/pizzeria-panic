@@ -460,3 +460,14 @@ Track the following weekly, segmented only by broad cohorts (new/returning, cont
 6. Playtest with new players and returning players. Tune for voluntary second sessions and D1/D7 return, not just longer individual runs.
 
 **Release definition:** Pizzeria Panic 3.0 is successful when the existing game remains instantly playable, players have a clear next goal, the daily/weekly loops are fair and reliable, new world events create distinct memorable runs, and measured return behavior improves without degrading player trust or performance.
+
+
+### Golden Ticket prototype (2026-11-22)
+
+- Added a rare Golden Ticket as a positive in-run collectible, beginning after progress 20 and capped at one on-screen ticket.
+- Catching tickets increments a device-local lifetime collection counter. Five tickets unlock the existing Golden Pan; each subsequent five-ticket milestone awards 100 Pizza Coins. If the Golden Pan is already owned when the first milestone is reached, the player receives 100 coins instead.
+- Added a Pizza Book collection readout and dedicated 2D fallback art.
+- Added procedural 3D ticket geometry and a Meshy asset registry hook for `assets/props/meshy-golden-ticket.glb`.
+- The ticket does not alter run score, weekly contract progress, leaderboard scoring, or the existing power-up count.
+- Production model brief: `docs/GOLDEN-PIZZA-TICKET-MESHY-BRIEF.md`.
+- Meshy generation remains pending. No credits spent. The preview is Vercel-protected, so authenticated in-game browser QA is still required before merge.
