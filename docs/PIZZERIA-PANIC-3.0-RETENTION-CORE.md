@@ -25,7 +25,7 @@ Daily and weekly schedules use UTC to avoid timezone-dependent reward duplicatio
 ## Validation
 
 - `node --check js/retention3.js`
-- `node --test js/retention3.test.mjs` (10 tests)
+- `node --test js/retention3.test.mjs` (12 tests)
 - Inline game scripts extracted from `play.html` and syntax-checked with Node.
 - `git diff --check`
 - Existing FX tests pass with the repository's declared Three.js 0.180.0 test dependency.
