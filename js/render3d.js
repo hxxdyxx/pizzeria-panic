@@ -938,7 +938,7 @@ function init() {
       const pool = pools[type] || (pools[type] = []);
       const n = used[type] || 0; used[type] = n + 1;
       const g = pool[n] || (pool[n] = makeFaller(type));
-      g.visible = true;
+      g.visible = !String(p.type).startsWith('signature-');
       let seed = seeds.get(p); if (seed === undefined) { seed = Math.random() * 10; seeds.set(p, seed); }
       screenToPlane(p.x * W, p.y * H, 0, g.position);
       const r = p.r * W * k;
