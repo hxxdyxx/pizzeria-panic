@@ -1504,6 +1504,7 @@
           const item=SIGNATURES.find(x=>x.type===p.type);
           const first=!signatureCollection[p.type];
           signatureCollection[p.type]=(Number(signatureCollection[p.type])||0)+1;saveSignatureCollection();
+          window.dispatchEvent(new CustomEvent('ppp:signature-collected',{detail:{type:p.type,first}}));
           addCoins(first?25:10);
           score+=first?50:15;
           showBigText(first?'WORLD COLLECTIBLE!':'BONUS COLLECTIBLE!','#F2C14E',1.4,'comboUp',item?item.name:'SPECIAL FIND');
