@@ -12,7 +12,7 @@ Status: implementation branch, not production release.
 - Five world-specific hazard encounters, one per world: Grease Spill (burnt-pizza behavior), Boardwalk Gull (pineapple behavior), Rooftop Antenna (brick behavior), Festival Spark (pepper behavior), and Neon Glitch (rolling-pin behavior). Each is introduced with a named warning and uses the established collision and dodge rules.
 - Distinct arrival stingers and world-specific musical arrangements for each world, using the existing synthesizer and audio settings.
 - Community Shift milestone display reads the real anonymous aggregate run count from the existing `GET /api/run?days=7` endpoint. It shows an offline state if telemetry is unavailable. It does not fabricate counts or promise a global reward.
-- Share action creates a seeded daily score-target challenge using `?daily=1&seed=YYYY-MM-DD&beat=`. Shared links preserve the UTC seed, item sequence, and daily modifier.
+- Share action creates a seeded daily score-target challenge using `?daily=1&seed=YYYY-MM-DD&beat=`. Shared links preserve the UTC seed, item sequence, and daily modifier for that UTC day; expired links rotate cleanly to today's challenge rather than posting mismatched scores to a new daily board.
 - Golden Ticket collection and Golden Pan unlock from the recovered prototype. Five tickets unlock the Golden Pan; existing coin milestones remain intact.
 - Local return tracking stores login streak and total run count. Existing anonymous aggregate run telemetry in `api/run.js` remains the server-side measurement source.
 
@@ -25,7 +25,7 @@ Daily and weekly schedules use UTC to avoid timezone-dependent reward duplicatio
 ## Validation
 
 - `node --check js/retention3.js`
-- `node --test js/retention3.test.mjs` (10 tests)
+- `node --test js/retention3.test.mjs` (11 tests)
 - Inline game scripts extracted from `play.html` and syntax-checked with Node.
 - `git diff --check`
 - Existing FX tests pass with the repository's declared Three.js 0.180.0 test dependency.
