@@ -823,9 +823,10 @@
     {id:'fastStart',name:'Fast Start',desc:'Pizzas fall faster from the jump.',speedAdd:0.09},
     {id:'extraSpicy',name:'Extra Spicy',desc:'Peppers everywhere.',pepperMult:2.2}
   ];
-  function dailySeedString(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
-  const todaySeed=dailySeedString();
-  const dailySpecial=DAILY_MODIFIERS[hashStr(todaySeed)%DAILY_MODIFIERS.length];
+  const todaySeed=new Date().toISOString().slice(0,10);
+  const requestedSeed=new URLSearchParams(location.search).get('seed')||todaySeed;
+  const challengeSeed=/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedSeed)?requestedSeed:todaySeed;
+  const dailySpecial=DAILY_MODIFIERS[hashStr(challengeSeed)%DAILY_MODIFIERS.length];
   function loadDailyBest(){return parseInt(lsGet('ppp_daily_'+todaySeed+'_best','0'),10)||0;}
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
   let dailyBest=loadDailyBest();
@@ -2064,7 +2065,7 @@
     // has no page fullscreen, so the start menu shows an Add to Home Screen tip instead.
     if(LANDSCAPE_SHORT.matches&&document.fullscreenEnabled&&!document.fullscreenElement){try{document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});}catch(_){}}
     ensureAudio();sfxUIClick();
-    dailyMode=!!daily;rng=dailyMode?mulberry32(hashStr('ppp-daily-'+utcDay)):Math.random;
+    dailyMode=!!daily;rng=dailyMode?mulberry32(hashStr('ppp-daily-'+challengeSeed)):Math.random;
     if(controlMode==='tilt'){
       requestMotion(()=>{motionEnabled=true;},()=>{motionEnabled=false;controlMode='touch';localStorage.setItem('ppp_controlMode','touch');renderControlButtons();});
     }
