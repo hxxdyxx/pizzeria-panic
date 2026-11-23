@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+function boot(storage={ppp_coins:'10'},Clock=Date){
+  const listeners={};
+  const make=()=>({textContent:'',innerHTML:'',style:{},disabled:false,children:[],addEventListener(type,fn){(this.listeners??={})[type]=fn;},insertAdjacentElement(){},appendChild(x){this.children.push(x);}});
+  const els={weeklyPanel:make(),ticketCollectionBook:make(),coinsText:make(),coinsTextSkins:make()};
+  const document={head:make(),body:make(),createElement:make,getElementById(id){return els[id]??(els[id]=make());}};
+  const localStorage={getItem:k=>Object.hasOwn(storage,k)?storage[k]:null,setItem:(k,v)=>{storage[k]=String(v);}};
+  class CE{constructor(type,init={}){this.type=type;this.detail=init.detail;}}
+  const window={addEventListener:(type,fn)=>(listeners[type]??=[]).push(fn),dispatchEvent:e=>(listeners[e.type]||[]).forEach(fn=>fn(e))};
+  window.addEventListener('ppp:award-coins',e=>{storage.ppp_coins=String(Number(storage.ppp_coins||0)+Number(e.detail.amount||0));});
+  vm.runInNewContext(fs.readFileSync(new URL('./retention3.js',import.meta.url),'utf8'),{document,localStorage,window,navigator:{},CustomEvent:CE,Date:Clock,Math,Number,String,Array,JSON,encodeURIComponent});
+  return {storage,els,window,CE};
+}
+test('daily reward is claimable once and awards coins',()=>{const app=boot();const btn=app.els['ppp3-claim'];assert.equal(btn.disabled,false);btn.listeners.click();assert.equal(app.storage.ppp_coins,'35');assert.equal(btn.disabled,true);});
+test('world event and world mastery rewards are one-time',()=>{const app=boot();const day=Math.floor(Date.now()/86400000);const defs=[['catches',12,0],['orders',5,1],['dodged',8,2],['combo',15,3],['score',250,4]];const [metric,goal,world]=defs[day%5];app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:world,[metric]:goal,score:100}}));assert.equal(app.storage.ppp_coins,'110');assert.match(app.els['ppp3-event-status'].textContent,/collected/);app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:world,[metric]:goal,score:100}}));assert.equal(app.storage.ppp_coins,'110');});
+test('sum-based world event progress carries across runs',()=>{class DayZero extends Date{static now(){return 0;}constructor(...args){super(...(args.length?args:[0]));}}const app=boot({ppp_coins:'0'},DayZero);app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:0,catches:6,score:0}}));assert.equal(app.els['ppp3-event-status'].textContent,'6 / 12 progress');app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:0,catches:6,score:0}}));assert.equal(app.els['ppp3-event-status'].textContent,'Event reward collected');assert.equal(app.storage.ppp_coins,'75');});
+test('world mastery awards each score tier once',()=>{class DayZero extends Date{static now(){return 0;}constructor(...args){super(...(args.length?args:[0]));}}const app=boot({ppp_coins:'0'},DayZero);app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:0,catches:0,score:500}}));assert.equal(app.storage.ppp_coins,'150');assert.match(app.els['ppp3-worlds'].innerHTML,/MASTER/);app.window.dispatchEvent(new app.CE('ppp:run-finished',{detail:{worldIdx:0,catches:0,score:500}}));assert.equal(app.storage.ppp_coins,'150');});
+test('daily login reward cannot be claimed twice after a reload',()=>{const app=boot();app.els['ppp3-claim'].listeners.click();const reloaded=boot(app.storage);assert.equal(reloaded.els['ppp3-claim'].disabled,true);assert.equal(reloaded.storage.ppp_coins,'35');});
