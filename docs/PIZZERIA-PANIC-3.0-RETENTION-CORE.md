@@ -11,6 +11,7 @@ Status: implementation branch, not production release.
 - Five unique signature collectibles, one themed to each world: Golden Ladle, Boardwalk Conch, Rooftop Star, Festival Lantern, and Neon Pixel. First collection pays 25 coins and 50 score; repeats pay 10 coins and 15 score. Collection progress persists and is visible in the World Collection counter.
 - Five world-specific hazard encounters, one per world: Grease Spill (burnt-pizza behavior), Boardwalk Gull (pineapple behavior), Rooftop Antenna (brick behavior), Festival Spark (pepper behavior), and Neon Glitch (rolling-pin behavior). Each is introduced with a named warning and uses the established collision and dodge rules.
 - Distinct arrival stingers and world-specific musical arrangements for each world, using the existing synthesizer and audio settings.
+- Community Shift milestone display reads the real anonymous aggregate run count from the existing `GET /api/run?days=7` endpoint. It shows an offline state if telemetry is unavailable. It does not fabricate counts or promise a global reward.
 - Share action creates a seeded daily score-target challenge using `?daily=1&seed=YYYY-MM-DD&beat=`. Shared links preserve the UTC seed, item sequence, and daily modifier.
 - Golden Ticket collection and Golden Pan unlock from the recovered prototype. Five tickets unlock the Golden Pan; existing coin milestones remain intact.
 - Local return tracking stores login streak and total run count. Existing anonymous aggregate run telemetry in `api/run.js` remains the server-side measurement source.
@@ -24,7 +25,7 @@ Daily and weekly schedules use UTC to avoid timezone-dependent reward duplicatio
 ## Validation
 
 - `node --check js/retention3.js`
-- `node --test js/retention3.test.mjs` (9 tests)
+- `node --test js/retention3.test.mjs` (10 tests)
 - Inline game scripts extracted from `play.html` and syntax-checked with Node.
 - `git diff --check`
 - Existing FX tests pass with the repository's declared Three.js 0.180.0 test dependency.
@@ -36,7 +37,7 @@ Full browser QA is not yet complete.
 - Signature collectibles, collection tracking, and five themed hazard encounters are implemented. The rotating world challenges are separate progression objectives.
 - Additional ambience layers, transitions, and the broader sensory pass beyond the five world arrangements and arrival stingers.
 - Daily challenge share payloads that preserve the exact deterministic daily seed, plus a proper friend result card.
-- Optional community milestone only if supported by real aggregate data. Do not display a fabricated live counter.
+- The community milestone display uses real aggregate run telemetry. A shared server-side reward or unlock is not implemented.
 - Full browser QA across portrait, landscape, touch, gamepad, reduced motion, and WebGL fallback, including the production build.
 - Cross-device identity/progression is intentionally not included. It requires a privacy-conscious account or sync decision and backend support.
 
