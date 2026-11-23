@@ -92,6 +92,7 @@ module.exports = async (req, res) => {
       if (fresh) {
         await redis('lpush', KEY, JSON.stringify(clean(body)));
         await redis('ltrim', KEY, '0', String(KEEP - 1));
+        await redis('incr', 'ppp_community_runs');
       }
       res.status(204).end();
       return;
