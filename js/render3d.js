@@ -811,7 +811,11 @@ function init() {
     screenToPlane(v.bodyX * W, v.groundTop * H, chefZ, _out);
     // Chibi proportions: hands sit low, so size the Chef from screen width (the 2D
     // sprite was 0.25W tall) and keep the pan at chest height in front of him.
-    const height = 0.34 * W * k * grow;
+    // Keep the Chef's proportions tied to the shorter logical viewport dimension.
+    // W alone makes him grow dramatically in landscape, while the pan stays a fixed
+    // screen-space size. That pushes the pan rim into his torso and affects every pan skin.
+    // Using min(W, H) preserves the portrait scale and caps landscape growth.
+    const height = 0.34 * Math.min(W, H) * k * grow;
     const s = height / chefModelHeight;
     // Procedural squash/stretch (catch), hop (celebrate), wobble (stumble, miss)
     const sq = v.squash || 0;
