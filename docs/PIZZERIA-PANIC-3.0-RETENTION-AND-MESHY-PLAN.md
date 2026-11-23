@@ -434,6 +434,22 @@ Track the following weekly, segmented only by broad cohorts (new/returning, cont
 
 ---
 
+## Implementation status (2026-11-22)
+
+### Landed on the 3.0 branch: weekly contracts, first slice
+
+- Added a start-screen weekly contract panel with three rotating goals and progress bars.
+- Added six deterministic contract types: cumulative pizza catches, hazard dodges, power-ups, and orders; best-in-run combo and score.
+- Contract selection is deterministic by ISO UTC week, so devices use the same contract set for the same week.
+- Progress accumulates across runs in the existing local save system.
+- Each completed contract grants 100 Pizza Coins once on that device for that week.
+- No account, network request, notification, paid item, leaderboard change, or production API change is required.
+- Existing daily challenge, mission, achievement, and wallet systems are reused, not replaced.
+
+**Known limitation:** this first implementation is device-local. Progress does not sync across devices, and clearing browser storage clears weekly progress. It is intentionally not represented as server-verified or cross-device progression.
+
+**Validation status:** source-level integration checks confirmed the panel, weekly key, contract pool, progress update call, and reuse of existing run metrics are present on the feature branch. Browser/device playtesting and automated regression tests remain outstanding. Do not merge or deploy until those checks pass.
+
 ## Immediate next actions
 
 1. Review this plan against the live game's current telemetry and the current `BACKLOG.md`.
