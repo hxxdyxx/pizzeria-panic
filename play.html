@@ -825,7 +825,8 @@
   ];
   const todaySeed=new Date().toISOString().slice(0,10);
   const requestedSeed=new URLSearchParams(location.search).get('seed')||todaySeed;
-  const challengeSeed=/^\d{4}-\d{2}-\d{2}$/.test(requestedSeed)?requestedSeed:todaySeed;
+  const sharedDailyExpired=new URLSearchParams(location.search).get('daily')==='1'&&requestedSeed!==todaySeed;
+  const challengeSeed=/^\d{4}-\d{2}-\d{2}$/.test(requestedSeed)&&requestedSeed===todaySeed?requestedSeed:todaySeed;
   const dailySpecial=DAILY_MODIFIERS[hashStr(challengeSeed)%DAILY_MODIFIERS.length];
   function loadDailyBest(){return parseInt(lsGet('ppp_daily_'+todaySeed+'_best','0'),10)||0;}
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
@@ -860,7 +861,7 @@
     });
   }
   function renderDailyBadge(){
-    dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Your daily best '+dailyBest:'');
+    dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Your daily best '+dailyBest:'')+(sharedDailyExpired?' · Shared challenge expired. Today’s challenge has rotated.':'');
     dailyBadge.classList.remove('hidden');
   }
 
@@ -1029,6 +1030,7 @@
 
   const challengeTarget=(function(){
     try{
+      if(sharedDailyExpired)return 0;
       const v=parseInt(new URLSearchParams(location.search).get('beat'),10);
       return (Number.isFinite(v)&&v>0&&v<100000)?v:null;
     }catch(e){return null;}
@@ -2179,7 +2181,7 @@
   function togglePause(){if(state==='playing')pauseGame();else if(state==='paused')resumeGame();}
   startBtn.addEventListener('click',()=>beginPlay(false));
   const sharedDailyLink=new URLSearchParams(location.search).get('daily')==='1';
-  if(sharedDailyLink)document.getElementById('dailyBtn').textContent='📅 Play Shared Challenge';
+  if(sharedDailyLink)document.getElementById('dailyBtn').textContent=sharedDailyExpired?'📅 Today’s Daily Challenge':'📅 Play Shared Challenge';
   document.getElementById('dailyBtn').addEventListener('click',()=>beginPlay(true));
   retryBtn.addEventListener('click',()=>beginPlay(dailyMode));
   pauseBtn.addEventListener('click',pauseGame);
