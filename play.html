@@ -960,6 +960,12 @@
   function sfxRun(){ensureAudio();tone(260,0.14,'sawtooth',0.035,780);}
   function sfxCoin(){ensureAudio();tone(880,0.08,'square',0.08,1400);setTimeout(()=>tone(1180,0.09,'square',0.08),60);}
   function sfxAchievement(){ensureAudio();tone(660,0.1,'triangle',0.1,990);setTimeout(()=>tone(990,0.16,'triangle',0.1,1320),90);}
+  function worldStinger(world){
+    ensureAudio();
+    const motifs={kitchen:[523,659,784],boardwalk:[392,494,587],rooftop:[330,392,494],festival:[587,740,880,1175],arcade:[440,554,659,880]};
+    const notes=motifs[world]||motifs.kitchen;
+    notes.forEach((n,i)=>setTimeout(()=>tone(n,0.12,'triangle',0.07,n*1.01),i*75));
+  }
   function sfxGameOver(){ensureAudio();tone(300,0.22,'sawtooth',0.12,150);setTimeout(()=>tone(180,0.32,'sawtooth',0.12,90),160);}
   function sfxUIClick(){ensureAudio();tone(900,0.05,'square',0.06);}
   // Haptics: navigator.vibrate where it exists (Android). iOS Safari has no vibrate, but tapping a
@@ -1452,7 +1458,7 @@
     if(hubShift)hubShift.textContent=lvlNow.name;
     updateOrders(dt);updateInspection(dt);updateTutorial(dt);
     if(lvlNow.name!==lastLevelName){
-      if(lastLevelName){fx3d('celebrate');const prevLvl=LEVELS.find(L=>L.name===lastLevelName);const newPlace=prevLvl&&prevLvl.world!==lvlNow.world;showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',newPlace?2.6:2.0,'level',newPlace?'NOW SERVING: '+lvlNow.place:'NEW SHIFT STARTING');if(newPlace)buzz([40,40,80]);setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
+      if(lastLevelName){fx3d('celebrate');const prevLvl=LEVELS.find(L=>L.name===lastLevelName);const newPlace=prevLvl&&prevLvl.world!==lvlNow.world;showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',newPlace?2.6:2.0,'level',newPlace?'NOW SERVING: '+lvlNow.place:'NEW SHIFT STARTING');if(newPlace){buzz([40,40,80]);worldStinger(lvlNow.world);}setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
       lastLevelName=lvlNow.name;neonIdx=0;neonT=0;
     }
     let input=getControlInput();
