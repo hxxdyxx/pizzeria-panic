@@ -126,6 +126,7 @@
   .weeklyBar{height:5px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;}
   .weeklyBar i{display:block;height:100%;background:var(--basil);}
   .weeklyDone{color:#9de0ad;font-weight:700;}
+  .ticketCollection{width:min(94%,360px);margin:8px auto 0;padding:8px 11px;border:1.5px solid rgba(242,193,78,.42);border-radius:9px;background:rgba(242,193,78,.07);font-family:'Fredoka',sans-serif;font-size:12px;color:var(--beige);text-align:center;}
   .dailyBadge{font-family:'Fredoka',sans-serif;font-size:12.5px;color:#F2C14E;background:rgba(242,193,78,.1);border:1px solid rgba(242,193,78,.4);border-radius:8px;padding:5px 11px;margin-top:6px;max-width:320px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:min(94%,480px);margin:14px auto 0;}
   .cosCard{background:rgba(255,255,255,.05);border:2px solid rgba(242,193,78,.3);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;}
@@ -393,6 +394,7 @@
     <div id="bookScreen" class="overlay hidden">
       <div class="leaderboardTitle">📖 PIZZA BOOK 📖</div>
       <div class="rankBadge" style="font-size:14px;" id="chefLevelText">Chef Level 1</div>
+      <div class="ticketCollection" id="ticketCollectionBook">Golden Tickets: 0 / 5 · Catch 5 to unlock the Golden Pan</div>
       <div class="subtitle" style="font-size:14px;margin:14px 0 0;">Missions</div>
       <div class="missionList" id="missionListBook"></div>
       <div class="subtitle" style="font-size:14px;margin:18px 0 0;">Achievements</div>
@@ -516,6 +518,7 @@
   function lsSetJSON(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
 
   let coins=parseInt(lsGet('ppp_coins','0'),10)||0;
+  let goldenTicketCount=Math.max(0,parseInt(lsGet('ppp_golden_tickets','0'),10)||0);
   function saveCoins(){lsSet('ppp_coins',String(coins));}
   function addCoins(n){coins=Math.max(0,coins+n);saveCoins();renderCoinsBadges();}
   function renderCoinsBadges(){coinsText.textContent=coins;coinsTextSkins.textContent=coins;}
@@ -682,6 +685,7 @@
   }
   function renderBookScreen(){
     document.getElementById('chefLevelText').textContent='👨‍🍳 Chef Level '+chefLevel()+' · '+(3-mstate.done%3)+' mission'+(3-mstate.done%3===1?'':'s')+' to next level';
+    const ticketBook=document.getElementById('ticketCollectionBook');if(ticketBook)ticketBook.textContent='Golden Tickets: '+goldenTicketCount+' · '+(unlockedPans.includes('gold')?'Golden Pan unlocked':'Catch '+Math.max(0,5-goldenTicketCount)+' more to unlock the Golden Pan');
     renderMissions(document.getElementById('missionListBook'));
     achList.innerHTML='';
     let count=0;
@@ -1111,7 +1115,7 @@
   let orderActive=false,orderTarget=0,orderProgress=0,orderTimer=0,orderNextT=18,ordersFilled=0;
   // Milestone boss event: a health inspection asks for a clean stretch with no drops/hazard hits.
   let inspectionActive=false,inspectionTimer=0,inspectionTriggered=false,inspectionFailed=false,inspectionStartDrops=0,inspectionStartHazards=0;
-  let runHazardHits=0;
+  let runHazardHits=0,goldenTicketOnScreen=false;
   let tutorialStep=0,tutorialTimer=0;
   const tutorialSeen=lsGet('ppp_tutorial_seen','0')==='1';
 
@@ -1203,7 +1207,7 @@
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
     rushActive=false;rushTimer=0;rushNextT=32+rng()*10;rushPill.classList.add('hidden');
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
-    orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
+    orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');goldenTicketOnScreen=false;
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
     tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');continueUsed=false;closeContinue();stopRun();isSprinting=false;lastTapT=-1e9;lastKeyT=-1e9;
     pickShiftGoals();fx3d('reset');
@@ -1276,6 +1280,7 @@
     const burntChance=progress>=35?Math.min(0.05,0.008+progress*0.00022):0;
     const brickChance=progress>=45?Math.min(0.05,0.01+progress*0.0003):0;
     const pinChance=progress>=60?Math.min(0.04,0.008+progress*0.00025):0;
+    const ticketSpawn=!goldenTicketOnScreen&&progress>=20&&rng()<0.0045;
     if(dailySpecial.id==='pineappleRain')pineappleChance=Math.min(0.3,pineappleChance*dailySpecial.pineappleMult+0.05);
     if(dailySpecial.id==='extraSpicy')pepperChance=Math.min(0.4,pepperChance*dailySpecial.pepperMult);
     const powerupGateOpen=(gameClock-lastPowerupT>=minPowerupInterval())&&powerupOnScreen===0;
@@ -1294,12 +1299,14 @@
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance)type='burnt';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
-    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:0.032;
-    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1));
+    if(ticketSpawn)type='ticket';
+    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:(type==='ticket'?0.038:0.032);
+    const speedMult=type==='ticket'?0.72:(type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1)));
     const f={type,x:r+rng()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
     // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
     if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
     if(type==='greenmushroom'){greenOnScreen=true;recordGreenSpawn();}
+    if(type==='ticket'){goldenTicketOnScreen=true;f.isTicket=true;}
     if(type==='mushroom'||type==='greenmushroom'||PU[type]){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
     fallers.push(f);
   }
@@ -1471,7 +1478,7 @@
       const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom'||!!PU[p.type];
       // Magnet: pizzas and power-ups drift toward the pan once they're a quarter of the way down.
       if(puT.magnet>0&&!HAZARDS.has(p.type)&&p.y>0.25)p.x+=(panX-p.x)*Math.min(1,dt*2.4);
-      const isGood=p.type==='pizza'||isPowerupType;
+      const isGood=p.type==='pizza'||p.type==='ticket'||isPowerupType;
       const stackTopY=panY-(Math.min(towerHeight,STACK_VISUAL_CAP)*SEG_LIFT_PX)/H;
       const goodBandTop=Math.min(panY-0.02,stackTopY-0.05);
       const inBand=isGood?(p.y>=goodBandTop&&p.y<=panY+0.05):(p.y>=panY-0.05&&p.y<=panY+0.06);
@@ -1480,7 +1487,15 @@
       if(inBand&&Math.abs(p.x-panX)<reach){
         fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch',p.type);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
-        if(p.type==='pizza'){
+        if(p.type==='ticket'){
+          goldenTicketOnScreen=false;goldenTicketCount++;lsSet('ppp_golden_tickets',String(goldenTicketCount));
+          const rewardMilestone=goldenTicketCount%5===0;
+          if(goldenTicketCount===5&&!unlockedPans.includes('gold')){unlockedPans.push('gold');lsSetJSON('ppp_pans_owned',unlockedPans);renderSkinsScreen();showBigText('GOLDEN PAN UNLOCKED!','#F2C14E',2,'comboUp','5 GOLDEN TICKETS COLLECTED');}
+          else if(rewardMilestone){addCoins(100);showBigText('GOLDEN TICKET MILESTONE!','#F2C14E',1.6,'comboUp','+100 PIZZA COINS');}
+          else{floatText('GOLDEN TICKET! '+goldenTicketCount+'/5',panX,panY-0.14,'#F2C14E');}
+          renderBookScreen();sfxAchievement();buzz([35,45,35]);spawnBurst(panX,panY-0.12,'#F2C14E',24,true,1.3);
+        }
+        else if(p.type==='pizza'){
           combo++;progress++;runCatches++;runMaxCombo=Math.max(runMaxCombo,combo);
           if(orderActive){orderProgress++;if(orderProgress>=orderTarget)completeOrder();else renderOrder();}
           sfxCatch();
@@ -1567,6 +1582,7 @@
           updateHud();
         }
         else if(p.type==='greenmushroom'){greenOnScreen=false;}
+        else if(p.type==='ticket'){goldenTicketOnScreen=false;}
         else if(p.type==='pineapple'){runHazardsDodged++;lifeStats.pineapplesDodged++;saveStats();}
         else if(p.type==='pepper'){runHazardsDodged++;lifeStats.peppersDodged++;saveStats();}
         else if(p.type==='brick'||p.type==='rollingpin'){runHazardsDodged++;}
