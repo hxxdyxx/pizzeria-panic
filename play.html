@@ -923,6 +923,7 @@
              [E5,0,E5,F5,E5,D5],[C5,0,C5,D5,C5,B4],[A4,C5,E5,A5,GS5,A5],[B5,GS5,E5,B4,0,0],
              [D5,F5,A5,F5,D5,A4],[C5,E5,A5,E5,C5,A4],[B4,E5,GS5,B5,GS5,E5],[A4,0,A4,0,0,0]];
   const BASS=[A3,E4,A3,E4,D4,A3,E4,A3,A3,A3,A3,E4,D4,A3,E4,A3];
+  const WORLD_MUSIC=[{transpose:0,wave:'square',bar:0},{transpose:2,wave:'triangle',bar:3},{transpose:-3,wave:'sine',bar:6},{transpose:5,wave:'triangle',bar:9},{transpose:7,wave:'square',bar:12}];
   function mNote(freq,t,dur,type,vol){
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
@@ -944,9 +945,9 @@
     const want=(1+Math.min(0.25,progress*0.0007)+(rushActive?0.12:0))*(0.6+0.4*slowF);musicTempo+=(want-musicTempo)*0.05;
     if(musicNextT<now)musicNextT=now+0.05;
     while(musicNextT<now+0.15){
-      const step=0.17/musicTempo,bar=Math.floor(musicStep/6)%16,i=musicStep%6,t=musicNextT;
-      const m=MEL[bar][i];if(m)mNote(N(m),t,step*0.9,'square',0.045);
-      if(i===0||i===3){mNote(N(BASS[bar]-12+(i===3?7:0)),t,step*2.6,'triangle',0.2);mDrum(t,true);}
+      const step=0.17/musicTempo,worldIdx=Math.max(0,['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)),worldMusic=WORLD_MUSIC[worldIdx],bar=(Math.floor(musicStep/6)+worldMusic.bar)%16,i=musicStep%6,t=musicNextT;
+      const m=MEL[bar][i];if(m)mNote(N(m+worldMusic.transpose),t,step*0.9,worldMusic.wave,0.045);
+      if(i===0||i===3){mNote(N(BASS[bar]-12+(i===3?7:0)+worldMusic.transpose),t,step*2.6,worldMusic.wave==='sine'?'triangle':worldMusic.wave,0.2);mDrum(t,true);}
       else mDrum(t,false);
       if(i===0&&bar%4===0)mNote(N(BASS[bar]),t,step*5.5,'sine',0.05);
       musicStep++;musicNextT+=step;
