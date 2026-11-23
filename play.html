@@ -38,6 +38,7 @@
   try{const c=document.createElement('canvas');if(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))import('/vendor/model-viewer.min.js');}catch(e){}
 </script>
 <script type="module" src="/js/render3d.js"></script>
+<script type="module" src="/js/retention3.js"></script>
 <style>
   :root{--beige:#F8E5C2;--beige-dark:#E0C99A;--tomato:#D64541;--tomato-dark:#A5322E;--mozz:#FAF8F5;--basil:#2E8B57;--basil-dark:#1F6640;--olive:#2C2C2C;--glow:#F2C14E;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -118,6 +119,15 @@
   .hubRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
   .hubBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;color:var(--beige);background:rgba(255,255,255,.07);border:2px solid rgba(242,193,78,.4);border-radius:9px;padding:8px 12px;cursor:pointer;touch-action:manipulation;}
   .hubBtn:active{transform:translateY(1px);}
+  .weeklyPanel{width:min(94%,360px);margin:8px auto 0;padding:9px 11px;border:1.5px solid rgba(242,193,78,.35);border-radius:10px;background:rgba(255,255,255,.045);text-align:left;}
+  .weeklyHead{display:flex;justify-content:space-between;align-items:center;font-family:'Fredoka',sans-serif;font-size:12px;color:var(--glow);letter-spacing:.4px;margin-bottom:6px;}
+  .weeklyContract{margin-top:6px;font-family:'Open Sans',sans-serif;font-size:10.5px;color:var(--beige);}
+  .weeklyContractTop{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .weeklyContractTop strong{font-weight:700;color:var(--mozz);}
+  .weeklyBar{height:5px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;}
+  .weeklyBar i{display:block;height:100%;background:var(--basil);}
+  .weeklyDone{color:#9de0ad;font-weight:700;}
+  .ticketCollection{width:min(94%,360px);margin:8px auto 0;padding:8px 11px;border:1.5px solid rgba(242,193,78,.42);border-radius:9px;background:rgba(242,193,78,.07);font-family:'Fredoka',sans-serif;font-size:12px;color:var(--beige);text-align:center;}
   .dailyBadge{font-family:'Fredoka',sans-serif;font-size:12.5px;color:#F2C14E;background:rgba(242,193,78,.1);border:1px solid rgba(242,193,78,.4);border-radius:8px;padding:5px 11px;margin-top:6px;max-width:320px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:min(94%,480px);margin:14px auto 0;}
   .cosCard{background:rgba(255,255,255,.05);border:2px solid rgba(242,193,78,.3);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;}
@@ -345,6 +355,7 @@
       <button class="btn playBtn" id="startBtn">Play</button>
       <button class="btn dailyBtn" id="dailyBtn">📅 Daily Challenge</button>
       <div class="dailyBadge hidden" id="dailyBadge"></div>
+      <section class="weeklyPanel" id="weeklyPanel" aria-live="polite" aria-label="Weekly contracts"><div class="weeklyHead"><span>THIS WEEK IN THE KITCHEN</span><span id="weeklyRewardText">Earn up to 300 coins</span></div><div id="weeklyContracts"></div></section>
       <div class="hubRow">
         <button class="hubBtn" id="openSkinsBtn"><span class="hubIcon">🛒</span>Shop</button>
         <button class="hubBtn" id="openBookBtn"><span class="hubIcon">📖</span>Book</button>
@@ -384,6 +395,7 @@
     <div id="bookScreen" class="overlay hidden">
       <div class="leaderboardTitle">📖 PIZZA BOOK 📖</div>
       <div class="rankBadge" style="font-size:14px;" id="chefLevelText">Chef Level 1</div>
+      <div class="ticketCollection" id="ticketCollectionBook">Golden Tickets: 0 / 5 · Catch 5 to unlock the Golden Pan</div>
       <div class="subtitle" style="font-size:14px;margin:14px 0 0;">Missions</div>
       <div class="missionList" id="missionListBook"></div>
       <div class="subtitle" style="font-size:14px;margin:18px 0 0;">Achievements</div>
@@ -507,8 +519,10 @@
   function lsSetJSON(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
 
   let coins=parseInt(lsGet('ppp_coins','0'),10)||0;
+  let goldenTicketCount=Math.max(0,parseInt(lsGet('ppp_golden_tickets','0'),10)||0);
   function saveCoins(){lsSet('ppp_coins',String(coins));}
   function addCoins(n){coins=Math.max(0,coins+n);saveCoins();renderCoinsBadges();}
+  window.addEventListener('ppp:award-coins',e=>{const amount=Number(e.detail&&e.detail.amount)||0;if(amount>0)addCoins(amount);});
   function renderCoinsBadges(){coinsText.textContent=coins;coinsTextSkins.textContent=coins;}
 
   const SKIN_CATALOG=[
@@ -673,6 +687,7 @@
   }
   function renderBookScreen(){
     document.getElementById('chefLevelText').textContent='👨‍🍳 Chef Level '+chefLevel()+' · '+(3-mstate.done%3)+' mission'+(3-mstate.done%3===1?'':'s')+' to next level';
+    const ticketBook=document.getElementById('ticketCollectionBook');if(ticketBook)ticketBook.textContent='Golden Tickets: '+goldenTicketCount+' · '+(unlockedPans.includes('gold')?'Golden Pan unlocked':'Catch '+Math.max(0,5-goldenTicketCount)+' more to unlock the Golden Pan');
     renderMissions(document.getElementById('missionListBook'));
     achList.innerHTML='';
     let count=0;
@@ -847,6 +862,44 @@
     dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Your daily best '+dailyBest:'');
     dailyBadge.classList.remove('hidden');
   }
+
+  // Weekly contracts are a device-local, deterministic return loop. No account or network required.
+  function utcWeekKey(date){const d=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));const week=Math.ceil((((d-yearStart)/86400000)+1)/7);return d.getUTCFullYear()+'-W'+String(week).padStart(2,'0');}
+  const weeklyKey=utcWeekKey(new Date());
+  const WEEKLY_POOL=[
+    {id:'catch',title:'Keep the Pizzas Coming',target:120,read:r=>r.catches,mode:'sum'},
+    {id:'dodge',title:'Clean Kitchen',target:25,read:r=>r.dodged,mode:'sum'},
+    {id:'power',title:'Power-Up Regular',target:8,read:r=>r.powerups,mode:'sum'},
+    {id:'combo',title:'Combo Specialist',target:15,read:r=>r.combo,mode:'best'},
+    {id:'orders',title:'Service Pro',target:8,read:r=>r.orders,mode:'sum'},
+    {id:'score',title:'Big Night',target:250,read:r=>r.score,mode:'best'}
+  ];
+  function newWeeklyState(){const offset=hashStr(weeklyKey)%WEEKLY_POOL.length;return{week:weeklyKey,contracts:[0,1,2].map(i=>({id:WEEKLY_POOL[(offset+i*2)%WEEKLY_POOL.length].id,progress:0,claimed:false}))};}
+  let weeklyState=lsGetJSON('ppp_weekly_v1',null);
+  if(!weeklyState||weeklyState.week!==weeklyKey||!Array.isArray(weeklyState.contracts)||weeklyState.contracts.length!==3)weeklyState=newWeeklyState();
+  const saveWeekly=()=>lsSetJSON('ppp_weekly_v1',weeklyState);
+  function weeklyContractDef(id){return WEEKLY_POOL.find(c=>c.id===id);}
+  function renderWeeklyContracts(){
+    const host=document.getElementById('weeklyContracts');if(!host)return;host.innerHTML='';
+    const earned=weeklyState.contracts.filter(c=>c.claimed).length;
+    document.getElementById('weeklyRewardText').textContent=earned+'/3 complete · '+(3-earned)*100+' coins left';
+    weeklyState.contracts.forEach(c=>{const def=weeklyContractDef(c.id);if(!def)return;const done=c.claimed,pct=Math.min(100,Math.round(c.progress/def.target*100));
+      const row=document.createElement('div');row.className='weeklyContract';
+      row.innerHTML='<div class="weeklyContractTop"><strong>'+escapeHtml(def.title)+'</strong><span class="'+(done?'weeklyDone':'')+'">'+(done?'COMPLETE':Math.min(c.progress,def.target)+' / '+def.target)+'</span></div><div class="weeklyBar"><i style="width:'+pct+'%"></i></div>';
+      host.appendChild(row);
+    });
+  }
+  function updateWeeklyContracts(run){
+    let newlyCompleted=0;
+    weeklyState.contracts.forEach(c=>{if(c.claimed)return;const def=weeklyContractDef(c.id);if(!def)return;const value=Math.max(0,Math.floor(Number(def.read(run))||0));
+      c.progress=def.mode==='best'?Math.max(c.progress,value):Math.min(def.target,c.progress+value);
+      if(c.progress>=def.target){c.progress=def.target;c.claimed=true;newlyCompleted++;addCoins(100);}
+    });
+    saveWeekly();renderWeeklyContracts();
+    if(newlyCompleted){sfxAchievement();buzz([35,45,35]);floatText('WEEKLY CONTRACT +'+(newlyCompleted*100)+' COINS',0.5,0.24,'#9DE0AD');}
+    return newlyCompleted;
+  }
+  renderWeeklyContracts();
 
   let audioCtx=null,isMuted=lsGet('ppp_muted','0')==='1';
   function ensureAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
@@ -1064,7 +1117,7 @@
   let orderActive=false,orderTarget=0,orderProgress=0,orderTimer=0,orderNextT=18,ordersFilled=0;
   // Milestone boss event: a health inspection asks for a clean stretch with no drops/hazard hits.
   let inspectionActive=false,inspectionTimer=0,inspectionTriggered=false,inspectionFailed=false,inspectionStartDrops=0,inspectionStartHazards=0;
-  let runHazardHits=0;
+  let runHazardHits=0,goldenTicketOnScreen=false;
   let tutorialStep=0,tutorialTimer=0;
   const tutorialSeen=lsGet('ppp_tutorial_seen','0')==='1';
 
@@ -1156,7 +1209,7 @@
     neonIdx=0;neonT=0;lightningT=6;lightningFlash=0;bigText=null;bigTextQueue.length=0;pendingReason='lives';
     rushActive=false;rushTimer=0;rushNextT=32+rng()*10;rushPill.classList.add('hidden');
     runCatches=0;runMaxCombo=0;runMushroomsCaught=0;runHazardsDodged=0;runPizzaDrops=0;runStackClears=0;
-    orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');
+    orderActive=false;orderTarget=0;orderProgress=0;orderTimer=0;orderNextT=18;ordersFilled=0;orderTicket.classList.add('hidden');goldenTicketOnScreen=false;
     inspectionActive=false;inspectionTimer=0;inspectionTriggered=false;inspectionFailed=false;inspectionHud.classList.add('hidden');runHazardHits=0;
     tutorialStep=0;tutorialTimer=0;tutorialToast.classList.add('hidden');continueUsed=false;closeContinue();stopRun();isSprinting=false;lastTapT=-1e9;lastKeyT=-1e9;
     pickShiftGoals();fx3d('reset');
@@ -1229,6 +1282,7 @@
     const burntChance=progress>=35?Math.min(0.05,0.008+progress*0.00022):0;
     const brickChance=progress>=45?Math.min(0.05,0.01+progress*0.0003):0;
     const pinChance=progress>=60?Math.min(0.04,0.008+progress*0.00025):0;
+    const ticketSpawn=!goldenTicketOnScreen&&progress>=20&&rng()<0.0045;
     if(dailySpecial.id==='pineappleRain')pineappleChance=Math.min(0.3,pineappleChance*dailySpecial.pineappleMult+0.05);
     if(dailySpecial.id==='extraSpicy')pepperChance=Math.min(0.4,pepperChance*dailySpecial.pepperMult);
     const powerupGateOpen=(gameClock-lastPowerupT>=minPowerupInterval())&&powerupOnScreen===0;
@@ -1247,12 +1301,14 @@
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance)type='burnt';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
-    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:0.032;
-    const speedMult=type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1));
+    if(ticketSpawn)type='ticket';
+    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:(type==='ticket'?0.038:0.032);
+    const speedMult=type==='ticket'?0.72:(type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1)));
     const f={type,x:r+rng()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
     // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
     if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
     if(type==='greenmushroom'){greenOnScreen=true;recordGreenSpawn();}
+    if(type==='ticket'){goldenTicketOnScreen=true;f.isTicket=true;}
     if(type==='mushroom'||type==='greenmushroom'||PU[type]){powerupOnScreen++;lastPowerupT=gameClock;f.isPowerup=true;}
     fallers.push(f);
   }
@@ -1424,7 +1480,7 @@
       const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom'||!!PU[p.type];
       // Magnet: pizzas and power-ups drift toward the pan once they're a quarter of the way down.
       if(puT.magnet>0&&!HAZARDS.has(p.type)&&p.y>0.25)p.x+=(panX-p.x)*Math.min(1,dt*2.4);
-      const isGood=p.type==='pizza'||isPowerupType;
+      const isGood=p.type==='pizza'||p.type==='ticket'||isPowerupType;
       const stackTopY=panY-(Math.min(towerHeight,STACK_VISUAL_CAP)*SEG_LIFT_PX)/H;
       const goodBandTop=Math.min(panY-0.02,stackTopY-0.05);
       const inBand=isGood?(p.y>=goodBandTop&&p.y<=panY+0.05):(p.y>=panY-0.05&&p.y<=panY+0.06);
@@ -1433,7 +1489,15 @@
       if(inBand&&Math.abs(p.x-panX)<reach){
         fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch',p.type);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
-        if(p.type==='pizza'){
+        if(p.type==='ticket'){
+          goldenTicketOnScreen=false;goldenTicketCount++;lsSet('ppp_golden_tickets',String(goldenTicketCount));
+          const rewardMilestone=goldenTicketCount%5===0;
+          if(goldenTicketCount===5&&!unlockedPans.includes('gold')){unlockedPans.push('gold');lsSetJSON('ppp_pans_owned',unlockedPans);renderSkinsScreen();showBigText('GOLDEN PAN UNLOCKED!','#F2C14E',2,'comboUp','5 GOLDEN TICKETS COLLECTED');}
+          else if(rewardMilestone){addCoins(100);showBigText('GOLDEN TICKET MILESTONE!','#F2C14E',1.6,'comboUp','+100 PIZZA COINS');}
+          else{floatText('GOLDEN TICKET! '+goldenTicketCount+'/5',panX,panY-0.14,'#F2C14E');}
+          renderBookScreen();sfxAchievement();buzz([35,45,35]);spawnBurst(panX,panY-0.12,'#F2C14E',24,true,1.3);
+        }
+        else if(p.type==='pizza'){
           combo++;progress++;runCatches++;runMaxCombo=Math.max(runMaxCombo,combo);
           if(orderActive){orderProgress++;if(orderProgress>=orderTarget)completeOrder();else renderOrder();}
           sfxCatch();
@@ -1520,6 +1584,7 @@
           updateHud();
         }
         else if(p.type==='greenmushroom'){greenOnScreen=false;}
+        else if(p.type==='ticket'){goldenTicketOnScreen=false;}
         else if(p.type==='pineapple'){runHazardsDodged++;lifeStats.pineapplesDodged++;saveStats();}
         else if(p.type==='pepper'){runHazardsDodged++;lifeStats.peppersDodged++;saveStats();}
         else if(p.type==='brick'||p.type==='rollingpin'){runHazardsDodged++;}
@@ -1627,6 +1692,14 @@
       const gw=ctx.createRadialGradient(0,0,r*0.6,0,0,r*2.4*pulse);gw.addColorStop(0,'rgba(91,200,255,0.65)');gw.addColorStop(1,'rgba(91,200,255,0)');
       ctx.fillStyle=gw;ctx.beginPath();ctx.arc(0,0,r*2.4*pulse,0,Math.PI*2);ctx.fill();
       ctx.font=Math.round(r*1.9)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(PU[p.type].icon,0,r*0.08);
+    } else if(p.type==='ticket'){
+      const tg=ctx.createRadialGradient(0,0,r*0.5,0,0,r*3.0*pulse);tg.addColorStop(0,'rgba(242,193,78,0.8)');tg.addColorStop(1,'rgba(242,193,78,0)');
+      ctx.fillStyle=tg;ctx.beginPath();ctx.arc(0,0,r*3*pulse,0,Math.PI*2);ctx.fill();
+      ctx.rotate(Math.sin(glowT*2.8+p.x*8)*0.12);
+      ctx.fillStyle='#F2C14E';ctx.strokeStyle='#8f6420';ctx.lineWidth=Math.max(1.5,r*0.13);ctx.beginPath();ctx.roundRect(-r*1.2,-r*0.72,r*2.4,r*1.44,r*0.2);ctx.fill();ctx.stroke();
+      ctx.fillStyle='#FFE9A8';ctx.beginPath();ctx.roundRect(-r*0.98,-r*0.52,r*1.96,r*1.04,r*0.12);ctx.fill();
+      ctx.strokeStyle='#D64541';ctx.lineWidth=Math.max(1.5,r*0.12);ctx.beginPath();ctx.arc(0,0,r*0.42,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#D64541';ctx.beginPath();ctx.moveTo(-r*0.25,r*0.16);ctx.lineTo(0,-r*0.24);ctx.lineTo(r*0.25,r*0.16);ctx.closePath();ctx.fill();
     } else if(p.type==='brick'){
       const bw=ctx.createRadialGradient(0,0,r*0.8,0,0,r*2.6*pulse);bw.addColorStop(0,'rgba(255,138,60,0.6)');bw.addColorStop(1,'rgba(255,138,60,0)');
       ctx.fillStyle=bw;ctx.beginPath();ctx.arc(0,0,r*2.6*pulse,0,Math.PI*2);ctx.fill();
@@ -2006,7 +2079,10 @@
     if(recapGoals)recapGoals.textContent=activeGoals.filter(g=>g.done).length+' / '+activeGoals.length;
     if(recapCoins)recapCoins.textContent=totalCoinsThisRun;
     if(totalCoinsThisRun>0){addCoins(totalCoinsThisRun);lifeStats.coinsEarned+=totalCoinsThisRun;}
-    const missionsDone=updateMissions({catches:runCatches,dodged:runHazardsDodged,powerups:runMushroomsCaught,slices:runSlices,orders:ordersFilled,daily:dailyMode?1:0,score,combo:runMaxCombo,worldIdx:['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)});
+    const runSummary={catches:runCatches,dodged:runHazardsDodged,powerups:runMushroomsCaught,slices:runSlices,orders:ordersFilled,daily:dailyMode?1:0,score,combo:runMaxCombo,worldIdx:['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)};
+    updateWeeklyContracts(runSummary);
+    window.dispatchEvent(new CustomEvent('ppp:run-finished',{detail:runSummary}));
+    const missionsDone=updateMissions(runSummary);
     renderMissions(document.getElementById('missionListEnd'),missionsDone);
     if(missionsDone.length){sfxAchievement();buzz([30,40,30]);}
     lifeStats.bestScoreEver=Math.max(lifeStats.bestScoreEver,score);
