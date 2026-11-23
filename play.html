@@ -825,7 +825,7 @@
   ];
   const todaySeed=new Date().toISOString().slice(0,10);
   const requestedSeed=new URLSearchParams(location.search).get('seed')||todaySeed;
-  const challengeSeed=/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedSeed)?requestedSeed:todaySeed;
+  const challengeSeed=/^\d{4}-\d{2}-\d{2}$/.test(requestedSeed)?requestedSeed:todaySeed;
   const dailySpecial=DAILY_MODIFIERS[hashStr(challengeSeed)%DAILY_MODIFIERS.length];
   function loadDailyBest(){return parseInt(lsGet('ppp_daily_'+todaySeed+'_best','0'),10)||0;}
   function saveDailyBest(v){lsSet('ppp_daily_'+todaySeed+'_best',String(v));}
