@@ -21,3 +21,5 @@ test('world mastery awards bronze, gold, and master for repeat visits',()=>{clas
 test('daily login reward cannot be claimed twice after a reload',()=>{const app=boot();app.els['ppp3-claim'].listeners.click();const reloaded=boot(app.storage);assert.equal(reloaded.els['ppp3-claim'].disabled,true);assert.equal(reloaded.storage.ppp_coins,'35');});
 
 test('world collection reflects saved unique finds',()=>{const app=boot({ppp_coins:'0',ppp_signature_collection_v1:JSON.stringify({'signature-ladle':1,'signature-star':2})});assert.equal(app.els['ppp3-collection-count'].textContent,'2 / 5');assert.equal(app.els['ppp3-collection'].textContent,'WORLD COLLECTION');});
+
+test('five signature collectibles are wired into the live game loop',()=>{const game=fs.readFileSync(new URL('../play.html',import.meta.url),'utf8');for(const type of ['signature-ladle','signature-shell','signature-star','signature-lantern','signature-pixel'])assert.ok(game.includes(type),'missing '+type);assert.match(game,/const isSignature=p\.type\.startsWith\('signature-'\)/);assert.match(game,/ppp:signature-collected/);assert.match(game,/function drawFaller\(p\)/);});
