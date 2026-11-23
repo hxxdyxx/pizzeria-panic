@@ -37,7 +37,7 @@
   const weekly=document.getElementById('weeklyPanel');
   if(weekly)weekly.insertAdjacentElement('afterend',panel);else document.body.appendChild(panel);
   const eventPanel=document.createElement('section');eventPanel.className='ppp3-panel';eventPanel.id='ppp3-event';
-  eventPanel.innerHTML=`<div class="ppp3-head"><span id="ppp3-event-title">WORLD EVENT</span><span id="ppp3-event-reward">75 COINS</span></div><p class="ppp3-copy" id="ppp3-event-desc"></p><div class="ppp3-progress"><i id="ppp3-event-fill"></i></div><div class="ppp3-meta"><span id="ppp3-event-status"></span><button class="ppp3-btn" id="ppp3-share">CHALLENGE A FRIEND</button></div><div class="ppp3-worlds" id="ppp3-worlds"></div>`;
+  eventPanel.innerHTML=`<div class="ppp3-head"><span id="ppp3-event-title">WORLD EVENT</span><span id="ppp3-event-reward">75 COINS</span></div><p class="ppp3-copy" id="ppp3-event-desc"></p><div class="ppp3-progress"><i id="ppp3-event-fill"></i></div><div class="ppp3-meta"><span id="ppp3-event-status"></span><button class="ppp3-btn" id="ppp3-share">CHALLENGE A FRIEND</button></div><div class="ppp3-worlds" id="ppp3-worlds"></div><div class="ppp3-meta" style="margin-top:7px"><span id="ppp3-collection">WORLD COLLECTION</span><span id="ppp3-collection-count">0 / 5</span></div>`;
   const dailyPanel=document.getElementById('ppp3-daily');
   if(dailyPanel)dailyPanel.insertAdjacentElement('afterend',eventPanel);else if(weekly)weekly.insertAdjacentElement('afterend',eventPanel);else document.body.appendChild(eventPanel);
   const claim=document.getElementById('ppp3-claim');
@@ -68,6 +68,10 @@
   const worldHost=document.getElementById('ppp3-worlds');
   const worldRank=i=>Number(state.worldVisits[i])>=5?'MASTER':Number(state.worldVisits[i])>=3?'GOLD':Number(state.worldVisits[i])>=1?'BRONZE':'NOT REACHED';
   worldHost.innerHTML=worldNames.map((n,i)=>`<div class="ppp3-world ${Number(state.worldVisits[i])>0?'done':' '}">${n}<br>${worldRank(i)}</div>`).join('');
+  const signatureTypes=['signature-ladle','signature-shell','signature-star','signature-lantern','signature-pixel'];
+  const renderCollection=()=>{let owned={};try{owned=JSON.parse(localStorage.getItem('ppp_signature_collection_v1')||'{}')}catch(e){}const count=signatureTypes.filter(k=>Number(owned[k])>0).length;document.getElementById('ppp3-collection-count').textContent=count+' / 5';document.getElementById('ppp3-collection').textContent=count===5?'ALL WORLD FINDS COLLECTED':'WORLD COLLECTION';};
+  window.addEventListener('ppp:signature-collected',renderCollection);
+  renderCollection();
   renderEvent();write(state);
   document.getElementById('ppp3-share').addEventListener('click',async()=>{
     const target=Math.max(250,Number(state.bestScore)||0);
