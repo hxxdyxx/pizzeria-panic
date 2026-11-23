@@ -18,7 +18,7 @@
   state.claimedDays=Array.isArray(state.claimedDays)?state.claimedDays:[];
   state.loginStreak=Number(state.loginStreak)||0;
   state.lastLogin=state.lastLogin||'';
-  state.worldBest=Array.isArray(state.worldBest)?state.worldBest:[0,0,0,0,0];
+  state.worldVisits=Array.isArray(state.worldVisits)?state.worldVisits:[0,0,0,0,0];
   state.worldRewards=Array.isArray(state.worldRewards)?state.worldRewards:[[],[],[],[],[]];
   state.event=state.event||{day:-1,progress:0,claimed:false};
   state.totalRuns=Number(state.totalRuns)||0;
@@ -66,8 +66,8 @@
   };
   const worldNames=['KITCHEN','BOARDWALK','ROOFTOP','FESTIVAL','ARCADE'];
   const worldHost=document.getElementById('ppp3-worlds');
-  const worldRank=i=>Number(state.worldBest[i])>=500?'MASTER':Number(state.worldBest[i])>=250?'GOLD':Number(state.worldBest[i])>=100?'BRONZE':'NOT REACHED';
-  worldHost.innerHTML=worldNames.map((n,i)=>`<div class="ppp3-world ${Number(state.worldBest[i])>0?'done':' '}">${n}<br>${worldRank(i)}</div>`).join('');
+  const worldRank=i=>Number(state.worldVisits[i])>=5?'MASTER':Number(state.worldVisits[i])>=3?'GOLD':Number(state.worldVisits[i])>=1?'BRONZE':'NOT REACHED';
+  worldHost.innerHTML=worldNames.map((n,i)=>`<div class="ppp3-world ${Number(state.worldVisits[i])>0?'done':' '}">${n}<br>${worldRank(i)}</div>`).join('');
   renderEvent();write(state);
   document.getElementById('ppp3-share').addEventListener('click',async()=>{
     const target=Math.max(250,Number(state.bestScore)||0);
@@ -78,9 +78,12 @@
   window.addEventListener('ppp:run-finished',e=>{
     const r=e.detail||{};state.totalRuns++;state.bestScore=Math.max(Number(state.bestScore)||0,Number(r.score)||0);
     const idx=Math.max(0,Math.min(4,Number(r.worldIdx)||0));
-    const oldBest=Number(state.worldBest[idx])||0;state.worldBest[idx]=Math.max(oldBest,Number(r.score)||0);
-    const tiers=[{score:100,reward:25},{score:250,reward:50},{score:500,reward:75}];
-    let masteryCoins=0;tiers.forEach((tier,i)=>{if(state.worldBest[idx]>=tier.score&&!state.worldRewards[idx].includes(i)){state.worldRewards[idx].push(i);masteryCoins+=tier.reward;}});
+    const tiers=[{visits:1,reward:25},{visits:3,reward:50},{visits:5,reward:75}];
+    let masteryCoins=0;
+    for(let world=0;world<=idx;world++){
+      state.worldVisits[world]=(Number(state.worldVisits[world])||0)+1;
+      tiers.forEach((tier,i)=>{if(state.worldVisits[world]>=tier.visits&&!state.worldRewards[world].includes(i)){state.worldRewards[world].push(i);masteryCoins+=tier.reward;}});
+    }
     if(masteryCoins>0)window.dispatchEvent(new CustomEvent('ppp:award-coins',{detail:{amount:masteryCoins}}));
     const value=Math.max(0,Number(r[event.metric])||0);
     if(!state.event.claimed&&idx===event.world){
