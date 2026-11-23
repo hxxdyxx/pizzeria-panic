@@ -93,6 +93,6 @@
       }
     }
     write(state);renderEvent();
-    worldHost.innerHTML=worldNames.map((n,i)=>`<div class="ppp3-world ${Number(state.worldBest[i])>0?'done':' '}">${n}<br>${worldRank(i)}</div>`).join('');
+    worldHost.innerHTML=worldNames.map((n,i)=>`<div class="ppp3-world ${Number(state.worldVisits[i])>0?'done':' '}">${n}<br>${worldRank(i)}</div>`).join('');
   });
 })();
