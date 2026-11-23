@@ -1931,13 +1931,25 @@
   const view3d={};
   function snapshot3d(sx,sy,lvl){const v=view3d;v.state=state;v.W=W;v.H=H;v.panX=panX;v.panY=panY;v.bodyX=bodyX;v.facing=facing;v.isRunning=isRunning;v.isSprinting=isSprinting;v.squash=squash;v.growActive=growActive;v.towerHeight=towerHeight;v.segSway=segSway;v.fallers=fallers;v.debris=debris;v.groundTop=groundTop;v.level=lvl;v.levelIdx=LEVELS.indexOf(lvl);v.glowT=glowT;v.shakeX=sx;v.shakeY=sy;v.segLift=SEG_LIFT_PX;v.stackCap=STACK_VISUAL_CAP;v.pauseTime=pauseTime;v.skinId=activeSkin;v.skin=currentSkinPalette();v.pan=currentPanColors();v.panModel=(PAN_CATALOG.find(p=>p.id===activePan)||{}).model||null;v.rush=rushActive;return v;}
   function drawStackLabel(){const h=Math.min(towerHeight,STACK_VISUAL_CAP);if(h<=0)return;const lastSway=segSway[h-1]||0;ctx.save();ctx.font="bold 12px 'Fredoka',sans-serif";ctx.fillStyle='#FAF8F5';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;ctx.fillText('x'+towerHeight,panX*W+lastSway*30,panY*H+2-(h+1)*SEG_LIFT_PX);ctx.restore();}
+  function drawSignatureMarkers(){
+    for(const p of fallers){
+      const item=SIGNATURES.find(x=>x.type===p.type),hazard=p.signatureHazard;
+      if(!item&&!hazard)continue;
+      const x=p.x*W,y=p.y*H,r=p.r*W;
+      ctx.save();ctx.translate(x,y);
+      const grad=ctx.createRadialGradient(0,0,r*0.2,0,0,r*2.8);grad.addColorStop(0,hazard?'rgba(214,69,65,0.7)':'rgba(242,193,78,0.75)');grad.addColorStop(1,hazard?'rgba(214,69,65,0)':'rgba(242,193,78,0)');
+      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,r*2.8,0,Math.PI*2);ctx.fill();
+      ctx.font=Math.round(r*2.0)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(hazard?hazard.icon:item.icon,0,0);
+      ctx.strokeStyle=hazard?'#D64541':'#F2C14E';ctx.lineWidth=Math.max(1.5,r*0.1);ctx.beginPath();ctx.arc(0,0,r*1.3,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
   function draw3d(r3){
     const lvl=currentLevel();let sx=0,sy=0;
     if(shakeAmt>0.5){const decay=shakeAmt*(shakeTimer>0?1:0.7);sx=(Math.random()-0.5)*decay*4;sy=(Math.random()-0.5)*decay*2.8;}
     ctx.clearRect(0,0,canvas.width,canvas.height);
     r3.render(snapshot3d(sx,sy,lvl));
     ctx.save();ctx.translate(sx+OX,sy);
-    drawWeather();drawStackLabel();drawParticles();drawWindFx();
+    drawSignatureMarkers();drawWeather();drawStackLabel();drawParticles();drawWindFx();
     if(lightningFlash>0){ctx.save();ctx.globalAlpha=lightningFlash*0.6;ctx.fillStyle='#fff';ctx.fillRect(-OX,0,canvas.width,H);ctx.restore();}
     drawBigText();
     ctx.restore();
