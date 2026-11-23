@@ -2165,6 +2165,8 @@
   function resumeGame(){if(state!=='paused')return;state='playing';pauseScreen.classList.add('hidden');}
   function togglePause(){if(state==='playing')pauseGame();else if(state==='paused')resumeGame();}
   startBtn.addEventListener('click',()=>beginPlay(false));
+  const sharedDailyLink=new URLSearchParams(location.search).get('daily')==='1';
+  if(sharedDailyLink)document.getElementById('dailyBtn').textContent='📅 Play Shared Challenge';
   document.getElementById('dailyBtn').addEventListener('click',()=>beginPlay(true));
   retryBtn.addEventListener('click',()=>beginPlay(dailyMode));
   pauseBtn.addEventListener('click',pauseGame);
