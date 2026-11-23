@@ -1199,7 +1199,12 @@
   ];
   function currentLevel(){let lvl=LEVELS[0];for(const L of LEVELS){if(progress>=L.from)lvl=L;}return lvl;}
   function computePanY(){const scale=(W*0.16)/BUF_W;const offsetPx=44*scale;return clamp(BODY_Y-offsetPx/Math.max(1,H),0.5,BODY_Y-0.02);}
+  const SIGNATURES=[{world:'kitchen',type:'signature-ladle',icon:'🥄',name:'Chef’s Golden Ladle'},{world:'boardwalk',type:'signature-shell',icon:'🐚',name:'Boardwalk Conch'},{world:'rooftop',type:'signature-star',icon:'⭐',name:'Rooftop Star'},{world:'festival',type:'signature-lantern',icon:'🏮',name:'Festival Lantern'},{world:'arcade',type:'signature-pixel',icon:'👾',name:'Neon Pixel'}];
+  let signatureOnScreen=false,signatureSeenThisRun=[];
+  let signatureCollection=(()=>{try{return JSON.parse(localStorage.getItem('ppp_signature_collection_v1')||'{}')}catch(_){return {};}})();
+  function saveSignatureCollection(){try{localStorage.setItem('ppp_signature_collection_v1',JSON.stringify(signatureCollection));}catch(_){}}
   function reset(){
+    signatureOnScreen=false;signatureSeenThisRun=[];
     fallers=[];debris=[];particles=[];weatherParticles=[];weatherSpawnT=0;
     score=0;progress=0;gameClock=0;towerHeight=0;lives=5;shield=Math.min(MAX_SHIELD,streakBonusShield()+(upg.shield||0));spawnTimer=0;
     panX=0.5;bodyX=0.5;squash=0;segSway=[];segVel=[];prevPanXForSway=0.5;shakeAmt=0;shakeTimer=0;
@@ -1282,6 +1287,9 @@
     const burntChance=progress>=35?Math.min(0.05,0.008+progress*0.00022):0;
     const brickChance=progress>=45?Math.min(0.05,0.01+progress*0.0003):0;
     const pinChance=progress>=60?Math.min(0.04,0.008+progress*0.00025):0;
+    const worldNow=currentLevel().world;
+    const signature=SIGNATURES.find(x=>x.world===worldNow);
+    const signatureSpawn=!signatureOnScreen&&signature&&!signatureSeenThisRun.includes(signature.type)&&rng()<0.045;
     const ticketSpawn=!goldenTicketOnScreen&&progress>=20&&rng()<0.0045;
     if(dailySpecial.id==='pineappleRain')pineappleChance=Math.min(0.3,pineappleChance*dailySpecial.pineappleMult+0.05);
     if(dailySpecial.id==='extraSpicy')pepperChance=Math.min(0.4,pepperChance*dailySpecial.pepperMult);
@@ -1302,8 +1310,9 @@
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance)type='brick';
     else if(roll<greenChance+mushChance+puChance+pepperChance+pineappleChance+burntChance+brickChance+pinChance)type='rollingpin';
     if(ticketSpawn)type='ticket';
-    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:(type==='ticket'?0.038:0.032);
-    const speedMult=type==='ticket'?0.72:(type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1)));
+    else if(signatureSpawn){type=signature.type;signatureOnScreen=true;signatureSeenThisRun.push(signature.type);}
+    const r=(type==='pizza'||type==='burnt')?0.032+rng()*0.012:(type==='ticket'||type.startsWith('signature-')?0.04:0.032);
+    const speedMult=type==='ticket'||type.startsWith('signature-')?0.68:(type==='pizza'||type==='burnt'?1:(type==='pepper'?1.1:type==='brick'?1.3:((type==='mushroom'||type==='greenmushroom'||PU[type])?0.85:1.1)));
     const f={type,x:r+rng()*(1-2*r),y:-r,r,speed:currentFallSpeed()*speedMult};
     // First brick / rolling pin of a run gets a heads-up so the new hazards never come out of nowhere.
     if((type==='brick'||type==='rollingpin')&&!seenHazards[type]){seenHazards[type]=true;showBigText(type==='brick'?'INCOMING BRICK!':'ROLLING PIN!','#FF5A3C',1.3,'combo',type==='brick'?'HEAVY. DODGE IT.':'IT BONKS. DODGE IT.');}
@@ -1480,7 +1489,8 @@
       const isPowerupType=p.type==='mushroom'||p.type==='greenmushroom'||!!PU[p.type];
       // Magnet: pizzas and power-ups drift toward the pan once they're a quarter of the way down.
       if(puT.magnet>0&&!HAZARDS.has(p.type)&&p.y>0.25)p.x+=(panX-p.x)*Math.min(1,dt*2.4);
-      const isGood=p.type==='pizza'||p.type==='ticket'||isPowerupType;
+      const isSignature=p.type.startsWith('signature-');
+      const isGood=p.type==='pizza'||p.type==='ticket'||isPowerupType||isSignature;
       const stackTopY=panY-(Math.min(towerHeight,STACK_VISUAL_CAP)*SEG_LIFT_PX)/H;
       const goodBandTop=Math.min(panY-0.02,stackTopY-0.05);
       const inBand=isGood?(p.y>=goodBandTop&&p.y<=panY+0.05):(p.y>=panY-0.05&&p.y<=panY+0.06);
@@ -1489,7 +1499,17 @@
       if(inBand&&Math.abs(p.x-panX)<reach){
         fallers.splice(i,1);squash=1;triggerBlink();fx3d('catch',p.type);
         if(p.isPowerup)powerupOnScreen=Math.max(0,powerupOnScreen-1);
-        if(p.type==='ticket'){
+        if(isSignature){
+          signatureOnScreen=false;
+          const item=SIGNATURES.find(x=>x.type===p.type);
+          const first=!signatureCollection[p.type];
+          signatureCollection[p.type]=(Number(signatureCollection[p.type])||0)+1;saveSignatureCollection();
+          addCoins(first?25:10);
+          score+=first?50:15;
+          showBigText(first?'WORLD COLLECTIBLE!':'BONUS COLLECTIBLE!','#F2C14E',1.4,'comboUp',item?item.name:'SPECIAL FIND');
+          sfxAchievement();buzz([35,45,35]);spawnBurst(panX,panY-0.12,'#F2C14E',22,true,1.2);
+        }
+        else if(p.type==='ticket'){
           goldenTicketOnScreen=false;goldenTicketCount++;lsSet('ppp_golden_tickets',String(goldenTicketCount));
           const rewardMilestone=goldenTicketCount%5===0;
           if(goldenTicketCount===5&&!unlockedPans.includes('gold')){unlockedPans.push('gold');lsSetJSON('ppp_pans_owned',unlockedPans);renderSkinsScreen();showBigText('GOLDEN PAN UNLOCKED!','#F2C14E',2,'comboUp','5 GOLDEN TICKETS COLLECTED');}
@@ -1585,6 +1605,7 @@
         }
         else if(p.type==='greenmushroom'){greenOnScreen=false;}
         else if(p.type==='ticket'){goldenTicketOnScreen=false;}
+        else if(p.type.startsWith('signature-')){signatureOnScreen=false;}
         else if(p.type==='pineapple'){runHazardsDodged++;lifeStats.pineapplesDodged++;saveStats();}
         else if(p.type==='pepper'){runHazardsDodged++;lifeStats.peppersDodged++;saveStats();}
         else if(p.type==='brick'||p.type==='rollingpin'){runHazardsDodged++;}
@@ -1692,6 +1713,12 @@
       const gw=ctx.createRadialGradient(0,0,r*0.6,0,0,r*2.4*pulse);gw.addColorStop(0,'rgba(91,200,255,0.65)');gw.addColorStop(1,'rgba(91,200,255,0)');
       ctx.fillStyle=gw;ctx.beginPath();ctx.arc(0,0,r*2.4*pulse,0,Math.PI*2);ctx.fill();
       ctx.font=Math.round(r*1.9)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(PU[p.type].icon,0,r*0.08);
+    } else if(p.type.startsWith('signature-')){
+      const item=SIGNATURES.find(x=>x.type===p.type);
+      const glow=ctx.createRadialGradient(0,0,r*0.3,0,0,r*3.2*pulse);glow.addColorStop(0,'rgba(242,193,78,0.75)');glow.addColorStop(1,'rgba(242,193,78,0)');
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,r*3.2*pulse,0,Math.PI*2);ctx.fill();
+      ctx.font=Math.round(r*2.0)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(item?item.icon:'⭐',0,0);
+      ctx.strokeStyle='#F2C14E';ctx.lineWidth=Math.max(1,r*0.1);ctx.beginPath();ctx.arc(0,0,r*1.25,0,Math.PI*2);ctx.stroke();
     } else if(p.type==='ticket'){
       const tg=ctx.createRadialGradient(0,0,r*0.5,0,0,r*3.0*pulse);tg.addColorStop(0,'rgba(242,193,78,0.8)');tg.addColorStop(1,'rgba(242,193,78,0)');
       ctx.fillStyle=tg;ctx.beginPath();ctx.arc(0,0,r*3*pulse,0,Math.PI*2);ctx.fill();
