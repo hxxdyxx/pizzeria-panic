@@ -75,8 +75,8 @@
   renderEvent();write(state);
   document.getElementById('ppp3-share').addEventListener('click',async()=>{
     const target=Math.max(250,Number(state.bestScore)||0);
-    const url='https://pppanic.com/play?beat='+target;
-    const text=`I'm taking on ${event.name} in Pizzeria Panic. Beat my target of ${target} points. ${url}`;
+    const url='https://pppanic.com/play?daily=1&seed='+today+'&beat='+target;
+    const text=`I'm taking on the same daily challenge in Pizzeria Panic. Beat my target of ${target} points. ${url}`;
     try{if(navigator.share)await navigator.share({title:'Pizzeria Panic Challenge',text,url});else if(navigator.clipboard){await navigator.clipboard.writeText(text);document.getElementById('ppp3-share').textContent='LINK COPIED';}else window.prompt('Copy your challenge link',text)}catch(e){}
   });
   window.addEventListener('ppp:run-finished',e=>{
