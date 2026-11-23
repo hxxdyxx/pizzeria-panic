@@ -7,7 +7,7 @@ Status: implementation branch, not production release.
 - Three rotating weekly contracts, each worth 100 Pizza Coins. Rotation is based on the UTC week. Existing player progress is stored in `ppp_weekly_v1` and retained.
 - Daily kitchen login reward. The 7-day reward cycle pays 25, 35, 45, 55, 65, 80, and 100 coins. A missed UTC day resets the streak. Claiming is idempotent per UTC date.
 - Five rotating world challenges, one per day. Kitchen catches, Boardwalk orders, and Rooftop dodges accumulate across runs. Festival combo and Neon score use the best single-run result. Each completed challenge pays 75 coins once per UTC day.
-- World score mastery across the five named worlds. Bronze at 100, Gold at 250, Master at 500. One-time rewards total 150 coins per world, with tier claims persisted separately from the best score.
+- World visit mastery across the five named worlds. Bronze at 1 visit, Gold at 3 visits, Master at 5 visits. One-time rewards total 150 coins per world, with tier claims persisted separately from visit counts.
 - Share action creates a score-target challenge using the existing `?beat=` URL contract. Existing challenge links remain compatible.
 - Golden Ticket collection and Golden Pan unlock from the recovered prototype. Five tickets unlock the Golden Pan; existing coin milestones remain intact.
 - Local return tracking stores login streak and total run count. Existing anonymous aggregate run telemetry in `api/run.js` remains the server-side measurement source.
