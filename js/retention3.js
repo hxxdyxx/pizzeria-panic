@@ -37,7 +37,7 @@
   const weekly=document.getElementById('weeklyPanel');
   if(weekly)weekly.insertAdjacentElement('afterend',panel);else document.body.appendChild(panel);
   const eventPanel=document.createElement('section');eventPanel.className='ppp3-panel';eventPanel.id='ppp3-event';
-  eventPanel.innerHTML=`<div class="ppp3-head"><span id="ppp3-event-title">WORLD EVENT</span><span id="ppp3-event-reward">75 COINS</span></div><p class="ppp3-copy" id="ppp3-event-desc"></p><div class="ppp3-progress"><i id="ppp3-event-fill"></i></div><div class="ppp3-meta"><span id="ppp3-event-status"></span><button class="ppp3-btn" id="ppp3-share">CHALLENGE A FRIEND</button></div><div class="ppp3-worlds" id="ppp3-worlds"></div><div class="ppp3-meta" style="margin-top:7px"><span id="ppp3-collection">WORLD COLLECTION</span><span id="ppp3-collection-count">0 / 5</span></div>`;
+  eventPanel.innerHTML=`<div class="ppp3-head"><span id="ppp3-event-title">WORLD EVENT</span><span id="ppp3-event-reward">75 COINS</span></div><p class="ppp3-copy" id="ppp3-event-desc"></p><div class="ppp3-progress"><i id="ppp3-event-fill"></i></div><div class="ppp3-meta"><span id="ppp3-event-status"></span><button class="ppp3-btn" id="ppp3-share">CHALLENGE A FRIEND</button></div><div class="ppp3-worlds" id="ppp3-worlds"></div><div class="ppp3-meta" style="margin-top:7px"><span id="ppp3-collection">WORLD COLLECTION</span><span id="ppp3-collection-count">0 / 5</span></div><div style="margin-top:10px;border-top:1px solid rgba(242,193,78,.2);padding-top:8px"><div class="ppp3-head"><span>COMMUNITY SHIFT</span><span id="ppp3-community-status">LOADING</span></div><p class="ppp3-copy" id="ppp3-community-copy">Checking the last seven days of anonymous game activity.</p><div class="ppp3-progress"><i id="ppp3-community-fill"></i></div></div>`;
   const dailyPanel=document.getElementById('ppp3-daily');
   if(dailyPanel)dailyPanel.insertAdjacentElement('afterend',eventPanel);else if(weekly)weekly.insertAdjacentElement('afterend',eventPanel);else document.body.appendChild(eventPanel);
   const claim=document.getElementById('ppp3-claim');
@@ -72,6 +72,19 @@
   const renderCollection=()=>{let owned={};try{owned=JSON.parse(localStorage.getItem('ppp_signature_collection_v1')||'{}')}catch(e){}const count=signatureTypes.filter(k=>Number(owned[k])>0).length;document.getElementById('ppp3-collection-count').textContent=count+' / 5';document.getElementById('ppp3-collection').textContent=count===5?'ALL WORLD FINDS COLLECTED':'WORLD COLLECTION';};
   window.addEventListener('ppp:signature-collected',renderCollection);
   renderCollection();
+  const communityCopy=document.getElementById('ppp3-community-copy');
+  const communityFill=document.getElementById('ppp3-community-fill');
+  const communityStatus=document.getElementById('ppp3-community-status');
+  if(typeof fetch==='function')fetch('/api/run?days=7').then(r=>{if(!r.ok)throw new Error('unavailable');return r.json();}).then(data=>{
+    const total=Math.max(0,Math.floor(Number(data&&data.runs)||0));
+    const marks=[100,250,500,1000,2500,5000];
+    const next=marks.find(n=>n>total)||Math.ceil((total+1)/5000)*5000;
+    const previous=marks.filter(n=>n<=total).pop()||0;
+    const pct=Math.max(0,Math.min(100,(total-previous)/(next-previous)*100));
+    communityStatus.textContent=total.toLocaleString()+' RUNS';
+    communityCopy.textContent=total>=marks[marks.length-1]?'The crew has passed every community milestone. Keep the kitchen moving.':(next-total).toLocaleString()+' more runs to the next community milestone. Anonymous totals from the last 7 days.';
+    communityFill.style.width=pct+'%';
+  }).catch(()=>{communityStatus.textContent='OFFLINE';communityCopy.textContent='Community totals are temporarily unavailable. Your personal progress still works.';communityFill.style.width='0%';});
   renderEvent();write(state);
   document.getElementById('ppp3-share').addEventListener('click',async()=>{
     const target=Math.max(250,Number(state.bestScore)||0);
