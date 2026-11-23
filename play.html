@@ -118,6 +118,14 @@
   .hubRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
   .hubBtn{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;color:var(--beige);background:rgba(255,255,255,.07);border:2px solid rgba(242,193,78,.4);border-radius:9px;padding:8px 12px;cursor:pointer;touch-action:manipulation;}
   .hubBtn:active{transform:translateY(1px);}
+  .weeklyPanel{width:min(94%,360px);margin:8px auto 0;padding:9px 11px;border:1.5px solid rgba(242,193,78,.35);border-radius:10px;background:rgba(255,255,255,.045);text-align:left;}
+  .weeklyHead{display:flex;justify-content:space-between;align-items:center;font-family:'Fredoka',sans-serif;font-size:12px;color:var(--glow);letter-spacing:.4px;margin-bottom:6px;}
+  .weeklyContract{margin-top:6px;font-family:'Open Sans',sans-serif;font-size:10.5px;color:var(--beige);}
+  .weeklyContractTop{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
+  .weeklyContractTop strong{font-weight:700;color:var(--mozz);}
+  .weeklyBar{height:5px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;}
+  .weeklyBar i{display:block;height:100%;background:var(--basil);}
+  .weeklyDone{color:#9de0ad;font-weight:700;}
   .dailyBadge{font-family:'Fredoka',sans-serif;font-size:12.5px;color:#F2C14E;background:rgba(242,193,78,.1);border:1px solid rgba(242,193,78,.4);border-radius:8px;padding:5px 11px;margin-top:6px;max-width:320px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:min(94%,480px);margin:14px auto 0;}
   .cosCard{background:rgba(255,255,255,.05);border:2px solid rgba(242,193,78,.3);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;}
@@ -345,6 +353,7 @@
       <button class="btn playBtn" id="startBtn">Play</button>
       <button class="btn dailyBtn" id="dailyBtn">📅 Daily Challenge</button>
       <div class="dailyBadge hidden" id="dailyBadge"></div>
+      <section class="weeklyPanel" id="weeklyPanel" aria-live="polite" aria-label="Weekly contracts"><div class="weeklyHead"><span>THIS WEEK IN THE KITCHEN</span><span id="weeklyRewardText">Earn up to 300 coins</span></div><div id="weeklyContracts"></div></section>
       <div class="hubRow">
         <button class="hubBtn" id="openSkinsBtn"><span class="hubIcon">🛒</span>Shop</button>
         <button class="hubBtn" id="openBookBtn"><span class="hubIcon">📖</span>Book</button>
@@ -847,6 +856,44 @@
     dailyBadge.innerHTML='<b>Today: '+escapeHtml(dailySpecial.name)+'</b> · '+escapeHtml(dailySpecial.desc)+(dailyBest>0?' · Your daily best '+dailyBest:'');
     dailyBadge.classList.remove('hidden');
   }
+
+  // Weekly contracts are a device-local, deterministic return loop. No account or network required.
+  function utcWeekKey(date){const d=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));const week=Math.ceil((((d-yearStart)/86400000)+1)/7);return d.getUTCFullYear()+'-W'+String(week).padStart(2,'0');}
+  const weeklyKey=utcWeekKey(new Date());
+  const WEEKLY_POOL=[
+    {id:'catch',title:'Keep the Pizzas Coming',target:120,read:r=>r.catches,mode:'sum'},
+    {id:'dodge',title:'Clean Kitchen',target:25,read:r=>r.dodged,mode:'sum'},
+    {id:'power',title:'Power-Up Regular',target:8,read:r=>r.powerups,mode:'sum'},
+    {id:'combo',title:'Combo Specialist',target:15,read:r=>r.combo,mode:'best'},
+    {id:'orders',title:'Service Pro',target:8,read:r=>r.orders,mode:'sum'},
+    {id:'score',title:'Big Night',target:250,read:r=>r.score,mode:'best'}
+  ];
+  function newWeeklyState(){const offset=hashStr(weeklyKey)%WEEKLY_POOL.length;return{week:weeklyKey,contracts:[0,1,2].map(i=>({id:WEEKLY_POOL[(offset+i*2)%WEEKLY_POOL.length].id,progress:0,claimed:false}))};}
+  let weeklyState=lsGetJSON('ppp_weekly_v1',null);
+  if(!weeklyState||weeklyState.week!==weeklyKey||!Array.isArray(weeklyState.contracts)||weeklyState.contracts.length!==3)weeklyState=newWeeklyState();
+  const saveWeekly=()=>lsSetJSON('ppp_weekly_v1',weeklyState);
+  function weeklyContractDef(id){return WEEKLY_POOL.find(c=>c.id===id);}
+  function renderWeeklyContracts(){
+    const host=document.getElementById('weeklyContracts');if(!host)return;host.innerHTML='';
+    const earned=weeklyState.contracts.filter(c=>c.claimed).length;
+    document.getElementById('weeklyRewardText').textContent=earned+'/3 complete · '+(3-earned)*100+' coins left';
+    weeklyState.contracts.forEach(c=>{const def=weeklyContractDef(c.id);if(!def)return;const done=c.claimed,pct=Math.min(100,Math.round(c.progress/def.target*100));
+      const row=document.createElement('div');row.className='weeklyContract';
+      row.innerHTML='<div class="weeklyContractTop"><strong>'+escapeHtml(def.title)+'</strong><span class="'+(done?'weeklyDone':'')+'">'+(done?'COMPLETE':Math.min(c.progress,def.target)+' / '+def.target)+'</span></div><div class="weeklyBar"><i style="width:'+pct+'%"></i></div>';
+      host.appendChild(row);
+    });
+  }
+  function updateWeeklyContracts(run){
+    let newlyCompleted=0;
+    weeklyState.contracts.forEach(c=>{if(c.claimed)return;const def=weeklyContractDef(c.id);if(!def)return;const value=Math.max(0,Math.floor(Number(def.read(run))||0));
+      c.progress=def.mode==='best'?Math.max(c.progress,value):Math.min(def.target,c.progress+value);
+      if(c.progress>=def.target){c.progress=def.target;c.claimed=true;newlyCompleted++;addCoins(100);}
+    });
+    saveWeekly();renderWeeklyContracts();
+    if(newlyCompleted){sfxAchievement();buzz([35,45,35]);floatText('WEEKLY CONTRACT +'+(newlyCompleted*100)+' COINS',0.5,0.24,'#9DE0AD');}
+    return newlyCompleted;
+  }
+  renderWeeklyContracts();
 
   let audioCtx=null,isMuted=lsGet('ppp_muted','0')==='1';
   function ensureAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
@@ -2006,7 +2053,9 @@
     if(recapGoals)recapGoals.textContent=activeGoals.filter(g=>g.done).length+' / '+activeGoals.length;
     if(recapCoins)recapCoins.textContent=totalCoinsThisRun;
     if(totalCoinsThisRun>0){addCoins(totalCoinsThisRun);lifeStats.coinsEarned+=totalCoinsThisRun;}
-    const missionsDone=updateMissions({catches:runCatches,dodged:runHazardsDodged,powerups:runMushroomsCaught,slices:runSlices,orders:ordersFilled,daily:dailyMode?1:0,score,combo:runMaxCombo,worldIdx:['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)});
+    const runSummary={catches:runCatches,dodged:runHazardsDodged,powerups:runMushroomsCaught,slices:runSlices,orders:ordersFilled,daily:dailyMode?1:0,score,combo:runMaxCombo,worldIdx:['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(currentLevel().world)};
+    updateWeeklyContracts(runSummary);
+    const missionsDone=updateMissions(runSummary);
     renderMissions(document.getElementById('missionListEnd'),missionsDone);
     if(missionsDone.length){sfxAchievement();buzz([30,40,30]);}
     lifeStats.bestScoreEver=Math.max(lifeStats.bestScoreEver,score);
