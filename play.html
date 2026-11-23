@@ -924,7 +924,7 @@
              [E5,0,E5,F5,E5,D5],[C5,0,C5,D5,C5,B4],[A4,C5,E5,A5,GS5,A5],[B5,GS5,E5,B4,0,0],
              [D5,F5,A5,F5,D5,A4],[C5,E5,A5,E5,C5,A4],[B4,E5,GS5,B5,GS5,E5],[A4,0,A4,0,0,0]];
   const BASS=[A3,E4,A3,E4,D4,A3,E4,A3,A3,A3,A3,E4,D4,A3,E4,A3];
-  const WORLD_MUSIC=[{transpose:0,wave:'square',bar:0},{transpose:2,wave:'triangle',bar:3},{transpose:-3,wave:'sine',bar:6},{transpose:5,wave:'triangle',bar:9},{transpose:7,wave:'square',bar:12}];
+  const WORLD_MUSIC=[{transpose:0,wave:'square',bar:0,color:'#F2C14E'},{transpose:2,wave:'triangle',bar:3,color:'#5BC8FF'},{transpose:-3,wave:'sine',bar:6,color:'#A99BFF'},{transpose:5,wave:'triangle',bar:9,color:'#FF7A9E'},{transpose:7,wave:'square',bar:12,color:'#5CD97A'}];
   function mNote(freq,t,dur,type,vol){
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+dur);
@@ -1468,7 +1468,7 @@
     if(hubShift)hubShift.textContent=lvlNow.name;
     updateOrders(dt);updateInspection(dt);updateTutorial(dt);
     if(lvlNow.name!==lastLevelName){
-      if(lastLevelName){fx3d('celebrate');const prevLvl=LEVELS.find(L=>L.name===lastLevelName);const newPlace=prevLvl&&prevLvl.world!==lvlNow.world;showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',newPlace?2.6:2.0,'level',newPlace?'NOW SERVING: '+lvlNow.place:'NEW SHIFT STARTING');if(newPlace){buzz([40,40,80]);worldStinger(lvlNow.world);}setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,'#F2C14E',24,true,1.3);}
+      if(lastLevelName){fx3d('celebrate');const prevLvl=LEVELS.find(L=>L.name===lastLevelName);const newPlace=prevLvl&&prevLvl.world!==lvlNow.world;showBigText(lvlNow.name.toUpperCase()+'!','#F2C14E',newPlace?2.6:2.0,'level',newPlace?'NOW SERVING: '+lvlNow.place:'NEW SHIFT STARTING');if(newPlace){buzz([40,40,80]);worldStinger(lvlNow.world);}setTimeout(()=>{if(state==='playing')showGoalsCard('GOALS LEFT');},1200);spawnBurst(panX,panY-0.3,WORLD_MUSIC[Math.max(0,['kitchen','boardwalk','rooftop','festival','arcade'].indexOf(lvlNow.world))].color,24,true,1.3);}
       lastLevelName=lvlNow.name;neonIdx=0;neonT=0;
     }
     let input=getControlInput();
