@@ -352,6 +352,17 @@ filled, reset) that only trigger animations.
 - [ ] **PR #6 (props and FX pack) still needs merging.** Everything above
   that depends on it activates automatically after the merge.
 
+## Open (2026-10-09)
+
+- [ ] **Untracked staging files sitting in `avatars/`, not committed:**
+  `CHEF_3D_CANONICAL_CONTEXT.md`, `CHEF_3D_RECONCILIATION_CONTEXT.md`,
+  `HotSliceCreative_Brand_Guidelines.pdf`, `Meshy_AI_The_Chef_Complex_Running.glb`,
+  `chef-3d-asset-index(1).md`. These look like reference/staging drops for
+  the cross-repo Chef 3D rollout (see `chef-app/BACKLOG.md`'s "Open
+  (2026-10-09)" section) — not deployment-ready, left untouched. **Pietro
+  remains the gameplay character; the Chef asset here is only the
+  decorative "Talk to the Chef" surface — do not replace Pietro.**
+
 ## Done (2026-09-08) — v2.0 Foundation Pass: coins, skins, achievements, shift goals, sound, daily special
 
 hoody asked for the game to become "more of a full fledged built out game"

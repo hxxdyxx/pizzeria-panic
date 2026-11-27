@@ -426,6 +426,7 @@
         <ol class="boardList" id="boardListEnd"><li class="boardEmpty">Loading…</li></ol>
       </div>
       <button class="btn" id="retryBtn" style="margin-top:20px;">Stack Again</button>
+      <button class="btn secondary" id="menuBtnGameOver">Main Menu</button>
       <button class="btn secondary" id="shareBtn">Copy Score</button>
       <button class="btn secondary" id="shareImgBtn">Share Score</button>
       <!-- Optional, unobtrusive: link this run to a Chef account. Collapsed
@@ -456,6 +457,7 @@
       <div class="pauseCard">
         <div class="pauseTitle">Paused</div>
         <button class="btn playBtn" id="resumeBtn">Resume</button>
+        <button class="btn secondary" id="menuBtnPause" style="margin-top:0;">Main Menu</button>
         <div class="pauseGoals"><div class="pauseGoalsTitle">Shift Goals</div><div class="goalsList" id="pauseGoalsList"></div></div>
         <div class="controlPicker" id="controlPickerPause">
           <span class="controlPickerLabel">Controls</span>
@@ -2180,13 +2182,22 @@
   }
   function resumeGame(){if(state!=='paused')return;state='playing';pauseScreen.classList.add('hidden');}
   function togglePause(){if(state==='playing')pauseGame();else if(state==='paused')resumeGame();}
-  startBtn.addEventListener('click',()=>beginPlay(false));
-  const sharedDailyLink=new URLSearchParams(location.search).get('daily')==='1';
-  if(sharedDailyLink)document.getElementById('dailyBtn').textContent=sharedDailyExpired?'📅 Today’s Daily Challenge':'📅 Play Shared Challenge';
-  document.getElementById('dailyBtn').addEventListener('click',()=>beginPlay(true));
-  retryBtn.addEventListener('click',()=>beginPlay(dailyMode));
+  function goToMainMenu(){
+    state=’start’;pauseTime=0;footTapping=false;headShaking=false;armWaving=false;
+    gameOverScreen.classList.add(‘hidden’);pauseScreen.classList.add(‘hidden’);
+    startScreen.classList.remove(‘hidden’);pauseBtn.classList.add(‘hidden’);
+    renderBestBadge();renderStreakBadge();renderCoinsBadges();renderDailyBadge();renderBookScreen();sfxUIClick();
+  }
+  window.addEventListener(‘pageshow’,e=>{if(e.persisted){goToMainMenu();}});
+  startBtn.addEventListener(‘click’,()=>beginPlay(false));
+  const sharedDailyLink=new URLSearchParams(location.search).get(‘daily’)===’1’;
+  if(sharedDailyLink)document.getElementById(‘dailyBtn’).textContent=sharedDailyExpired?’📅 Today’s Daily Challenge’:’📅 Play Shared Challenge’;
+  document.getElementById(‘dailyBtn’).addEventListener(‘click’,()=>beginPlay(true));
+  retryBtn.addEventListener(‘click’,()=>beginPlay(dailyMode));
   pauseBtn.addEventListener('click',pauseGame);
   resumeBtn.addEventListener('click',resumeGame);
+  document.getElementById('menuBtnPause').addEventListener('click',goToMainMenu);
+  document.getElementById('menuBtnGameOver').addEventListener('click',goToMainMenu);
   shareBtn.addEventListener('click',()=>{const text='I stacked '+score+' pizzas with the Chef in Pizzeria Panic! 🍕 Beat my score: '+challengeUrl(score)+' #HotSliceCreative';if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{shareBtn.textContent='Copied!';setTimeout(()=>shareBtn.textContent='Copy Score',1400);}).catch(()=>{});}});
   async function shareScoreImage(){
     const cw=800,chh=1000;

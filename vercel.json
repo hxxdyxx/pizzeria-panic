@@ -5,5 +5,11 @@
   ],
   "functions": {
     "api/props.js": { "includeFiles": "assets/**" }
-  }
+  },
+  "headers": [
+    { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/play", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/play.html", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ]
 }

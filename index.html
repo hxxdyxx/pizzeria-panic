@@ -38,31 +38,31 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{background:var(--olive); font-family:'Open Sans',sans-serif; color:var(--mozz); overflow-x:hidden;}
-  .hero{height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; background:radial-gradient(ellipse at 50% 30%,rgba(242,193,78,.14),transparent 60%),linear-gradient(180deg,#3a3530,#2C2C2C);}
+  .hero{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 24px 60px; background:radial-gradient(ellipse at 50% 30%,rgba(242,193,78,.14),transparent 60%),linear-gradient(180deg,#3a3530,#2C2C2C);}
   h1.title{font-family:'Fredoka',sans-serif; font-weight:700; color:var(--glow); font-size:clamp(41px,10.4vw,74px); text-shadow:3px 3px 0 var(--tomato-dark); line-height:1.05; display:flex; flex-direction:column; align-items:center;}
   .titleLine{display:flex; align-items:center; justify-content:center;}
   .pizzaA{display:inline-block; font-size:.8em; line-height:1; transform:translateY(.05em);}
   .subtitle{font-family:'Fredoka',sans-serif; font-weight:600; font-size:18px; color:var(--beige); margin-top:10px;}
-  .scrollCue{margin-top:52px; font-family:'Fredoka',sans-serif; font-size:14px; color:var(--beige); opacity:.7; animation:bob 1.8s ease-in-out infinite;}
-  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
-  .scene-wrap{position:relative; height:150vh;}
-  .scene-pin{position:sticky; top:0; height:100vh; overflow:hidden; display:flex; align-items:center; justify-content:center;}
-  canvas.scene{position:absolute; inset:0; width:100%; height:100%;}
-  .captions{position:relative; z-index:2; text-align:center; padding:0 28px; pointer-events:none;}
-  .caption-line{font-family:'Fredoka',sans-serif; font-weight:600; font-size:clamp(20px,5vw,32px); color:var(--mozz); text-shadow:0 2px 10px rgba(0,0,0,.6); opacity:0; transition:opacity .25s linear; margin:6px 0;}
-  .caption-line.tomato{color:var(--tomato);} .caption-line.basil{color:var(--basil);} .caption-line.glow{color:var(--glow);}
-  .cta{height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(180deg,#2C2C2C,#1a130d); padding:24px;}
-  .cta h2{font-family:'Fredoka',sans-serif; font-size:clamp(28px,7vw,44px); color:var(--mozz); margin-bottom:14px;}
-  .cta p{color:var(--beige); max-width:340px; margin-bottom:28px; line-height:1.5;}
-  .playBtn{font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--mozz); text-decoration:none; background:linear-gradient(180deg,var(--tomato),var(--tomato-dark)); border:2px solid var(--olive); border-bottom:5px solid #6b1f1c; border-radius:12px; padding:16px 40px; display:inline-block;}
+  .playBtn{font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--mozz); text-decoration:none; background:linear-gradient(180deg,var(--tomato),var(--tomato-dark)); border:2px solid var(--olive); border-bottom:5px solid #6b1f1c; border-radius:12px; padding:16px 40px; display:inline-block; margin-top:28px;}
   .playBtn:active{transform:translateY(2px); border-bottom-width:3px;}
-  .footer-credit a{color:inherit;letter-spacing:1px;}
-  .footer-credit{margin-top:40px; font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.65; line-height:1.7;}
+  .scrollCue{margin-top:36px; font-family:'Fredoka',sans-serif; font-size:13px; color:var(--beige); opacity:.55; animation:bob 1.8s ease-in-out infinite; letter-spacing:.5px;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+  .howto{padding:64px 20px 72px; background:linear-gradient(180deg,#2C2C2C,#201810);}
+  .howtoTitle{font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(18px,4.5vw,26px); color:var(--glow); text-align:center; letter-spacing:2px; text-transform:uppercase; margin-bottom:36px; opacity:.9;}
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; max-width:720px; margin:0 auto;}
+  @media(max-width:580px){.steps{grid-template-columns:1fr;}}
+  .step{background:rgba(255,255,255,.045); border:2px solid rgba(242,193,78,.22); border-radius:16px; padding:28px 18px 24px; text-align:center; transition:border-color .2s;}
+  .step:hover{border-color:rgba(242,193,78,.5);}
+  .stepIcon{font-size:40px; line-height:1; margin-bottom:12px;}
+  .stepTitle{font-family:'Fredoka',sans-serif; font-weight:700; font-size:17px; color:var(--glow); letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px;}
+  .stepText{font-family:'Open Sans',sans-serif; font-size:13px; color:var(--beige); line-height:1.55; opacity:.88;}
+  .foot{padding:36px 24px 44px; background:#1a130d; text-align:center;}
+  .footer-credit{font-family:'Fredoka',sans-serif; font-size:12px; color:var(--beige); opacity:.65; line-height:1.9;}
   .footer-credit a{color:var(--glow); text-decoration:underline;}
   @keyframes chefIdleBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(-1deg);}}
-  .chefTalk{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:22px;}
+  .chefTalk{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:18px;}
   .chefTalk a{color:var(--beige); opacity:.75; text-decoration:underline; font-size:12px; font-family:'Fredoka',sans-serif;}
-  model-viewer.chef-mini-3d{width:110px; height:110px; flex:0 0 auto; background:transparent; animation:chefIdleBob 4.5s ease-in-out infinite;}
+  model-viewer.chef-mini-3d{width:90px; height:90px; flex:0 0 auto; background:transparent; animation:chefIdleBob 4.5s ease-in-out infinite;}
 </style>
 <!-- Google tag (GA4): traffic for the Weekly Slice report -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1Y872DLT49"></script>
@@ -75,24 +75,32 @@
       <span class="titleLine">P<span class="pizzaA">🍕</span>NIC</span>
     </h1>
     <div class="subtitle">Catch. Stack. Survive the rush.</div>
-    <div class="scrollCue">scroll to see how it works ↓</div>
+    <a class="playBtn" href="/play">Play Now</a>
+    <div class="scrollCue">how to play ↓</div>
   </section>
-  <section class="scene-wrap" id="scene3"><div class="scene-pin"><canvas class="scene" id="canvas3"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.35">Catch the falling pizzas.</div><div class="caption-line tomato" data-in="0.4" data-out="0.65">Stack 'em high...</div><div class="caption-line glow" data-in="0.82" data-out="1.0">Stack toward the ceiling, but don't touch it! 🎉</div></div></div></section>
-  <section class="scene-wrap" id="scene4"><div class="scene-pin"><canvas class="scene" id="canvas4"></canvas><div class="captions"><div class="caption-line" data-in="0.1" data-out="0.3">5 lives on the bricks.</div><div class="caption-line basil" data-in="0.38" data-out="0.6">🍄 helps you. 🌶️ and 🍍 HURT you.</div><div class="caption-line glow" data-in="0.68" data-out="1.0">Tilt or tap to move. Catch. Survive.</div></div></div></section>
-  <section class="cta"><h2>Ready to play?</h2><p>Free to play. Tilt or tap to move. See how high you can stack it.</p><a class="playBtn" href="/play">Play Now</a><div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" camera-orbit="0deg 78deg auto" shadow-intensity="0.7" tone-mapping="neutral" environment-image="neutral" exposure="1.15" loading="eager"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef</a></div><div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">1HOTSLICE.COM</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div></section>
-<script>
-(function(){
-  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-  const scenes=['scene3','scene4'].map(id=>{const wrap=document.getElementById(id);const canvas=wrap.querySelector('canvas');const ctx=canvas.getContext('2d');const captions=Array.from(wrap.querySelectorAll('.caption-line'));return{wrap,canvas,ctx,captions};});
-  function resizeCanvases(){scenes.forEach(s=>{s.canvas.width=window.innerWidth;s.canvas.height=window.innerHeight;});}
-  window.addEventListener('resize',resizeCanvases);resizeCanvases();
-  function drawScene3(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a3530');g.addColorStop(1,'#1c1a17');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const baseX=W/2,baseY=H*0.78;const n=Math.floor(p*14);const sway=Math.sin(p*6)*0.5*p;for(let i=0;i<n;i++){const t=(i+1)/14;const s=sway*t;const lift=(i+1)*(H*0.028);ctx.save();ctx.translate(baseX+s*40,baseY-lift);ctx.rotate(s*0.5);const rx=30-t*8,ry=10;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.fillStyle=i%2===0?'#D9A15A':'#e0b06e';ctx.fill();ctx.strokeStyle='#8f5322';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.ellipse(0,-1.5,rx*0.72,ry*0.6,0,0,Math.PI*2);ctx.fillStyle='#FAF0C8';ctx.fill();ctx.fillStyle='#D64541';ctx.beginPath();ctx.arc(-rx*0.3,0,rx*0.14,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx*0.25,ry*0.2,rx*0.14,0,Math.PI*2);ctx.fill();ctx.restore();}if(p>0.85){const burstT=(p-0.85)/0.15;ctx.save();for(let i=0;i<16;i++){const ang=(i/16)*Math.PI*2;const dist=burstT*80;ctx.globalAlpha=1-burstT;ctx.beginPath();ctx.arc(baseX+Math.cos(ang)*dist,baseY-H*0.4+Math.sin(ang)*dist,4,0,Math.PI*2);ctx.fillStyle='#F2C14E';ctx.fill();}ctx.restore();}}
-  function drawScene4(ctx,p,W,H){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#3a3530');g.addColorStop(1,'#1c1a17');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);const gy=H-H*0.16*clamp(p*2,0,1);ctx.fillStyle='#5a301b';ctx.fillRect(0,gy,W,H-gy);const rowH=Math.max(14,(H-gy)/2.5),brickW=rowH*2.1;let ri=0;for(let y=gy;y<H;y+=rowH){const off=(ri%2===0)?0:brickW/2;ctx.fillStyle=ri%2===0?'#A5322E':'#8f3626';for(let bx=-brickW+off;bx<W;bx+=brickW)ctx.fillRect(bx+2,y+2,brickW-4,Math.min(rowH,H-y)-4);ri++;}const icons=[{emoji:'🍕',label:'catch them',at:0.2,x:0.28},{emoji:'🍄',label:'helps you',at:0.45,x:0.5},{emoji:'🌶️',label:'DANGER',at:0.7,x:0.72}];icons.forEach(ic=>{const a=clamp((p-ic.at)/0.15,0,1);if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.font=`${Math.floor(W*0.09)}px sans-serif`;ctx.textAlign='center';ctx.fillText(ic.emoji,W*ic.x,H*0.42-(1-a)*20);ctx.font=`bold 16px 'Fredoka',sans-serif`;ctx.fillStyle=ic.label==='DANGER'?'#D64541':'#FAF8F5';ctx.fillText(ic.label,W*ic.x,H*0.42+34);ctx.restore();});}
-  const drawers=[drawScene3,drawScene4];
-  function updateCaptions(scene,p){scene.captions.forEach(el=>{const inP=parseFloat(el.dataset.in),outP=parseFloat(el.dataset.out);let op=0;if(p>=inP&&p<=outP){const span=(outP-inP)/2;op=clamp((p-inP)/(span*0.4),0,1)*clamp((outP-p)/(span*0.4),0,1);}el.style.opacity=op;});}
-  function loop(){scenes.forEach((s,idx)=>{const rect=s.wrap.getBoundingClientRect();const total=s.wrap.offsetHeight-window.innerHeight;const scrolled=clamp(-rect.top,0,Math.max(1,total));const p=total>0?scrolled/total:0;drawers[idx](s.ctx,p,s.canvas.width,s.canvas.height);updateCaptions(s,p);});requestAnimationFrame(loop);}
-  requestAnimationFrame(loop);
-})();
-</script>
+  <section class="howto">
+    <div class="howtoTitle">How to Play</div>
+    <div class="steps">
+      <div class="step">
+        <div class="stepIcon">🍕</div>
+        <div class="stepTitle">Catch</div>
+        <div class="stepText">Move your pan left and right. Don't let pizza hit the floor — 5 drops and your shift is over.</div>
+      </div>
+      <div class="step">
+        <div class="stepIcon">📦</div>
+        <div class="stepTitle">Stack</div>
+        <div class="stepText">Build the tower higher for bigger combos. Watch the danger meter — the ceiling ends your shift fast.</div>
+      </div>
+      <div class="step">
+        <div class="stepIcon">⚡</div>
+        <div class="stepTitle">Survive</div>
+        <div class="stepText">🍄 restores a life. 🌶️ and 🍍 hurt. Ride Rush Hour for double points — and watch out for the wind.</div>
+      </div>
+    </div>
+  </section>
+  <section class="foot">
+    <div class="chefTalk"><model-viewer class="chef-mini-3d" src="/avatars/chef-3d.glb" alt="The Chef, a 3D avatar" interaction-prompt="none" camera-orbit="0deg 78deg auto" shadow-intensity="0.7" exposure="1.1" loading="lazy"></model-viewer><a href="https://chef.1hotslice.com" target="_blank" rel="noopener">Talk to the Chef</a></div>
+    <div class="footer-credit">A Hot Slice Creative Game · <a href="https://www.1hotslice.com" target="_blank" rel="noopener">www.1HotSlice.com</a> · <a href="https://instagram.com/1hotslice" target="_blank" rel="noopener">@1hotslice</a></div>
+  </section>
 </body>
 </html>
