@@ -2191,7 +2191,7 @@
   window.addEventListener(‘pageshow’,e=>{if(e.persisted){goToMainMenu();}});
   startBtn.addEventListener(‘click’,()=>beginPlay(false));
   const sharedDailyLink=new URLSearchParams(location.search).get(‘daily’)===’1’;
-  if(sharedDailyLink)document.getElementById(‘dailyBtn’).textContent=sharedDailyExpired?’📅 Today’s Daily Challenge’:’📅 Play Shared Challenge’;
+  if(sharedDailyLink)document.getElementById('dailyBtn').textContent=sharedDailyExpired?'📅 Today\'s Daily Challenge':'📅 Play Shared Challenge';
   document.getElementById(‘dailyBtn’).addEventListener(‘click’,()=>beginPlay(true));
   retryBtn.addEventListener(‘click’,()=>beginPlay(dailyMode));
   pauseBtn.addEventListener('click',pauseGame);
